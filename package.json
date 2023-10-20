@@ -1,0 +1,35 @@
+{
+  "name": "jgithub/ts-gist-pile",
+  "version": "0.0.1",
+  "description": "tired of finding this on stackoverflow",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@types/chai": "^4.3.5",
+    "@types/lodash.clonedeep": "^4.5.7",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^20.2.5",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
+  },
+  "scripts": {
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test",
+    "build": "tsc",
+    "test": "env TZ='America/Chicago' env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.test.ts'"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "keywords": [],
+  "author": "jgithub",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jgithub/ts-gist-pile.git"
+  },
+  "dependencies": {
+    "lodash.clonedeep": "^4.5.0"
+  }
+}
