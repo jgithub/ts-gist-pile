@@ -1,5 +1,5 @@
 {
-  "name": "jgithub/ts-gist-pile",
+  "name": "@jgithub/ts-gist-pile",
   "version": "0.0.1",
   "description": "tired of finding this on stackoverflow",
   "main": "dist/index.js",
@@ -29,6 +29,9 @@
     "type": "git",
     "url": "git+https://github.com/jgithub/ts-gist-pile.git"
   },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },  
   "dependencies": {
     "lodash.clonedeep": "^4.5.0"
   }

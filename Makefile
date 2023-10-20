@@ -18,4 +18,4 @@ test:
 
 .PHONY: publish
 publish:
-	cd ${ROOT_DIR}
+	cd ${ROOT_DIR} && npm publish
