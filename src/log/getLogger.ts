@@ -1,17 +1,17 @@
 
 
-class LogFactory {
+class LoggerFactory {
   private static mapOfLoggers: Map<string, Logger>;
 
   public static getLogger(loggerName: string): Logger {
-    if (LogFactory.mapOfLoggers == null) {
-      LogFactory.mapOfLoggers = new Map()
+    if (LoggerFactory.mapOfLoggers == null) {
+      LoggerFactory.mapOfLoggers = new Map()
     }
 
     let logger: Logger = this.mapOfLoggers.get(loggerName) as Logger
     if (logger == null){
       logger = new Logger(loggerName)
-      LogFactory.mapOfLoggers.set(loggerName, logger)
+      LoggerFactory.mapOfLoggers.set(loggerName, logger)
     }
     return logger
   }
@@ -94,6 +94,10 @@ class Logger {
       console.log(completeMsg, extra)
     }
   }
+}
+
+export function getLogger(loggerName: string): Logger {
+  return LoggerFactory.getLogger(loggerName)
 }
 
 function isTruelike(input: boolean | string | number | undefined): boolean {
