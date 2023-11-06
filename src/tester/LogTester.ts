@@ -14,7 +14,7 @@ class LogTester {
 }
 
 
-withTraceId( '1234567890', () => {
+withTraceId( '00000000-0000-0000-0000-000000000000', () => {
   const logTester = new LogTester()
   logTester.buildCar("Jeep", "Cherokee")
 })

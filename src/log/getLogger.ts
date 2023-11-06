@@ -21,10 +21,6 @@ class LoggerFactory {
 }
 
 
-// TODO:  Add support for AsyncLocalStorage.
-// https://dev.to/george_k/using-asynclocalstorage-in-nodejs-real-world-use-cases-3ekd
-
-
 class Logger {
   constructor(private readonly loggerName: string) {}
 
