@@ -1,5 +1,7 @@
 
+import { AsyncLocalStorage } from "async_hooks";
 
+const asyncLocalStorage = new AsyncLocalStorage();
 
 class LoggerFactory {
   private static mapOfLoggers: Map<string, Logger>;
@@ -19,6 +21,8 @@ class LoggerFactory {
 }
 
 
+// TODO:  Add support for AsyncLocalStorage.
+// https://dev.to/george_k/using-asynclocalstorage-in-nodejs-real-world-use-cases-3ekd
 
 
 class Logger {
@@ -33,6 +37,17 @@ class Logger {
     messageParts.push(severity)
     // messageParts.push(JSON.stringify(jsonContext))
     messageParts.push(msg)
+
+    try {
+      const traceId = asyncLocalStorage.getStore();
+      if (traceId != null) {
+        jsonContext = Object.assign({}, jsonContext, {traceId});
+      }
+    } catch(err) {
+      
+    }
+    
+
     messageParts.push(JSON.stringify(jsonContext))
     return messageParts.join(" ")
   }
@@ -100,6 +115,10 @@ class Logger {
 
 export function getLogger(loggerName: string): Logger {
   return LoggerFactory.getLogger(loggerName)
+}
+
+export function withTraceId(traceId: string, fn: () => any) {
+  return asyncLocalStorage.run(traceId, fn);
 }
 
 function isTruelike(input: boolean | string | number | undefined): boolean {

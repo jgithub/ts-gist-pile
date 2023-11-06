@@ -1,5 +1,5 @@
 
-import { getLogger } from "../log/getLogger"
+import { getLogger, withTraceId } from "../log/getLogger"
 import { d4l } from "../log/logUtil"
 
 process.env.LOG_DEBUG = "true"
@@ -13,5 +13,8 @@ class LogTester {
   }
 }
 
-const logTester = new LogTester()
-logTester.buildCar("Jeep", "Cherokee")
+
+withTraceId( '1234567890', () => {
+  const logTester = new LogTester()
+  logTester.buildCar("Jeep", "Cherokee")
+})
