@@ -19,3 +19,8 @@ test:
 .PHONY: publish
 publish:
 	cd ${ROOT_DIR} && npm publish
+
+
+.PHONY: LogTester
+LogTester:
+	cd ${ROOT_DIR}/src && npx ts-node --files tester/LogTester.ts
