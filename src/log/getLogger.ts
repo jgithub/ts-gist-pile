@@ -29,9 +29,9 @@ class Logger {
     if (isTruelike(process.env.LOG_PREPEND_TIMESTAMP)) {
       messageParts.push(new Date().toUTCString())
     }
-    messageParts.push(this.loggerName)
     messageParts.push(severity)
     // messageParts.push(JSON.stringify(jsonContext))
+    messageParts.push(this.loggerName)
     messageParts.push(msg)
 
     try {
