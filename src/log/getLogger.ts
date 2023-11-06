@@ -1,5 +1,6 @@
 
 
+
 class LoggerFactory {
   private static mapOfLoggers: Map<string, Logger>;
 
@@ -23,21 +24,22 @@ class LoggerFactory {
 class Logger {
   constructor(private readonly loggerName: string) {}
 
-  private buildLogMsg(severity: string, msg: string): string {
+  private buildLogMsg(severity: string, msg: string, jsonContext: JSONContext): string {
     const messageParts = [];
     if (isTruelike(process.env.LOG_PREPEND_TIMESTAMP)) {
       messageParts.push(new Date().toUTCString())
     }
     messageParts.push(this.loggerName)
     messageParts.push(severity)
+    // messageParts.push(JSON.stringify(jsonContext))
     messageParts.push(msg)
-
+    messageParts.push(JSON.stringify(jsonContext))
     return messageParts.join(" ")
   }
 
-  public trace(msg: string, ...extra: any[]): void {
+  public trace(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
     if (isTruelike(process.env.LOG_TRACE)) {
-      const completeMsg = this.buildLogMsg("[ TRACE]", msg)
+      const completeMsg = this.buildLogMsg("[ TRACE]", msg, jsonContext)
       if (extra.length === 0) {
         console.log(completeMsg)
       } else if (extra.length > 0) {
@@ -46,9 +48,9 @@ class Logger {
     }
   }
 
-  public debug(msg: string, ...extra: any[]): void {
+  public debug(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
     if (isTruelike(process.env.LOG_DEBUG)) {
-      const completeMsg = this.buildLogMsg("[ DEBUG]", msg)
+      const completeMsg = this.buildLogMsg("[ DEBUG]", msg, jsonContext)
       if (extra.length === 0) {
         console.log(completeMsg)
       } else if (extra.length > 0) {
@@ -57,9 +59,9 @@ class Logger {
     }
   }
 
-  public info(msg: string, ...extra: any[]): void {
+  public info(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
     if (isTruelike(process.env.LOG_INFO)) {
-      const completeMsg = this.buildLogMsg("[  INFO]", msg)
+      const completeMsg = this.buildLogMsg("[  INFO]", msg, jsonContext)
       if (extra.length === 0) {
         console.log(completeMsg)
       } else if (extra.length > 0) {
@@ -68,8 +70,8 @@ class Logger {
     }
   }
 
-  public notice(msg: string, ...extra: any[]): void {
-    const completeMsg = this.buildLogMsg("[NOTICE]", msg)
+  public notice(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
+    const completeMsg = this.buildLogMsg("[NOTICE]", msg, jsonContext)
     if (extra.length === 0) {
       console.log(completeMsg)
     } else if (extra.length > 0) {
@@ -77,8 +79,8 @@ class Logger {
     }
   }
 
-  public warn(msg: string, ...extra: any[]): void {
-    const completeMsg = this.buildLogMsg("[  WARN]", msg)
+  public warn(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
+    const completeMsg = this.buildLogMsg("[  WARN]", msg, jsonContext)
     if (extra.length === 0) {
       console.log(completeMsg)
     } else if (extra.length > 0) {
@@ -86,8 +88,8 @@ class Logger {
     }
   }
 
-  public error(msg: string, ...extra: any[]): void {
-    const completeMsg = this.buildLogMsg("[ ERROR]", msg)
+  public error(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
+    const completeMsg = this.buildLogMsg("[ ERROR]", msg, jsonContext)
     if (extra.length === 0) {
       console.log(completeMsg)
     } else if (extra.length > 0) {
@@ -111,3 +113,5 @@ function isTruelike(input: boolean | string | number | undefined): boolean {
   }
   return false
 }
+
+type JSONContext = { [key: string]: any }
