@@ -7,6 +7,7 @@ export function xTimesRollDie(numRolls: number, numSides: number): number { // m
   for( let ii = 0; ii < numRolls; ii++) {
     total = total + rollOneDie(numSides)
   }
+  return total
 }
 
 export function beTrueXPercentOfTheTime(percent: number): boolean { // min and max included 
