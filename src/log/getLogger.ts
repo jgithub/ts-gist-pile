@@ -1,5 +1,6 @@
 
 import { AsyncLocalStorage } from "async_hooks";
+import { d4l } from "./logUtil";
 
 const asyncLocalStorage = new AsyncLocalStorage();
 
@@ -117,6 +118,7 @@ class Logger {
 
       console.log(`Sending to Stathat url = '${url}',  stathatCaptureBody = '${stathatCaptureBody}'`)
 
+      const beforeAt = new Date()
       // While still experimental, the global fetch API is available by default in Node.js 18
       fetch(url, { 
         method: 'POST', 
@@ -124,7 +126,8 @@ class Logger {
         body: stathatCaptureBody
       }).then(response => {
         // completed request before timeout fired
-        console.log(`Stathat fetch completed`)
+        const deltaInMs = new Date().getTime() - beforeAt.getTime()
+        console.log(`Stathat fetch completed after ${deltaInMs} milliseconds,  with response = ${d4l(response)}`)
 
         // If you only wanted to timeout the request, not the response, add:
         clearTimeout(timeoutId)
