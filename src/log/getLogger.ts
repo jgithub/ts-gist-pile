@@ -1,6 +1,5 @@
 
 import { AsyncLocalStorage } from "async_hooks";
-const stathat = require('stathat');
 
 const asyncLocalStorage = new AsyncLocalStorage();
 
