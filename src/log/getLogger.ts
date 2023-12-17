@@ -112,8 +112,8 @@ class Logger {
       // 1 second timeout:
       const timeoutId = setTimeout(() => controller.abort(), 1000)
 
-      const url = "http://api.stathat.com/ez"
-      const stathatCaptureBody = `stat=${process.env.STATHAT_ERROR_KEY?.trim()}&email=${process.env.STATHAT_EZ_KEY?.trim()}&count=1`
+      const url = "https://api.stathat.com/ez"
+      const stathatCaptureBody = `stat=${process.env.STATHAT_ERROR_KEY?.trim()}&ezkey=${process.env.STATHAT_EZ_KEY?.trim()}&count=1`
 
       console.log(`Sending to Stathat url = '${url}',  stathatCaptureBody = '${stathatCaptureBody}'`)
 
