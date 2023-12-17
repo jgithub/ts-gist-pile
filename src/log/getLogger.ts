@@ -119,7 +119,7 @@ class Logger {
       const requestBody = `stat=${process.env.STATHAT_ERROR_KEY?.trim()}&${ezKeyLabel}=${process.env.STATHAT_EZ_KEY?.trim()}&count=1`
 
       /*
-       * jeano@MacBook-Pro sisu_order_callback % curl -v -d "stat=sisu _ERROR&email=qOYjP06KEvoFGgSn&count=1" https://api.stathat.com/ez
+       * % curl -v -d "stat=sisu _ERROR&email=ezkey&count=1" https://api.stathat.com/ez
        */
 
       console.log(`Sending POST to Stathat url = '${url}',  requestBody = '${requestBody}'`)
