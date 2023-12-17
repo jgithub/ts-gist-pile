@@ -114,16 +114,22 @@ class Logger {
       const timeoutId = setTimeout(() => controller.abort(), 1000)
 
       const url = "https://api.stathat.com/ez"
-      const stathatCaptureBody = `stat=${process.env.STATHAT_ERROR_KEY?.trim()}&ezkey=${process.env.STATHAT_EZ_KEY?.trim()}&count=1`
+      // This param should either be 'ezkey' or 'email'... I'm not sure which
+      const ezKeyLabel = "ezkey" // vs email
+      const requestBody = `stat=${process.env.STATHAT_ERROR_KEY?.trim()}&${ezKeyLabel}=${process.env.STATHAT_EZ_KEY?.trim()}&count=1`
 
-      console.log(`Sending to Stathat url = '${url}',  stathatCaptureBody = '${stathatCaptureBody}'`)
+      /*
+       * jeano@MacBook-Pro sisu_order_callback % curl -v -d "stat=sisu _ERROR&email=qOYjP06KEvoFGgSn&count=1" https://api.stathat.com/ez
+       */
+
+      console.log(`Sending POST to Stathat url = '${url}',  requestBody = '${requestBody}'`)
 
       const beforeAt = new Date()
       // While still experimental, the global fetch API is available by default in Node.js 18
       fetch(url, { 
         method: 'POST', 
         signal: controller.signal,
-        body: stathatCaptureBody
+        body: requestBody
       }).then(response => {
         // completed request before timeout fired
         const deltaInMs = new Date().getTime() - beforeAt.getTime()
@@ -132,7 +138,7 @@ class Logger {
         // If you only wanted to timeout the request, not the response, add:
         clearTimeout(timeoutId)
       }).catch(err => {
-        console.log(`[STATHAT][ ERROR] Reason: ${JSON.stringify(err)}`)
+        console.log(`[STATHAT][ ERROR] Reason: ${d4l(err)}`)
       })
 
       // } catch(err) {
