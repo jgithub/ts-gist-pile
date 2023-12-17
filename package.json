@@ -1,6 +1,6 @@
 {
   "name": "@jgithub/ts-gist-pile",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "tired of finding this on stackoverflow",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -35,7 +35,6 @@
   },
   "dependencies": {
     "lodash.clonedeep": "^4.5.0",
-    "stathat": "^0.0.8",
     "uuid-with-v6": "^2.0.0"
   }
 }

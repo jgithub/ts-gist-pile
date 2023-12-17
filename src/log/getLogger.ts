@@ -103,12 +103,38 @@ class Logger {
   public error(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
     if (process.env.STATHAT_EZ_KEY != null && process.env.STATHAT_EZ_KEY.trim()?.length > 0 && process.env.STATHAT_ERROR_KEY != null && process.env.STATHAT_ERROR_KEY.trim()?.length > 0) {
       // TODO: Change this to run as a promise
-      try {
-        stathat.trackEZCount(process.env.STATHAT_EZ_KEY?.trim(), process.env.STATHAT_ERROR_KEY?.trim(), 1, function(status: any, json: any) {});
-      } catch(err) {
-        const stathatError = this.buildLogMsg("[STATHAT][ ERROR]", msg, jsonContext)
-        console.log(stathatError)
-      } 
+      // try {
+        // stathat.trackEZCount(process.env.STATHAT_EZ_KEY?.trim(), process.env.STATHAT_ERROR_KEY?.trim(), 1, function(status: any, json: any) {});
+
+
+      const controller = new AbortController()
+      // 1 second timeout:
+      const timeoutId = setTimeout(() => controller.abort(), 1000)
+
+      const url = "http://api.stathat.com/ez"
+      const stathatCaptureBody = `stat=${process.env.STATHAT_ERROR_KEY?.trim()}&email=${process.env.STATHAT_EZ_KEY?.trim()}&count=1`
+
+      console.log(`Sending to Stathat url = '${url}',  stathatCaptureBody = '${stathatCaptureBody}'`)
+
+      // While still experimental, the global fetch API is available by default in Node.js 18
+      fetch(url, { 
+        method: 'POST', 
+        signal: controller.signal,
+        body: stathatCaptureBody
+      }).then(response => {
+        // completed request before timeout fired
+        console.log(`Stathat fetch completed`)
+
+        // If you only wanted to timeout the request, not the response, add:
+        clearTimeout(timeoutId)
+      }).catch(err => {
+        console.log(`[STATHAT][ ERROR] Reason: ${JSON.stringify(err)}`)
+      })
+
+      // } catch(err) {
+      //   const stathatError = this.buildLogMsg("[STATHAT][ ERROR]", msg, jsonContext)
+      //   console.log(stathatError)
+      // } 
     }    
     
     const completeMsg = this.buildLogMsg("[ ERROR]", msg, jsonContext)
