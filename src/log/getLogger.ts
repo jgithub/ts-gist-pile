@@ -102,14 +102,13 @@ class Logger {
 
   public error(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
     if (process.env.STATHAT_EZ_KEY != null && process.env.STATHAT_EZ_KEY.trim()?.length > 0 && process.env.STATHAT_ERROR_KEY != null && process.env.STATHAT_ERROR_KEY.trim()?.length > 0) {
-      setTimeout( () => {
-        try {
-          stathat.trackEZCount(process.env.STATHAT_EZ_KEY?.trim(), process.env.STATHAT_ERROR_KEY?.trim(), 1, function(status: any, json: any) {});
-        } catch(err) {
-          const stathatError = this.buildLogMsg("[STATHAT][ ERROR]", msg, jsonContext)
-          console.log(stathatError)
-        } 
-      })
+      // TODO: Change this to run as a promise
+      try {
+        stathat.trackEZCount(process.env.STATHAT_EZ_KEY?.trim(), process.env.STATHAT_ERROR_KEY?.trim(), 1, function(status: any, json: any) {});
+      } catch(err) {
+        const stathatError = this.buildLogMsg("[STATHAT][ ERROR]", msg, jsonContext)
+        console.log(stathatError)
+      } 
     }    
     
     const completeMsg = this.buildLogMsg("[ ERROR]", msg, jsonContext)
