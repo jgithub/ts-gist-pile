@@ -101,6 +101,8 @@ class Logger {
   }
 
   public error(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
+    console.log(`error(): STATHAT_EZ_KEY = '${process.env.STATHAT_EZ_KEY}',  STATHAT_ERROR_KEY = '${process.env.STATHAT_ERROR_KEY}'`)
+
     if (process.env.STATHAT_EZ_KEY != null && process.env.STATHAT_EZ_KEY.trim()?.length > 0 && process.env.STATHAT_ERROR_KEY != null && process.env.STATHAT_ERROR_KEY.trim()?.length > 0) {
       // TODO: Change this to run as a promise
       // try {
