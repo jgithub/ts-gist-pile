@@ -3,7 +3,7 @@ import { DateProviderService, stringUtil } from "../../src/index";
 
 
 describe('stringUtil', () => {
-  describe('isWellFormedCanonicalUuid', () => {
+  describe('.isWellFormedCanonicalUuid()', () => {
     describe('based on some common test inputs', () => {
       it('returns the expected result', () => {
         
