@@ -37,3 +37,16 @@ export function isBlank(input: string | undefined): boolean {
   }
   return false
 }
+
+export function isWellFormedCanonicalUuid(input: string | undefined): boolean {
+  if (input == null) {
+    return false
+  }
+  if (typeof input === 'string') {
+    const regexp = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    if (input.toLowerCase().match(regexp)) {
+      return true
+    }
+  }
+  return false
+}
