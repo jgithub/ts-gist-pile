@@ -161,7 +161,7 @@ class Logger {
       const url = "https://stat.kpitracks.com/c"
       // This param should either be 'ezkey' or 'email'... I'm not sure which
       const ezKeyLabel = "ezkey" // vs email
-      const requestBody = `stat=${process.env.STATHAT_ERROR_KEY?.trim()}&${ezKeyLabel}=${process.env.STATHAT_EZ_KEY?.trim()}&count=1`
+      const requestBody = `stat=${process.env.KPITRACKS_ERROR_KEY?.trim()}&${ezKeyLabel}=${process.env.KPITRACK_EZ_KEY?.trim()}&count=1`
 
       /*
        * % curl -v -d "stat=sisu _ERROR&email=ezkey&count=1" https://api.stathat.com/ez
