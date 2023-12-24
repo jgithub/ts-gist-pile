@@ -18,4 +18,13 @@ describe('stringUtil', () => {
       })  
     })
   })
+
+  describe('.padLeftWithZeros()', () => {
+    describe('on a sunny day', () => {
+      it('returns the expected value', () => {
+        expect(stringUtil.padLeftWithZeros(5, 2)).to.eq("05")
+
+      })  
+    })
+  })  
 })

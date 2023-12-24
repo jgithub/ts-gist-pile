@@ -50,3 +50,11 @@ export function isWellFormedCanonicalUuid(input: string | undefined): boolean {
   }
   return false
 }
+
+export function padLeftWithZeros(input: any, notLessThanXDigits: number): string {
+  let workingValue: string = input.toString();
+  while (workingValue.length < notLessThanXDigits) {
+    workingValue = "0" + workingValue;
+  }
+  return workingValue;
+}
