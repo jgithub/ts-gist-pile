@@ -10,3 +10,4 @@ export function generateSortedFiveMinuteBucketsForYear(year: number): number[] {
   }
   return retval
 }
+
