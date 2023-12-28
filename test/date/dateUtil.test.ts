@@ -3,10 +3,10 @@ import { dateUtil } from "../../src/index";
 
 
 describe('dateUtil', () => {
-  describe('.generateSortedFiveMinuteBucketsForYear()', () => {
+  describe('.generateSortedFiveMinuteBucketsForYearInSeconds()', () => {
     describe('for 2023', () => {
       it('generates the expected range', () => {
-        const buckets = dateUtil.generateSortedFiveMinuteBucketsForYear(2023)
+        const buckets = dateUtil.generateSortedFiveMinuteBucketsForYearInSeconds(2023)
         expect(buckets[0]).to.eq(1672444800)
         const minutesThisYear = 365 * 24 * 60
         const numberOf5MinuteBlocksThisYear = minutesThisYear / 5
@@ -18,7 +18,7 @@ describe('dateUtil', () => {
     
     describe('for 2024', () => {
       it('generates the expected range', () => {
-        const buckets = dateUtil.generateSortedFiveMinuteBucketsForYear(2024)
+        const buckets = dateUtil.generateSortedFiveMinuteBucketsForYearInSeconds(2024)
         // 2024 is leap year
         expect(buckets.length).to.eq(366 * 24 * 12) 
         expect(buckets[0]).to.eq(1703980800)

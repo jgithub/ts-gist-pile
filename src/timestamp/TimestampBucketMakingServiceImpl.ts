@@ -8,13 +8,13 @@ export class TimestampBucketMakingServiceImpl implements TimestampBucketMakingSe
    * Return value is a sorted array of bucket starting times since epoch in Seconds
    * @param year 
    */
-  public gengetSorted5MinuteBucketsForYear(year: number): ReadonlyArray<number> {
-    return dateUtil.generateSortedFiveMinuteBucketsForYear(year)
+  public gengetSorted5MinuteBucketStartingUnixtimesForYearInSeconds(year: number): ReadonlyArray<number> {
+    return dateUtil.generateSortedFiveMinuteBucketsForYearInSeconds(year)
   }
 
   public getMyCurrent5MinuteBucketStartTimeSecondsSinceEpoch(): number {
     const nowInSeconds = this.dateProviderService.getNow().getTime() / 1000
-    const array = this.gengetSorted5MinuteBucketsForYear(this.dateProviderService.getNow().getUTCFullYear())
+    const array = this.gengetSorted5MinuteBucketStartingUnixtimesForYearInSeconds(this.dateProviderService.getNow().getUTCFullYear())
     for (let ii = 0; ii < array.length; ++ii) {
       // as soon as we are bigger than one we found the 
       // right one
