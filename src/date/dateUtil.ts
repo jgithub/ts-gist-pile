@@ -1,4 +1,10 @@
-export function generateSortedFiveMinuteBucketsForYear(year: number): number[] {
+/**
+ * 
+ * @param year 
+ * @returns Array of starting unixtime in SECONDS
+ */
+
+export function generateSortedFiveMinuteBucketsForYearInSeconds(year: number): number[] {
   const firstMomentOfYear = Date.UTC(year, 0, 0, 0, 0, 0)
   const firstMomentOfNextYear = Date.UTC(year + 1, 0, 0, 0, 0, 0)
 
@@ -11,3 +17,21 @@ export function generateSortedFiveMinuteBucketsForYear(year: number): number[] {
   return retval
 }
 
+export function dateToYyyyMmDdStringAtUtc(date: Date): string {
+  const dateAtUtc: Date = new Date(date.toUTCString())
+  const yyyyMmDdString = `${dateAtUtc.getUTCFullYear()}${padLeftWithZeros(dateAtUtc.getUTCMonth() + 1, 2)}${padLeftWithZeros(dateAtUtc.getUTCDate(), 2)}` 
+  return yyyyMmDdString
+}
+
+export function getDateInLondon(date: Date): Date {
+  const dateAtUtc: Date = new Date(date.toUTCString())
+  return dateAtUtc
+}
+
+function padLeftWithZeros(input: any, notLessThanXDigits: number): string {
+  let workingValue: string = input.toString();
+  while (workingValue.length < notLessThanXDigits) {
+    workingValue = "0" + workingValue;
+  }
+  return workingValue;
+}

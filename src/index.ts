@@ -8,6 +8,5 @@ export { d4l } from "./log/logUtil"
 
 export { DateProviderServiceImpl } from "./date/DateProviderServiceImpl"
 export { DateProviderService } from "./date/DateProviderService"
-export { TimestampBucketMakingService } from "./timestamp/TimestampBucketMakingService"
 export { UtcGetterService } from "./date/UtcGetterService"
 export { UtcGetterServiceImpl } from "./date/UtcGetterServiceImpl"

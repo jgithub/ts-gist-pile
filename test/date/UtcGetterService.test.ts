@@ -15,6 +15,7 @@ describe('UtcGetterService', () => {
         expect(dateProviderService.getNow().toString()).to.eql("Sat Dec 23 2023 14:52:15 GMT-0600 (Central Standard Time)")
         const utcGetterService: UtcGetterService = new UtcGetterServiceImpl(dateProviderService)
         expect(utcGetterService.getYyyyMmDdStringAtUtc()).to.eq('20231223')
+        // expect(`${utcGetterService.getSpecifiedDateAsUtc(dateProviderService.getNow())}`).to.eql("asdf")
       })  
     })
 
