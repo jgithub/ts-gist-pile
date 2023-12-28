@@ -8,4 +8,11 @@ export class UtcGetterServiceImpl implements UtcGetterService {
   public getYyyyMmDdStringAtUtc(): string {
     return dateUtil.dateToYyyyMmDdStringAtUtc(this.dateProviderService.getNow())
   }
+
+  public getSpecifiedDateAsUtc(anyDate: Date): Date // UTC date {
+  {
+    const dateAtUtc: Date = new Date(this.dateProviderService.getNow().toUTCString())
+    return dateAtUtc;
+  }
+
 }
