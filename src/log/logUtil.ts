@@ -21,14 +21,16 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any)
     if (typeof ((input as any).toLogString) === 'function' ) {
       return (input as any).toLogString()
     }
-    if (typeof ((input as any).toJSON) === 'function' ) {
-      const whateverToJSONReturns = (input as any).toJSON()
-      if (typeof whateverToJSONReturns === 'string') {
-        return whateverToJSONReturns
-      }
-    }
+    // Do yourself a huge favor and don't mess with toJSON
+    // if (typeof ((input as any).toJSON) === 'function' ) {
+    //   const whateverToJSONReturns = (input as any).toJSON()
+    //   if (typeof whateverToJSONReturns === 'string') {
+    //     return whateverToJSONReturns
+    //   }
+    // }
     if (typeof ((input as any).asJson) === 'function' ) {
       const whateverAsJsonReturns = (input as any).asJson()
+      // return whateverAsJsonReturns
       try {
         return safeStringify(whateverAsJsonReturns)
       } catch (err){}
