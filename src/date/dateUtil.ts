@@ -35,3 +35,7 @@ function padLeftWithZeros(input: any, notLessThanXDigits: number): string {
   }
   return workingValue;
 }
+
+export function getMillisecondsSinceDate(dateStart: Date): number {
+  return new Date().getTime() - dateStart.getTime()
+}
