@@ -22,4 +22,5 @@ export function sendStatToKpitracks(requestBodyString: string): void {
       clearTimeout(timeoutId)
     }).catch(err => {
     })
+  }
 }
