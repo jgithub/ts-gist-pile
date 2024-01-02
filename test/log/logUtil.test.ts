@@ -44,5 +44,13 @@ describe('logUtil', () => {
         expect(d4l(obj)).to.eql('{"a":1}')
       })  
     })
+
+
+    describe('when an object is an Error', () => {
+      it('works', () => {
+        const myError = new Error("my error")
+        expect(d4l(myError).startsWith("Error: my error")).to.be.true
+      })  
+    })    
   })  
 })

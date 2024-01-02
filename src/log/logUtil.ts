@@ -16,6 +16,17 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any)
   else if (typeof input === 'boolean') {
     return `${input == true ? 'TRUE' : 'FALSE'} (boolean)`
   }
+  else if (input instanceof Error) {
+    let stackStr: string | undefined = (input as Error).stack
+    stackStr = stackStr?.replace(/\r\n/g, "\\n,   ")
+    stackStr = stackStr?.replace(/\n\r/g, "\\n,   ")
+    stackStr = stackStr?.replace(/\n/g, "\\n,   ")
+    stackStr = stackStr?.replace(/\r/g, "\\n,   ")
+    return `${input} (Error, stack: ${stackStr}`
+  }
+  else if (Object.prototype.toString.call(input) === '[object Date]') {
+    return (input as Date).toISOString();
+  }  
   else if (typeof input === 'object') {
     if (typeof ((input as any).toDebugString) === 'function' ) {
       return (input as any).toDebugString()
@@ -56,17 +67,6 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any)
     }
 
     return `Array(len=${inputAsArray.length}) [${parts.join(", ")}]`
-  }
-  else if (input instanceof Error) {
-    let stackStr: string | undefined = (input as Error).stack
-    stackStr = stackStr?.replace(/\r\n/g, "\\n,   ")
-    stackStr = stackStr?.replace(/\n\r/g, "\\n,   ")
-    stackStr = stackStr?.replace(/\n/g, "\\n,   ")
-    stackStr = stackStr?.replace(/\r/g, "\\n,   ")
-    return `${input} (Error, stack: ${stackStr}`
-  }
-  else if (Object.prototype.toString.call(input) === '[object Date]') {
-    return (input as Date).toISOString();
   }
   return `${input}`
 }
