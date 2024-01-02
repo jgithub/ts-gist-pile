@@ -5,6 +5,9 @@ export * as numberUtil from "./number/numberUtil"
 export * as dateUtil from "./date/dateUtil"
 export { getLogger } from "./log/getLogger"
 export { d4l } from "./log/logUtil"
+export * as statUtil from "./stat/statUtil"
+export { safeStringify } from "./string/safeStringify"
+
 
 export { DateProviderServiceImpl } from "./date/DateProviderServiceImpl"
 export { DateProviderService } from "./date/DateProviderService"

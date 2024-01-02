@@ -1,7 +1,6 @@
 
 import { AsyncLocalStorage } from "async_hooks";
 import { sendStatToKpitracks } from "../stat/statUtil";
-import { d4l } from "./logUtil";
 
 const asyncLocalStorage = new AsyncLocalStorage();
 
