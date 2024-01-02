@@ -1,3 +1,5 @@
+import { safeStringify } from "../string/safeStringify"
+
 export function d4l(input: string | number | boolean | Error | Array<any> | any) {
   if (typeof input === 'undefined') {
     return "<undefined> (undefined)"
@@ -67,20 +69,4 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any)
     return (input as Date).toISOString();
   }
   return `${input}`
-}
-
-const safeStringify = (obj: any, indent = 0) => {
-  let cache: any = []
-  const retVal = JSON.stringify(
-    obj,
-    (key, value) =>
-      typeof value === 'object' && value !== null
-        ? cache.includes(value)
-          ? undefined // Duplicate reference found, discard key
-          : cache.push(value) && value // Store value in our collection
-        : value,
-    indent
-  )
-  cache = null
-  return retVal
 }

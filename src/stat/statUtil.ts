@@ -1,9 +1,14 @@
+/*
+ * DO NOT use the logger herein!!
+ */
+
+
 export function sendStatToKpitracks(requestBodyString: string): void {
   if (process.env.KPITRACKS_EZ_KEY != null && process.env.KPITRACKS_EZ_KEY.trim()?.length > 0 && process.env.KPITRACKS_ERROR_KEY != null && process.env.KPITRACKS_ERROR_KEY.trim()?.length > 0) {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 750)
     const url = "https://stat.kpitracks.com/c"
-    requestBodyString = requestBodyString + "&ezkey=${process.env.KPITRACK_EZ_KEY?.trim()}"
+    requestBodyString = requestBodyString + `&ezkey=${process.env.KPITRACK_EZ_KEY?.trim()}`
 
     // console.log(`Sending POST to Stathat url = '${url}',  requestBody = '${requestBody}'`)
 
@@ -21,6 +26,7 @@ export function sendStatToKpitracks(requestBodyString: string): void {
       // If you only wanted to timeout the request, not the response, add:
       clearTimeout(timeoutId)
     }).catch(err => {
+      console.log(`sendStatToKpitracks(): Failed to send stat.  requestBodyString = ${requestBodyString},  Reason: ${JSON.stringify(err)}`);
     })
   }
 }
