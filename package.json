@@ -1,6 +1,6 @@
 {
   "name": "@jgithub/ts-gist-pile",
-  "version": "0.0.25",
+  "version": "0.0.26",
   "description": "tired of finding this on stackoverflow",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

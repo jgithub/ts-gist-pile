@@ -8,7 +8,7 @@ export function sendStatToKpitracks(requestBodyString: string): void {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 750)
     const url = "https://stat.kpitracks.com/c"
-    requestBodyString = requestBodyString + `&ezkey=${process.env.KPITRACK_EZ_KEY?.trim()}`
+    requestBodyString = requestBodyString + `&ezkey=${process.env.KPITRACKS_EZ_KEY?.trim()}`
 
     // console.log(`Sending POST to Stathat url = '${url}',  requestBody = '${requestBody}'`)
 
