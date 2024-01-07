@@ -45,50 +45,53 @@ class Logger {
     }
     
 
-    messageParts.push(JSON.stringify(jsonContext))
+    const wouldBeJsonContextString = JSON.stringify(jsonContext)
+    if (wouldBeJsonContextString != null && wouldBeJsonContextString.length > 0 && wouldBeJsonContextString != "{}" && wouldBeJsonContextString != "{ }") {
+      messageParts.push(wouldBeJsonContextString)
+    }
     return messageParts.join(" ")
+  }
+
+  private writeLogMsgToTerminal(msg: string, ...extra: any[]): void {
+    if (isTruelike(process.env.LOG_TO_STDERR)) {
+      if (extra.length === 0) {
+        console.error(msg)
+      } else if (extra.length > 0) {
+        console.error(msg, extra)
+      }
+    } else {
+      if (extra.length === 0) {
+        console.log(msg)
+      } else if (extra.length > 0) {
+        console.log(msg, extra)
+      }
+    }
   }
 
   public trace(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
     if (isTruelike(process.env.LOG_TRACE)) {
       const completeMsg = this.buildLogMsg("[ TRACE]", msg, jsonContext)
-      if (extra.length === 0) {
-        console.log(completeMsg)
-      } else if (extra.length > 0) {
-        console.log(completeMsg, extra)
-      }
+      this.writeLogMsgToTerminal(completeMsg)
     }
   }
 
   public debug(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
     if (isTruelike(process.env.LOG_DEBUG)) {
       const completeMsg = this.buildLogMsg("[ DEBUG]", msg, jsonContext)
-      if (extra.length === 0) {
-        console.log(completeMsg)
-      } else if (extra.length > 0) {
-        console.log(completeMsg, extra)
-      }
+      this.writeLogMsgToTerminal(completeMsg)
     }
   }
 
   public info(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
     if (isTruelike(process.env.LOG_INFO)) {
       const completeMsg = this.buildLogMsg("[  INFO]", msg, jsonContext)
-      if (extra.length === 0) {
-        console.log(completeMsg)
-      } else if (extra.length > 0) {
-        console.log(completeMsg, extra)
-      }
+      this.writeLogMsgToTerminal(completeMsg)
     }
   }
 
   public notice(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
     const completeMsg = this.buildLogMsg("[NOTICE]", msg, jsonContext)
-    if (extra.length === 0) {
-      console.log(completeMsg)
-    } else if (extra.length > 0) {
-      console.log(completeMsg, extra)
-    }
+    this.writeLogMsgToTerminal(completeMsg)
   }
 
   public warn(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
@@ -96,11 +99,7 @@ class Logger {
       sendStatToKpitracks(`stat=${process.env.KPITRACKS_WARN_KEY?.trim()}&count=1`)
     }
     const completeMsg = this.buildLogMsg("[  WARN]", msg, jsonContext)
-    if (extra.length === 0) {
-      console.log(completeMsg)
-    } else if (extra.length > 0) {
-      console.log(completeMsg, extra)
-    }
+    this.writeLogMsgToTerminal(completeMsg)
   }
 
   public error(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
@@ -155,11 +154,7 @@ class Logger {
     }
 
     const completeMsg = this.buildLogMsg("[ ERROR]", msg, jsonContext)
-    if (extra.length === 0) {
-      console.log(completeMsg)
-    } else if (extra.length > 0) {
-      console.log(completeMsg, extra)
-    }
+    this.writeLogMsgToTerminal(completeMsg)
 
   }
 }
