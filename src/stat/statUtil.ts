@@ -4,13 +4,16 @@
 
 
 export function sendStatToKpitracks(requestBodyString: string): void {
-  if (process.env.KPITRACKS_EZ_KEY != null && process.env.KPITRACKS_EZ_KEY.trim()?.length > 0 && process.env.KPITRACKS_ERROR_KEY != null && process.env.KPITRACKS_ERROR_KEY.trim()?.length > 0) {
+  let kpitracksEzKey = process.env.KPITRACKS_EZ_KEY
+  kpitracksEzKey = kpitracksEzKey?.trim()
+
+  if (kpitracksEzKey != null && kpitracksEzKey?.length > 0) {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 750)
     const url = "https://stat.kpitracks.com/c"
     requestBodyString = requestBodyString + `&ezkey=${process.env.KPITRACKS_EZ_KEY?.trim()}`
 
-    // console.log(`Sending POST to Stathat url = '${url}',  requestBody = '${requestBody}'`)
+    console.log(`sendStatToKpitracks(): Sending POST to Stathat url = '${url}',  requestBodyString = '${requestBodyString}'`)
 
     const beforeAt = new Date()
     // While still experimental, the global fetch API is available by default in Node.js 18
