@@ -1,8 +1,8 @@
 
-import { AsyncLocalStorage } from "async_hooks";
+// import { AsyncLocalStorage } from "async_hooks";
 import { sendStatToKpitracks } from "../stat/statUtil";
 
-const asyncLocalStorage = new AsyncLocalStorage();
+// const asyncLocalStorage = new AsyncLocalStorage();
 
 class LoggerFactory {
   private static mapOfLoggers: Map<string, Logger>;
@@ -35,14 +35,14 @@ class Logger {
     messageParts.push(this.loggerName)
     messageParts.push(msg)
 
-    try {
-      const traceId = asyncLocalStorage.getStore();
-      if (traceId != null) {
-        jsonContext = Object.assign({}, jsonContext, {traceId});
-      }
-    } catch(err) {
+    // try {
+    //   const traceId = asyncLocalStorage.getStore();
+    //   if (traceId != null) {
+    //     jsonContext = Object.assign({}, jsonContext, {traceId});
+    //   }
+    // } catch(err) {
       
-    }
+    // }
     
 
     const wouldBeJsonContextString = JSON.stringify(jsonContext)
@@ -163,9 +163,9 @@ export function getLogger(loggerName: string): Logger {
   return LoggerFactory.getLogger(loggerName)
 }
 
-export function withTraceId(traceId: string, fn: () => any) {
-  return asyncLocalStorage.run(traceId, fn);
-}
+// export function withTraceId(traceId: string, fn: () => any) {
+//   return asyncLocalStorage.run(traceId, fn);
+// }
 
 function isTruelike(input: boolean | string | number | undefined): boolean {
   if (input == null) {

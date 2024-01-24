@@ -1,6 +1,7 @@
 
-import { getLogger, withTraceId } from "../log/getLogger"
+// import { withTraceId } from "../log/getLogger"
 import { d4l } from "../log/logUtil"
+import { getLogger } from "../log/getLogger"
 
 process.env.LOG_DEBUG = "true"
 process.env.LOG_PREPEND_TIMESTAMP = "true"
@@ -14,7 +15,7 @@ class LogTester {
 }
 
 
-withTraceId( '00000000-0000-0000-0000-000000000000', () => {
-  const logTester = new LogTester()
-  logTester.buildCar("Jeep", "Cherokee")
-})
+// withTraceId( '00000000-0000-0000-0000-000000000000', () => {
+//   const logTester = new LogTester()
+//   logTester.buildCar("Jeep", "Cherokee")
+// })
