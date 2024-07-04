@@ -3,10 +3,12 @@ export * as booleanUtil from "./boolean/booleanUtil"
 export * as logUtil from "./log/logUtil"
 export * as numberUtil from "./number/numberUtil"
 export * as dateUtil from "./date/dateUtil"
+export * as mapUtil from "./map/mapUtil"
 export { getLogger } from "./log/getLogger"
 export { d4l } from "./log/logUtil"
 export * as statUtil from "./stat/statUtil"
 export { safeStringify } from "./string/safeStringify"
+export { JsonValue } from "./json/JsonValue"
 
 
 export { DateProviderServiceImpl } from "./date/DateProviderServiceImpl"
