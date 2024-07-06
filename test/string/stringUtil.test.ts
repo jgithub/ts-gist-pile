@@ -23,8 +23,36 @@ describe('stringUtil', () => {
     describe('on a sunny day', () => {
       it('returns the expected value', () => {
         expect(stringUtil.padLeftWithZeros(5, 2)).to.eq("05")
-
       })  
     })
   })  
+
+
+  describe('.tryRemoveTrailingSlashesIfPresent()', () => {
+    it('works as expected', () => {
+      expect(stringUtil.tryRemoveTrailingSlashesIfPresent("hello")).to.eql("hello")
+      expect(stringUtil.tryRemoveTrailingSlashesIfPresent("hello/")).to.eql("hello")
+      expect(stringUtil.tryRemoveTrailingSlashesIfPresent("hello//")).to.eql("hello")
+      expect(stringUtil.tryRemoveTrailingSlashesIfPresent("hello///")).to.eql("hello")
+      expect(stringUtil.tryRemoveTrailingSlashesIfPresent("")).to.eql("")
+      expect(stringUtil.tryRemoveTrailingSlashesIfPresent(null)).to.be.null
+      expect(stringUtil.tryRemoveTrailingSlashesIfPresent(undefined)).to.be.undefined
+      expect(stringUtil.tryRemoveTrailingSlashesIfPresent("/////here///there///////and///////everywhere/to//be/sure//")).to.eql("/////here///there///////and///////everywhere/to//be/sure")
+
+    })  
+  }) 
+
+
+  describe('.tryRemoveDoubleSlashesIfPresent()', () => {
+    it('works as expected', () => {
+      expect(stringUtil.tryRemoveDoubleSlashesIfPresent("hello")).to.eql("hello")
+      expect(stringUtil.tryRemoveDoubleSlashesIfPresent("hello/")).to.eql("hello/")
+      expect(stringUtil.tryRemoveDoubleSlashesIfPresent("hello//")).to.eql("hello/")
+      expect(stringUtil.tryRemoveDoubleSlashesIfPresent("hello///")).to.eql("hello/")
+      expect(stringUtil.tryRemoveDoubleSlashesIfPresent("")).to.eql("")
+      expect(stringUtil.tryRemoveDoubleSlashesIfPresent(null)).to.be.null
+      expect(stringUtil.tryRemoveDoubleSlashesIfPresent(undefined)).to.be.undefined
+      expect(stringUtil.tryRemoveDoubleSlashesIfPresent("/////here///there///////and///////everywhere/to//be/sure//")).to.eql("/here/there/and/everywhere/to/be/sure/")
+    })  
+  })   
 })
