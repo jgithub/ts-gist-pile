@@ -58,3 +58,26 @@ export function padLeftWithZeros(input: any, notLessThanXDigits: number): string
   }
   return workingValue;
 }
+
+export function tryRemoveTrailingSlashesIfPresent(input: string | null | undefined): string| null | undefined {
+  if (input == null) {
+    return input
+  }
+
+  while (input.endsWith("\/")) {
+    input = input.replace(/\/$/g, "")
+  }
+  return input
+}
+
+
+export function tryRemoveDoubleSlashesIfPresent(input: string| null | undefined): string| null | undefined {
+  if (input == null) {
+    return input
+  }
+  
+  while (input.match(/\/\//)) {
+    input = input.replace(/\/\//g, "/")
+  }
+  return input
+}
