@@ -2,7 +2,7 @@ import { JsonValue } from "../json/JsonValue";
 import { LlmQAndA } from "./LlmQAndA";
 
 export interface LlmQuery {
-  prompt: string,
-  context: JsonValue
+  prompt: string
+  additionalContext: JsonValue
   qAndA: Array<LlmQAndA>
 }

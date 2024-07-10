@@ -13,7 +13,10 @@ export { LlmQuery } from "./llm/LlmQuery"
 export { LlmQAndA } from "./llm/LlmQAndA"
 export { LlmAnswerMeta } from "./llm/LlmAnswerMeta"
 export { LlmResponse } from "./llm/LlmResponse"
-
+export { TgpEmail } from "./email/TgpEmail"
+export { TgpEmailGroup } from "./email/TgpEmailGroup"
+export { TgpEmailMixedMultipart } from "./email/TgpEmailMixedMultipart"
+export { TgpEmailPart } from "./email/TgpEmailPart"
 
 export { DateProviderServiceImpl } from "./date/DateProviderServiceImpl"
 export { DateProviderService } from "./date/DateProviderService"
