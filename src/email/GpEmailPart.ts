@@ -1,4 +1,4 @@
-export interface TgpEmailPart {
+export interface GpEmailPart {
   contentType: string,
   contentDisposition: string,
   contextTransferEncoding: string,
