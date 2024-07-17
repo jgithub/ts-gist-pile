@@ -1,8 +1,8 @@
-import { JsonValue } from "../json/JsonValue";
+import { JsonObjectOrArray } from "../json/JsonObjectOrArray";
 import { LlmQAndA } from "./LlmQAndA";
 
 export interface LlmQuery {
   prompt: string
-  additionalContext: JsonValue
+  additionalContext: JsonObjectOrArray
   qAndA: Array<LlmQAndA>
 }
