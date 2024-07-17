@@ -1,6 +1,7 @@
 import { LlmQuery } from "./LlmQuery";
 import { JsonValue } from "../json/JsonValue";
 import { LlmQAndA } from "./LlmQAndA";
+import { JsonObjectOrArray } from "../json/JsonObjectOrArray";
 
 /**
  * Mutable Rich model associated with the anemic model 'LlmQuery'
@@ -26,11 +27,11 @@ export class LlmQueryImpl implements LlmQuery {
     this._attr.prompt = input;
   }
 
-  public get additionalContext(): JsonValue {
+  public get additionalContext(): JsonObjectOrArray {
     return this._attr.additionalContext;
   }
 
-  public set additionalContext(input: JsonValue) {
+  public set additionalContext(input: JsonObjectOrArray) {
     this._attr.additionalContext = input;
   }
 
