@@ -1,12 +1,12 @@
 {
   "name": "@jgithub/ts-gist-pile",
-  "version": "0.0.37",
+  "version": "0.0.38",
   "description": "tired of finding this on stackoverflow",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "devDependencies": {
     "@types/chai": "^4.3.5",
-    "@types/lodash.clonedeep": "^4.5.7",
+    "@types/lodash.clonedeep": "^4.5.9",
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.2.5",
     "@types/uuid-with-v6": "^1.1.2",
