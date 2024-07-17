@@ -1,4 +1,4 @@
-import { LlmQuery } from "../../src";
+import { LlmQuery } from "./LlmQuery";
 import { JsonValue } from "../json/JsonValue";
 import { LlmQAndA } from "./LlmQAndA";
 
