@@ -130,6 +130,9 @@ class Logger {
       // While still experimental, the global fetch API is available by default in Node.js 18
       fetch(url, { 
         method: 'POST', 
+        headers:{
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
         signal: controller.signal,
         body: requestBody
       }).then(response => {
