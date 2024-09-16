@@ -94,13 +94,99 @@ class Logger {
     this.writeLogMsgToTerminal(completeMsg)
   }
 
+
+  public fatal(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
+    if (process.env.STATHAT_EZ_KEY != null && process.env.STATHAT_EZ_KEY.trim()?.length > 0 && process.env.STATHAT_FATAL_KEY != null && process.env.STATHAT_FATAL_KEY.trim()?.length > 0) {
+
+      const controller = new AbortController()
+      // 1 second timeout:
+      const timeoutId = setTimeout(() => controller.abort(), 750)
+
+      const url = "https://api.stathat.com/ez"
+      // This param should either be 'ezkey' or 'email'... I'm not sure which
+      const ezKeyLabel = "ezkey" // vs email
+      const requestBody = `stat=${process.env.STATHAT_FATAL_KEY?.trim()}&${ezKeyLabel}=${process.env.STATHAT_EZ_KEY?.trim()}&count=1`
+
+      /*
+       * % curl -v -d "stat=sisu _ERROR&email=ezkey&count=1" https://api.stathat.com/ez
+       */
+
+      // console.log(`Sending POST to Stathat url = '${url}',  requestBody = '${requestBody}'`)
+
+      const beforeAt = new Date()
+      // While still experimental, the global fetch API is available by default in Node.js 18
+      fetch(url, { 
+        method: 'POST', 
+        headers:{
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        signal: controller.signal,
+        body: requestBody
+      }).then(response => {
+        // completed request before timeout fired
+        const deltaInMs = new Date().getTime() - beforeAt.getTime()
+        // console.log(`Stathat fetch completed after ${deltaInMs} milliseconds,  with response = ${d4l(response)}`)
+
+        // If you only wanted to timeout the request, not the response, add:
+        clearTimeout(timeoutId)
+      }).catch(err => {
+        // console.log(`[STATHAT][ ERROR] Reason: ${d4l(err)}`)
+      })
+    }    
+    
+    if (process.env.KPITRACKS_FATAL_KEY != null && process.env.KPITRACKS_FATAL_KEY.trim()?.length > 0) {
+      sendStatToKpitracks(`stat=${process.env.KPITRACKS_FATAL_KEY?.trim()}&count=1`)
+    }
+    const completeMsg = this.buildLogMsg("[ FATAL]", msg, jsonContext)
+    this.writeLogMsgToTerminal(completeMsg)
+  }
+
   public warn(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
+    if (process.env.STATHAT_EZ_KEY != null && process.env.STATHAT_EZ_KEY.trim()?.length > 0 && process.env.STATHAT_WARN_KEY != null && process.env.STATHAT_WARN_KEY.trim()?.length > 0) {
+
+      const controller = new AbortController()
+      // 1 second timeout:
+      const timeoutId = setTimeout(() => controller.abort(), 750)
+
+      const url = "https://api.stathat.com/ez"
+      // This param should either be 'ezkey' or 'email'... I'm not sure which
+      const ezKeyLabel = "ezkey" // vs email
+      const requestBody = `stat=${process.env.STATHAT_WARN_KEY?.trim()}&${ezKeyLabel}=${process.env.STATHAT_EZ_KEY?.trim()}&count=1`
+
+      /*
+       * % curl -v -d "stat=sisu _ERROR&email=ezkey&count=1" https://api.stathat.com/ez
+       */
+
+      // console.log(`Sending POST to Stathat url = '${url}',  requestBody = '${requestBody}'`)
+
+      const beforeAt = new Date()
+      // While still experimental, the global fetch API is available by default in Node.js 18
+      fetch(url, { 
+        method: 'POST', 
+        headers:{
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        signal: controller.signal,
+        body: requestBody
+      }).then(response => {
+        // completed request before timeout fired
+        const deltaInMs = new Date().getTime() - beforeAt.getTime()
+        // console.log(`Stathat fetch completed after ${deltaInMs} milliseconds,  with response = ${d4l(response)}`)
+
+        // If you only wanted to timeout the request, not the response, add:
+        clearTimeout(timeoutId)
+      }).catch(err => {
+        // console.log(`[STATHAT][ ERROR] Reason: ${d4l(err)}`)
+      })
+    }    
+    
     if (process.env.KPITRACKS_WARN_KEY != null && process.env.KPITRACKS_WARN_KEY.trim()?.length > 0) {
       sendStatToKpitracks(`stat=${process.env.KPITRACKS_WARN_KEY?.trim()}&count=1`)
     }
     const completeMsg = this.buildLogMsg("[  WARN]", msg, jsonContext)
     this.writeLogMsgToTerminal(completeMsg)
   }
+
 
   public error(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
     // console.log(`error(): STATHAT_EZ_KEY = '${process.env.STATHAT_EZ_KEY}',  STATHAT_ERROR_KEY = '${process.env.STATHAT_ERROR_KEY}'`)
@@ -158,7 +244,6 @@ class Logger {
 
     const completeMsg = this.buildLogMsg("[ ERROR]", msg, jsonContext)
     this.writeLogMsgToTerminal(completeMsg)
-
   }
 }
 
