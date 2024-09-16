@@ -1,6 +1,6 @@
 import { safeStringify } from "../string/safeStringify"
 
-export function d4l(input: string | number | boolean | Error | Array<any> | any) {
+export function d4l(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}) {
   if (typeof input === 'undefined') {
     return "<undefined> (undefined)"
   }
@@ -8,6 +8,12 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any)
     return "<null> (null)"
   }
   else if (typeof input === 'string') {
+    if (logOptions.joinLines) {
+      input = input?.replace(/\r\n/g, " ")
+      input = input?.replace(/\n\r/g, " ")
+      input = input?.replace(/\n/g, " ")
+      input = input?.replace(/\r/g, " ")      
+    }
     return `'${input}' (string, ${input.length})`
   }
   else if (typeof input === 'number') {
@@ -69,4 +75,8 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any)
     return `Array(len=${inputAsArray.length}) [${parts.join(", ")}]`
   }
   return `${input}`
+}
+
+export type LogOptions = {
+  joinLines?: boolean
 }
