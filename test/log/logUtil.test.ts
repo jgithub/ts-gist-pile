@@ -45,6 +45,17 @@ describe('logUtil', () => {
       })  
     })
 
+    describe('when the input is a multiline string and considering the joinLines option', () => {
+      it('can join it', () => {
+        const input = `SELECT * 
+FROM table WHERE id = 1`
+        expect(d4l(input)).to.eql(`'SELECT * 
+FROM table WHERE id = 1' (string, 33)`)
+        expect(d4l(input, { joinLines: false })).to.eql(`'SELECT * 
+FROM table WHERE id = 1' (string, 33)`)
+        expect(d4l(input, { joinLines: true })).to.eql(`'SELECT *  FROM table WHERE id = 1' (string, 33)`)
+      })  
+    })
 
     describe('when an object is an Error', () => {
       it('works', () => {
