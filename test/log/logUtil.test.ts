@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { d4l, dateUtil } from "../../src/index";
+import { d4l, safeStringify, dateUtil } from "../../src/index";
 
 
 describe('logUtil', () => {
@@ -64,4 +64,10 @@ FROM table WHERE id = 1' (string, 33)`)
       })  
     })    
   })  
+
+  describe('.safeStringify()', () => {
+    it('works', () => {
+      expect(safeStringify({ toJSON: () => { throw new Error() } })).to.be.undefined
+    })
+  });
 })
