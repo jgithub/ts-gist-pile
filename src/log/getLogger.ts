@@ -1,8 +1,17 @@
 
-// import { AsyncLocalStorage } from "async_hooks";
 import { sendStatToKpitracks } from "../stat/statUtil";
 
-// const asyncLocalStorage = new AsyncLocalStorage();
+let AsyncLocalStorage: any | undefined;
+
+if (typeof window === "undefined" && typeof global !== "undefined") {
+  const { AsyncLocalStorage: ALS } = require("async_hooks");
+  AsyncLocalStorage = ALS;
+}
+
+let asyncLocalStorage: any | undefined;
+if (AsyncLocalStorage != null) {
+  asyncLocalStorage = new AsyncLocalStorage();
+}
 
 class LoggerFactory {
   private static mapOfLoggers: Map<string, Logger>;
@@ -21,11 +30,12 @@ class LoggerFactory {
   }
 }
 
+type stringorstringfn = string | (() => string)
 
 class Logger {
   constructor(private readonly loggerName: string) {}
 
-  private buildLogMsg(severity: string, msg: string, jsonContext: JSONContext): string {
+  private buildLogMsg(severity: string, msg: stringorstringfn, jsonContext: JSONContext): string {
     const messageParts = [];
     if (isTruelike(process.env.LOG_PREPEND_TIMESTAMP)) {
       messageParts.push(new Date().toUTCString())
@@ -33,16 +43,23 @@ class Logger {
     messageParts.push(severity)
     // messageParts.push(JSON.stringify(jsonContext))
     messageParts.push(this.loggerName)
-    messageParts.push(msg)
 
-    // try {
-    //   const traceId = asyncLocalStorage.getStore();
-    //   if (traceId != null) {
-    //     jsonContext = Object.assign({}, jsonContext, {traceId});
-    //   }
-    // } catch(err) {
-      
-    // }
+    if (typeof msg === 'function') {
+      messageParts.push(msg())
+    } else {
+      messageParts.push(msg)
+    }
+    
+
+    if (asyncLocalStorage != null) {
+      try {
+        const traceId = asyncLocalStorage.getStore();
+        if (traceId != null) {
+          jsonContext = Object.assign({}, jsonContext, { traceId });
+        }
+      } catch (err) {
+      }
+    }
     
 
     const wouldBeJsonContextString = JSON.stringify(jsonContext)
@@ -68,34 +85,34 @@ class Logger {
     }
   }
 
-  public trace(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
+  public trace(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
     if (isTruelike(process.env.LOG_TRACE)) {
       const completeMsg = this.buildLogMsg("[ TRACE]", msg, jsonContext)
       this.writeLogMsgToTerminal(completeMsg)
     }
   }
 
-  public debug(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
+  public debug(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
     if (isTruelike(process.env.LOG_DEBUG)) {
       const completeMsg = this.buildLogMsg("[ DEBUG]", msg, jsonContext)
       this.writeLogMsgToTerminal(completeMsg)
     }
   }
 
-  public info(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
+  public info(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
     if (isTruelike(process.env.LOG_INFO)) {
       const completeMsg = this.buildLogMsg("[  INFO]", msg, jsonContext)
       this.writeLogMsgToTerminal(completeMsg)
     }
   }
 
-  public notice(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
+  public notice(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
     const completeMsg = this.buildLogMsg("[NOTICE]", msg, jsonContext)
     this.writeLogMsgToTerminal(completeMsg)
   }
 
 
-  public fatal(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
+  public fatal(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
     if (process.env.STATHAT_EZ_KEY != null && process.env.STATHAT_EZ_KEY.trim()?.length > 0 && process.env.STATHAT_FATAL_KEY != null && process.env.STATHAT_FATAL_KEY.trim()?.length > 0) {
 
       const controller = new AbortController()
@@ -249,11 +266,17 @@ class Logger {
 
 export function getLogger(loggerName: string): Logger {
   return LoggerFactory.getLogger(loggerName)
-}
+} 
 
-// export function withTraceId(traceId: string, fn: () => any) {
-//   return asyncLocalStorage.run(traceId, fn);
-// }
+export function withTraceId(traceId: string, fn: () => any) {
+  // @ts-ignore
+  if (typeof asyncLocalStorage != 'undefined' && asyncLocalStorage != null) {
+    // @ts-ignore
+    return asyncLocalStorage.run(traceId, fn);
+  } else {
+    return fn();
+  }
+}
 
 function isTruelike(input: boolean | string | number | undefined): boolean {
   if (input == null) {
