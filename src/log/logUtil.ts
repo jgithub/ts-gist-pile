@@ -8,6 +8,22 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
     return "<null> (null)"
   }
   else if (typeof input === 'string') {
+    if (logOptions.obfuscate) {
+      if (input.length > 36) {
+        return `****${input.substring(input.length-4)}`
+      }
+      else if (input.length > 26) {
+        return `****${input.substring(input.length-3)}`
+      }
+      else if (input.length > 16) {
+        return `****${input.substring(input.length-2)}`
+      }
+      else if (input.length > 10) {
+        return `****${input.substring(input.length-1)}`
+      }
+      return "****"
+    }
+
     if (logOptions.joinLines) {
       input = input?.replace(/\r\n/g, " ")
       input = input?.replace(/\n\r/g, " ")
@@ -77,6 +93,11 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
   return `${input}`
 }
 
+export function d4lObfuscate(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}) {
+  return d4l(input, { ...logOptions, obfuscate: true })
+}
+
 export type LogOptions = {
   joinLines?: boolean
+  obfuscate?: boolean
 }

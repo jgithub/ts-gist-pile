@@ -23,4 +23,4 @@ publish:
 
 .PHONY: LogTester
 LogTester:
-	cd ${ROOT_DIR}/src && npx ts-node --files tester/LogTester.ts
+	cd ${ROOT_DIR}/src && LOG_DEBUG=1 npx ts-node --files tester/LogTester.ts
