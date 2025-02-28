@@ -45,6 +45,20 @@ describe('logUtil', () => {
       })  
     })
 
+    describe('when an object IS A RegExp', () => {
+      it('works', () => {
+        const obj = new RegExp("^[01]\d{11}$")
+        expect(d4l(obj)).to.eql('/^[01]d{11}$/ (RegExp)')
+      })  
+    })  
+    
+    describe('when an object HAS A RegExp', () => {
+      it('works', () => {
+        const obj = { a: new RegExp("^[01]\d{11}$") }
+        expect(d4l(obj)).to.eql('{"a":"/^[01]d{11}$/"}')
+      })  
+    })
+
     describe('when the input is a multiline string and considering the joinLines option', () => {
       it('can join it', () => {
         const input = `SELECT * 
