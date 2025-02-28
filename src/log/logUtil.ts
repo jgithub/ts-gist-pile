@@ -49,6 +49,10 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
   else if (Object.prototype.toString.call(input) === '[object Date]') {
     return (input as Date).toISOString();
   }  
+  else if (input instanceof RegExp) {
+    return input.toString() + " (RegExp)";
+  }
+  
   else if (typeof input === 'object') {
     if (typeof ((input as any).toDebugString) === 'function' ) {
       return (input as any).toDebugString()
@@ -67,11 +71,11 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
       const whateverAsJsonReturns = (input as any).asJson()
       // return whateverAsJsonReturns
       try {
-        return safeStringify(whateverAsJsonReturns)
+        return localSafeStringify(whateverAsJsonReturns)
       } catch (err){}
     }
     try {
-      return safeStringify(input)
+      return localSafeStringify(input)
     } catch (err){}
   }
   else if (Array.isArray(input)) {
@@ -100,4 +104,31 @@ export function d4lObfuscate(input: string | number | boolean | Error | Array<an
 export type LogOptions = {
   joinLines?: boolean
   obfuscate?: boolean
+}
+
+const localSafeStringify = (obj: any, indent = 0) => {
+  let cache: any = []
+  try {
+    const retval = JSON.stringify(
+      obj,
+      (key, value) => {
+        // https://stackoverflow.com/questions/12075927/serialization-of-regexp
+
+        if (value instanceof RegExp) {
+          return value.toString();
+        }
+        return typeof value === 'object' && value !== null
+          ? cache.includes(value)
+            ? undefined // Duplicate reference found, discard key
+            : cache.push(value) && value // Store value in our collection
+          : value
+      },
+      indent
+    )
+    cache = null
+    return retval
+  } catch (err) {
+    cache = null
+    return undefined;
+  }  
 }
