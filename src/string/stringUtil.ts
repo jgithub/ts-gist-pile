@@ -1,4 +1,4 @@
-export function isPresent(input: string | undefined): boolean {
+export function isPresent(input: string | undefined | null): boolean {
   if (input == null) {
     return false
   }
@@ -14,7 +14,7 @@ export function isPresent(input: string | undefined): boolean {
 //  StringUtils.isEmpty(" ")       = false  
 //  StringUtils.isEmpty("")        = true  
 
-export function isEmpty(input: string | undefined): boolean {
+export function isEmpty(input: string | undefined | null): boolean {
   if (input == null) {
     return true
   }
@@ -26,7 +26,7 @@ export function isEmpty(input: string | undefined): boolean {
   return false
 }
 
-export function isBlank(input: string | undefined): boolean {
+export function isBlank(input: string | undefined | null): boolean {
   if (input == null) {
     return true
   }
@@ -38,7 +38,7 @@ export function isBlank(input: string | undefined): boolean {
   return false
 }
 
-export function isWellFormedCanonicalUuid(input: string | undefined): boolean {
+export function isWellFormedCanonicalUuid(input: string | undefined | null): boolean {
   if (input == null) {
     return false
   }
