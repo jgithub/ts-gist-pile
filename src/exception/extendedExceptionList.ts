@@ -4,3 +4,5 @@ export { ActuallyUnauthenticated401Exception } from "./ActuallyUnauthenticated40
 export { Forbidden403Exception } from "./Forbidden403Exception"
 export { NotFound404Exception } from "./NotFound404Exception"
 export { ArgumentException } from "./ArgumentException"
+export { InternalServerError500Exception } from "./InternalServerError500Exception"
+export { ServiceUnavailable503Exception } from "./ServiceUnavailable503Exception"

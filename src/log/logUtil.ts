@@ -46,6 +46,22 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
     stackStr = stackStr?.replace(/\r/g, "\\n,   ")
     return `${input} (Error, stack: ${stackStr}`
   }
+  else if (Array.isArray(input)) {
+    const parts: string[] = []
+
+    const inputAsArray = (input as Array<any>)
+    if (inputAsArray.length > 0) {
+      parts.push(`${d4l(inputAsArray[0])}`)
+    }
+    if (inputAsArray.length > 2) {
+      parts.push(`…`)
+    }
+    if (inputAsArray.length > 1) {
+      parts.push(`${d4l(inputAsArray[inputAsArray.length-1])}`)
+    }
+
+    return `Array(len=${inputAsArray.length}) [${parts.join(", ")}]`
+  }
   else if (Object.prototype.toString.call(input) === '[object Date]') {
     return (input as Date).toISOString();
   }  
@@ -77,22 +93,6 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
     try {
       return localSafeStringify(input)
     } catch (err){}
-  }
-  else if (Array.isArray(input)) {
-    const parts: string[] = []
-
-    const inputAsArray = (input as Array<any>)
-    if (inputAsArray.length > 0) {
-      parts.push(`${d4l(inputAsArray[0])}`)
-    }
-    if (inputAsArray.length > 2) {
-      parts.push(`…`)
-    }
-    if (inputAsArray.length > 1) {
-      parts.push(`${d4l(inputAsArray[inputAsArray.length-1])}`)
-    }
-
-    return `Array(len=${inputAsArray.length}) [${parts.join(", ")}]`
   }
   return `${input}`
 }
