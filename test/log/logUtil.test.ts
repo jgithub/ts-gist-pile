@@ -45,6 +45,29 @@ describe('logUtil', () => {
       })  
     })
 
+    describe('when its an array', () => {
+      describe('when its three or more items in length', () => {
+        it('talks about the endpoints', () => {
+          const obj = [1,2,3]
+          expect(d4l(obj)).to.eql('Array(len=3) [1 (number), …, 3 (number)]')
+        }) 
+      })  
+      
+      describe('when its a 2-item array', () => {
+        it('uses it', () => {
+          const obj = ['hello', 'goodbye']
+          expect(d4l(obj)).to.eql(`Array(len=2) ['hello' (string, 5), 'goodbye' (string, 7)]`)
+        }) 
+      }) 
+
+      describe('when its a 1-item array', () => {
+        it('uses it', () => {
+          const obj = ['just one']
+          expect(d4l(obj)).to.eql(`Array(len=1) ['just one' (string, 8)]`)
+        }) 
+      })
+    })
+
     describe('when an object IS A RegExp', () => {
       it('works', () => {
         const obj = new RegExp("^[01]\d{11}$")

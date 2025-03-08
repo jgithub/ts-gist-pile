@@ -6,6 +6,7 @@ export * as dateUtil from "./date/dateUtil"
 export * as mapUtil from "./map/mapUtil"
 export * as functionUtil from "./function/functionUtil"
 export * as extendedExceptionList from "./exception/extendedExceptionList"
+export * as arrayUtil from "./array/arrayUtil"
 
 export { getLogger } from "./log/getLogger"
 export { d4l, d4lObfuscate } from "./log/logUtil"
