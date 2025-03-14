@@ -1,6 +1,6 @@
 {
   "name": "@jgithub/ts-gist-pile",
-  "version": "0.0.58",
+  "version": "0.0.101",
   "description": "tired of finding this on stackoverflow",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,6 @@
     "@types/lodash.clonedeep": "^4.5.9",
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.2.5",
-    "@types/uuid-with-v6": "^1.1.2",
     "chai": "^4.3.7",
     "csv": "^6.3.9",
     "mocha": "^10.2.0",
@@ -35,7 +34,8 @@
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
+    "@types/uuid": "^10.0.0",
     "lodash.clonedeep": "^4.5.0",
-    "uuid-with-v6": "^2.0.0"
+    "uuid": "^11.1.0"
   }
 }

@@ -27,3 +27,45 @@ export function tryParseStringToArray(input: string | undefined | null): Array<s
 
   return result
 }
+
+
+export function hasExactlyOneItem(input: any[]): boolean {
+  if (Array.isArray(input) && input.length == 1) {
+    return true
+  }
+  return false;
+}
+
+export function isPopulated(input: any[]): boolean {
+  if (Array.isArray(input) && input.length > 0) {
+    return true
+  }
+  return false;
+}
+
+export function existsButIsEmpty(input: any[]): boolean {
+  if (Array.isArray(input) && input.length === 0) {
+    return true
+  }
+  return false;
+}
+
+// export function arrayify(input: any, options: {nullIsAnElement: boolean, undefinedIsAnElement: boolean, emptyStringIsAnElement?: boolean}): Array<any> {
+//   if (Array.isArray(input)) {
+//     // It's already an array
+//     return input
+//   }
+//   if (typeof input === 'undefined') {
+//     if (options?.undefinedIsAnElement === true) {
+//       return [undefined]
+//     }
+//     return []
+//   }
+//   if (input === null) {
+//     if (options?.nullIsAnElement === true) {
+//       return [null]
+//     }
+//     return []
+//   }
+//   return [input]
+// }
