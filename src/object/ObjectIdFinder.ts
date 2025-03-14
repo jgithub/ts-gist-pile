@@ -1,4 +1,4 @@
-import { v6 } from 'uuid-with-v6';
+import { v6 } from 'uuid';
 import { BooleanStringPair } from '../container/BooleanStringPair';
 import { OptionallyCachedValue } from '../container/OptionallyCachedValue';
 

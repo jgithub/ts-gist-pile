@@ -39,3 +39,8 @@ function padLeftWithZeros(input: any, notLessThanXDigits: number): string {
 export function getMillisecondsSinceDate(dateStart: Date): number {
   return new Date().getTime() - dateStart.getTime()
 }
+
+// https://stackoverflow.com/questions/643782/how-to-check-whether-an-object-is-a-date
+export function isDate(obj: any): boolean {
+  return Object.prototype.toString.call(obj) === '[object Date]'
+}
