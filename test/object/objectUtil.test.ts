@@ -25,7 +25,7 @@ describe('objectUtil', () => {
         expect(clone).to.not.eq(obj)
         expect(clone.b).to.be.instanceOf(Date)
         expect(typeof (clone.b)).to.eq('object')
-        expect(dateUtil.isDate(clone.b)).to.be.true
+        expect(dateUtil.isValidDateObject(clone.b)).to.be.true
         expect(JSON.stringify(clone)).to.eq(`{"a":1,"b":"1970-01-01T00:00:00.000Z"}`)
 
       })

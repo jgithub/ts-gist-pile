@@ -29,4 +29,27 @@ describe('dateUtil', () => {
       })  
     })
   })  
+
+
+  describe('.isValidDateObject()', () => {
+    describe('for a variety of common inputs', () => {
+      it('generates the expected result', () => {
+        expect(dateUtil.isValidDateObject(null)).to.be.false
+        expect(dateUtil.isValidDateObject(undefined)).to.be.false
+        expect(dateUtil.isValidDateObject("")).to.be.false
+        expect(dateUtil.isValidDateObject("hello")).to.be.false
+        expect(dateUtil.isValidDateObject(11)).to.be.false
+        expect(dateUtil.isValidDateObject(11.0)).to.be.false
+        expect(dateUtil.isValidDateObject(new Date())).to.be.true
+        expect(dateUtil.isValidDateObject(new Date(0))).to.be.true
+        expect(dateUtil.isValidDateObject(new Date('hello'))).to.be.false
+
+        const isThisAValidDate = new Date('hello')
+        expect(isThisAValidDate.toString()).to.eq('Invalid Date')
+        expect(isThisAValidDate.getMonth()).to.be.NaN
+
+      })
+    })
+  })
+
 })
