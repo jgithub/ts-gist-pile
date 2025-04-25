@@ -37,21 +37,37 @@ class Logger {
   constructor(private readonly loggerName: string) {}
 
   private buildLogMsg(severity: string, msg: stringorstringfn, jsonContext: JSONContext): string {
-    const messageParts = [];
-    if (isTruelike(process.env.LOG_PREPEND_TIMESTAMP)) {
-      messageParts.push(new Date().toUTCString())
+    if (isTruelike(process.env.LOG_USE_JSON_FORMAT)) {
+      return this.buildLogMsgJsonFormat(severity, msg, jsonContext);
+    } else {
+      return this.buildLogMsgPlainText(severity, msg, jsonContext);
     }
-    messageParts.push(severity)
-    // messageParts.push(JSON.stringify(jsonContext))
-    messageParts.push(this.loggerName)
+  }
+
+  private buildLogMsgJsonFormat(severity: string, msg: stringorstringfn, jsonContext: JSONContext): string {
+    const json: any = {}
+    if (isTruelike(process.env.LOG_PREPEND_TIMESTAMP)) {
+      json["at"] = new Date().toISOString()
+    }
+
+    severity = severity.replace(/[\[\]]/g, "").trim()
+
+    json["lvl"] = severity
+    json["logger"] = this.loggerName
 
     if (typeof msg === 'function') {
-      messageParts.push(msg())
+      json["msg"] = msg()
     } else {
-      messageParts.push(msg)
+      json["msg"] = msg
     }
-    
 
+    jsonContext = this.buildCompleteJsonContext(jsonContext)
+    json["context"] = jsonContext
+
+    return JSON.stringify(json)
+  }
+
+  private buildCompleteJsonContext(jsonContext: JSONContext): JSONContext {
     if (asyncLocalStorage != null) {
       try {
         const mapOfStuffInLocalStorage = asyncLocalStorage.getStore();
@@ -74,6 +90,27 @@ class Logger {
     } else {
       // console.log("No Span")
     }
+
+    return jsonContext
+  }
+
+
+  private buildLogMsgPlainText(severity: string, msg: stringorstringfn, jsonContext: JSONContext): string {
+    const messageParts = [];
+    if (isTruelike(process.env.LOG_PREPEND_TIMESTAMP)) {
+      messageParts.push(new Date().toUTCString())
+    }
+    messageParts.push(severity)
+    // messageParts.push(JSON.stringify(jsonContext))
+    messageParts.push(this.loggerName)
+
+    if (typeof msg === 'function') {
+      messageParts.push(msg())
+    } else {
+      messageParts.push(msg)
+    }
+    
+    jsonContext = this.buildCompleteJsonContext(jsonContext)
 
 
     const wouldBeJsonContextString = JSON.stringify(jsonContext)

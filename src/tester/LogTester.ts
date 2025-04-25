@@ -3,7 +3,7 @@ import { withStoreId } from "../log/getLogger"
 import { d4l, d4lObfuscate } from "../log/logUtil"
 import { getLogger } from "../log/getLogger"
 import { context, trace, isSpanContextValid, Span, SpanStatusCode } from '@opentelemetry/api';
-import { TraceInitializer } from "../trace/TraceInitializer";
+// import { TraceInitializer } from "../trace/TraceInitializer";
 
 // import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
@@ -12,7 +12,7 @@ process.env.LOG_DEBUG = "true"
 process.env.LOG_PREPEND_TIMESTAMP = "true"
 
 const LOG = getLogger("log.LogTester");
-TraceInitializer.getInstance("log.LogTester")
+// TraceInitializer.getInstance("log.LogTester")
 const tracer = trace.getTracer('log.LogTester');
 
 

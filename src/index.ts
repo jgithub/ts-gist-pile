@@ -9,9 +9,11 @@ export * as functionUtil from "./function/functionUtil"
 export * as extendedExceptionList from "./exception/extendedExceptionList"
 export * as arrayUtil from "./array/arrayUtil"
 
+
 export { getLogger } from "./log/getLogger"
 export { d4l, d4lObfuscate } from "./log/logUtil"
-export { TraceInitializer } from "./trace/TraceInitializer"
+// export { TraceInitializer } from "./trace/TraceInitializer"
+export { withStoreId } from "./log/getLogger"
 export * as statUtil from "./stat/statUtil"
 export * as jsonUtil from "./json/jsonUtil"
 export { safeStringify } from "./string/safeStringify"
