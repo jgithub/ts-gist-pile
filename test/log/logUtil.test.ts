@@ -28,7 +28,6 @@ describe('logUtil', () => {
             return `"\"already has quotes\"" (object)`
           }
         }
-        // expect(d4l(obj)).to.eql('asdf')
       })
     })    
 

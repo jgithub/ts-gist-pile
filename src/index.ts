@@ -11,6 +11,7 @@ export * as arrayUtil from "./array/arrayUtil"
 
 export { getLogger } from "./log/getLogger"
 export { d4l, d4lObfuscate } from "./log/logUtil"
+export { TraceInitializer } from "./trace/TraceInitializer"
 export * as statUtil from "./stat/statUtil"
 export * as jsonUtil from "./json/jsonUtil"
 export { safeStringify } from "./string/safeStringify"
