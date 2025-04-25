@@ -12,9 +12,25 @@ describe('logUtil', () => {
     //       }
     //     }
     //     expect(d4l(obj)).to.eql('{"a":1}')
-    //   })  
+    //   })
     // })
 
+    describe('when using a string that already has quotes', () => {
+      it('does something', () => {
+        expect(d4l(`"already has quotes"`)).to.eql(`'"already has quotes"' (string, 20)`)
+      })  
+    })
+
+    describe('when an object has toJSON() available', () => {
+      it('uses it', () => {
+        const obj = {
+          toJSON: () => {
+            return `"\"already has quotes\"" (object)`
+          }
+        }
+        // expect(d4l(obj)).to.eql('asdf')
+      })
+    })    
 
     describe('when an object looks kinda like KpStat', () => {
       it('uses it', () => {
@@ -78,7 +94,7 @@ describe('logUtil', () => {
     describe('when an object HAS A RegExp', () => {
       it('works', () => {
         const obj = { a: new RegExp("^[01]\d{11}$") }
-        expect(d4l(obj)).to.eql('{"a":"/^[01]d{11}$/"}')
+        expect(d4l(obj)).to.eql('{"a":"/^[01]d{11}$/"} (object)')
       })  
     })
 
@@ -96,7 +112,7 @@ FROM table WHERE id = 1' (string, 33)`)
 
     describe('when an object is an Error', () => {
       it('works', () => {
-        const myError = new Error("my error")
+        const myError = new Error("my error");
         expect(d4l(myError).startsWith("Error: my error")).to.be.true
       })  
     })    

@@ -1,3 +1,5 @@
+// https://opentelemetry.io/docs/specs/otel/logs/data-model/
+
 export interface Happening {
   eventAt: Date,
   appName: string,
@@ -47,4 +49,7 @@ export interface Happening {
   screenHeight?: number,
   screenWidth?: number,
   upstreamRecordId?: string, 
+  attributes: { [key: string]: string | number | boolean }
+  spanId?: string,
+  traceId?: string,
 }

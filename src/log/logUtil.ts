@@ -1,6 +1,6 @@
 import { safeStringify } from "../string/safeStringify"
 
-export function d4l(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}) {
+export function d4l(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}): string {
   if (typeof input === 'undefined') {
     return "<undefined> (undefined)"
   }
@@ -68,13 +68,12 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
   else if (input instanceof RegExp) {
     return input.toString() + " (RegExp)";
   }
-  
   else if (typeof input === 'object') {
     if (typeof ((input as any).toDebugString) === 'function' ) {
-      return (input as any).toDebugString()
+      return (input as any).toDebugString() + " (object; via toDebugString())"
     }
     if (typeof ((input as any).toLogString) === 'function' ) {
-      return (input as any).toLogString()
+      return (input as any).toLogString() + " (object; via toLogString())"
     }
     // Do yourself a huge favor and don't mess with toJSON
     // if (typeof ((input as any).toJSON) === 'function' ) {
@@ -83,15 +82,16 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
     //     return whateverToJSONReturns
     //   }
     // }
+
     if (typeof ((input as any).asJson) === 'function' ) {
       const whateverAsJsonReturns = (input as any).asJson()
       // return whateverAsJsonReturns
       try {
-        return localSafeStringify(whateverAsJsonReturns)
+        return localSafeStringify(whateverAsJsonReturns) || `${input}`
       } catch (err){}
     }
     try {
-      return localSafeStringify(input)
+      return localSafeStringify(input) + " (object)"
     } catch (err){}
   }
   return `${input}`

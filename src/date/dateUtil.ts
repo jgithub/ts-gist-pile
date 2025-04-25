@@ -41,6 +41,26 @@ export function getMillisecondsSinceDate(dateStart: Date): number {
 }
 
 // https://stackoverflow.com/questions/643782/how-to-check-whether-an-object-is-a-date
-export function isDate(obj: any): boolean {
-  return Object.prototype.toString.call(obj) === '[object Date]'
+export function isValidDateObject(obj: any): boolean {
+  return !!(obj && Object.prototype.toString.call(obj) === "[object Date]" && !isNaN(obj));
+}
+
+export function isIso8601(input: string): boolean {
+  if (typeof input !== 'string') {
+    return false
+  }
+  return (new Date(input)).toISOString() === input
+}
+
+export function isIso8601Utc(input: string): boolean {
+  if (typeof input !== 'string') {
+    return false
+  }
+  // return (new Date(input)).toISOString() === input && input.endsWith('Z')
+
+  if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(input)) return false;
+  const d = new Date(input); 
+  return !isNaN(d.getTime()) && d.toISOString()===input; // valid date 
+
+  // https://stackoverflow.com/questions/52869695/check-if-a-date-string-is-in-iso-and-utc-format
 }
