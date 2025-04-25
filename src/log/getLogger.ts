@@ -62,7 +62,7 @@ class Logger {
     }
 
     jsonContext = this.buildCompleteJsonContext(jsonContext)
-    json["context"] = jsonContext
+    json["ctx"] = jsonContext
 
     return JSON.stringify(json)
   }
