@@ -1,5 +1,6 @@
 
 import { sendStatToKpitracks } from "../stat/statUtil";
+import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
 
 let AsyncLocalStorage: any | undefined;
 
@@ -53,14 +54,27 @@ class Logger {
 
     if (asyncLocalStorage != null) {
       try {
-        const traceId = asyncLocalStorage.getStore();
-        if (traceId != null) {
-          jsonContext = Object.assign({}, jsonContext, { traceId });
+        const mapOfStuffInLocalStorage = asyncLocalStorage.getStore();
+        if (mapOfStuffInLocalStorage instanceof Map) {
+          const storeId = mapOfStuffInLocalStorage.get('storeId')
+          if (storeId != null) {
+            jsonContext = Object.assign({}, jsonContext, { storeId });
+          }
         }
       } catch (err) {
       }
     }
     
+
+    const span = trace.getSpan(context.active()); 
+    if (span) {
+      const { traceId, spanId } = span.spanContext();
+      console.log(`traceId = '${traceId}', spanId = '${spanId}'`)
+      jsonContext = Object.assign({}, jsonContext, { traceId, spanId })
+    } else {
+      console.log("No Span")
+    }
+
 
     const wouldBeJsonContextString = JSON.stringify(jsonContext)
     if (wouldBeJsonContextString != null && wouldBeJsonContextString.length > 0 && wouldBeJsonContextString != "{}" && wouldBeJsonContextString != "{ }") {
@@ -268,11 +282,17 @@ export function getLogger(loggerName: string): Logger {
   return LoggerFactory.getLogger(loggerName)
 } 
 
-export function withTraceId(traceId: string, fn: () => any) {
+export function withStoreId(storeId: string, fn: () => any) {
   // @ts-ignore
   if (typeof asyncLocalStorage != 'undefined' && asyncLocalStorage != null) {
     // @ts-ignore
-    return asyncLocalStorage.run(traceId, fn);
+    let mapOfStuffInLocalStorage: Map<string, string> = asyncLocalStorage.getStore(); 
+    if (mapOfStuffInLocalStorage == null) {
+      mapOfStuffInLocalStorage = new Map<string, string>()
+    }
+    mapOfStuffInLocalStorage.set('storeId', storeId)
+
+    return asyncLocalStorage.run(mapOfStuffInLocalStorage, fn);
   } else {
     return fn();
   }
