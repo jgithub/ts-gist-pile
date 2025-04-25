@@ -69,10 +69,10 @@ class Logger {
     const span = trace.getSpan(context.active()); 
     if (span) {
       const { traceId, spanId } = span.spanContext();
-      console.log(`traceId = '${traceId}', spanId = '${spanId}'`)
+      // console.log(`traceId = '${traceId}', spanId = '${spanId}'`)
       jsonContext = Object.assign({}, jsonContext, { traceId, spanId })
     } else {
-      console.log("No Span")
+      // console.log("No Span")
     }
 
 
