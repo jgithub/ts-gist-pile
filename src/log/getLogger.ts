@@ -93,7 +93,8 @@ class Logger {
     if (span) {
       const { traceId, spanId } = span.spanContext();
       // console.log(`traceId = '${traceId}', spanId = '${spanId}'`)
-      jsonContext = Object.assign({}, jsonContext, { traceId, spanId })
+      // https://opentelemetry.io/docs/specs/otel/compatibility/logging_trace_context/#overview non-otlp JSON logs use trace_id, not traceId.
+      jsonContext = Object.assign({}, jsonContext, { trace_id: traceId, span_id: spanId })
     } else {
       // console.log("No Span")
     }
