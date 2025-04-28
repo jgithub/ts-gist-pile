@@ -93,7 +93,8 @@ class Logger {
     if (span) {
       const { traceId, spanId } = span.spanContext();
       // console.log(`traceId = '${traceId}', spanId = '${spanId}'`)
-      jsonContext = Object.assign({}, jsonContext, { traceId, spanId })
+      // https://opentelemetry.io/docs/specs/otel/compatibility/logging_trace_context/#overview non-otlp JSON logs use trace_id, not traceId.
+      jsonContext = Object.assign({}, jsonContext, { trace_id: traceId, span_id: spanId })
     } else {
       // console.log("No Span")
     }
@@ -220,7 +221,7 @@ class Logger {
     if (process.env.STATHAT_EZ_KEY != null && process.env.STATHAT_EZ_KEY.trim()?.length > 0 && process.env.STATHAT_WARN_KEY != null && process.env.STATHAT_WARN_KEY.trim()?.length > 0) {
 
       const controller = new AbortController()
-      // 1 second timeout:
+      // 1 second timeout:1
       const timeoutId = setTimeout(() => controller.abort(), 750)
 
       const url = "https://api.stathat.com/ez"
