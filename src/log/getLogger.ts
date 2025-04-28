@@ -62,9 +62,16 @@ class Logger {
     }
 
     jsonContext = this.buildCompleteJsonContext(jsonContext)
-    json["context"] = jsonContext
+    
+    // testing
+    // jsonContext["spanId"] = "from context"
+    // json["spanId"] = "from orig"
 
-    return JSON.stringify(json)
+    // In the merged JSON, the root context should take presedence over the jsonContext
+    const mergedJson = { ...jsonContext, ...json }
+
+
+    return JSON.stringify(mergedJson)
   }
 
   private buildCompleteJsonContext(jsonContext: JSONContext): JSONContext {
