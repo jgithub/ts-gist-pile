@@ -221,7 +221,7 @@ class Logger {
     if (process.env.STATHAT_EZ_KEY != null && process.env.STATHAT_EZ_KEY.trim()?.length > 0 && process.env.STATHAT_WARN_KEY != null && process.env.STATHAT_WARN_KEY.trim()?.length > 0) {
 
       const controller = new AbortController()
-      // 1 second timeout
+      // 1 second timeout:
       const timeoutId = setTimeout(() => controller.abort(), 750)
 
       const url = "https://api.stathat.com/ez"
