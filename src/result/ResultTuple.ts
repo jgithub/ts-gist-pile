@@ -1,0 +1,1 @@
+export type ResultTuple<T, E = Error> = [T, null] | [null, E];
