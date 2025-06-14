@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { DateProviderService, stringUtil } from "../../src/index";
+import { url } from 'inspector';
 
 
 describe('stringUtil', () => {
@@ -38,7 +39,6 @@ describe('stringUtil', () => {
       expect(stringUtil.tryRemoveTrailingSlashesIfPresent(null)).to.be.null
       expect(stringUtil.tryRemoveTrailingSlashesIfPresent(undefined)).to.be.undefined
       expect(stringUtil.tryRemoveTrailingSlashesIfPresent("/////here///there///////and///////everywhere/to//be/sure//")).to.eql("/////here///there///////and///////everywhere/to//be/sure")
-
     })  
   }) 
 
@@ -53,6 +53,9 @@ describe('stringUtil', () => {
       expect(stringUtil.tryRemoveDoubleSlashesIfPresent(null)).to.be.null
       expect(stringUtil.tryRemoveDoubleSlashesIfPresent(undefined)).to.be.undefined
       expect(stringUtil.tryRemoveDoubleSlashesIfPresent("/////here///there///////and///////everywhere/to//be/sure//")).to.eql("/here/there/and/everywhere/to/be/sure/")
+      expect(stringUtil.tryRemoveDoubleSlashesIfPresent("https://blah.com/whatever//this.html")).to.eql("https:/blah.com/whatever/this.html")
+      expect(stringUtil.tryRemoveDoubleSlashesIfPresent("https://blah.com/whatever//this.html", {butTryToBeSmartAboutUrls: false})).to.eql("https:/blah.com/whatever/this.html")
+      expect(stringUtil.tryRemoveDoubleSlashesIfPresent("https://blah.com/whatever//this.html", {butTryToBeSmartAboutUrls: true})).to.eql("https://blah.com/whatever/this.html")
     })  
   })   
 })

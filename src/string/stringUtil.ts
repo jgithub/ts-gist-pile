@@ -71,7 +71,7 @@ export function tryRemoveTrailingSlashesIfPresent(input: string | null | undefin
 }
 
 
-export function tryRemoveDoubleSlashesIfPresent(input: string| null | undefined): string| null | undefined {
+export function tryRemoveDoubleSlashesIfPresent(input: string| null | undefined, opt?: { butTryToBeSmartAboutUrls: boolean }): string| null | undefined {
   if (input == null) {
     return input
   }
@@ -79,5 +79,12 @@ export function tryRemoveDoubleSlashesIfPresent(input: string| null | undefined)
   while (input.match(/\/\//)) {
     input = input.replace(/\/\//g, "/")
   }
+
+  if (opt?.butTryToBeSmartAboutUrls) {
+    input = input.replace(/^https:\//, "https://")
+    input = input.replace(/^http:\//, "http://")
+    input = input.replace(/^ftp:\//, "ftp://")
+  }
+
   return input
 }
