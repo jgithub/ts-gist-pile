@@ -24,6 +24,11 @@ describe('idUtil', () => {
         expect(generatedId.startsWith('30I')).to.be.true
         expect(anotherGeneratedId.startsWith('30I')).to.be.true
 
+        expect(thirdNanoIdLike.startsWith('1')).to.be.true
+        expect(thirdNanoIdLike.startsWith('1a')).to.be.true
+        expect(thirdNanoIdLike.startsWith('1av')).to.be.true
+
+
         const end1 = generatedId.replace(/^[0-9a-zA-Z]{18}/, '');
         const end2 = anotherGeneratedId.replace(/^[0-9a-zA-Z]{18}/, '');
 
