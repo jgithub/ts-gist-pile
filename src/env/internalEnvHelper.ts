@@ -9,6 +9,7 @@ export function tryGetEnvVar(envVarName: string): string | undefined {
       if (typeof importMeta !== 'undefined' && typeof importMeta?.env?.[envVarName] !== 'undefined') {
         // @ts-ignore: TypeScript doesn't know about Vite's import.meta.env
         retval = importMeta.env[envVarName];
+        console.log(`ts-gist-pile: tryGetEnvVar(): During logger configuration, found import.meta.env[${envVarName}] = ${retval}`);
       }
     }
     catch {
@@ -16,13 +17,14 @@ export function tryGetEnvVar(envVarName: string): string | undefined {
     }
   }
 
-  if (typeof window !== "undefined" && typeof retval === 'undefined') {
+  if ( typeof window !== "undefined" && typeof retval === 'undefined') {
     try {
       // Avoid TS1343 by putting this inside a dynamically eval'd function
       const importMeta = new Function('return import.meta')();
-      if (typeof importMeta !== 'undefined' && typeof importMeta?.env?.[envVarName] !== 'undefined') {
+      if (typeof importMeta !== 'undefined' && typeof importMeta?.env?.[`VITE_${envVarName}`] !== 'undefined') {
         // @ts-ignore: TypeScript doesn't know about Vite's import.meta.env
-        retval = importMeta.env[`VITE_` + envVarName];
+        retval = importMeta.env[`VITE_${envVarName}`];
+        console.log(`ts-gist-pile: tryGetEnvVar(): During logger configuration, found import.meta.env[VITE_${envVarName}] = ${retval}`);
       }
     }
     catch {
@@ -32,15 +34,17 @@ export function tryGetEnvVar(envVarName: string): string | undefined {
 
   if (typeof retval === 'undefined') {
     if (typeof process !== 'undefined' && typeof process.env?.[envVarName] !== 'undefined') {
-      return process.env[envVarName];
+      retval = process.env[envVarName];
+      console.log(`ts-gist-pile: tryGetEnvVar(): During logger configuration, found process.env[${envVarName}] = ${retval}`);
     }
   }
 
-  if (typeof window !== "undefined" && typeof retval === 'undefined') {
-    if (typeof process !== 'undefined' && typeof process.env?.[envVarName] !== 'undefined') {
-      return process.env[`REACT_` + envVarName];
+  if ( typeof window !== "undefined" && typeof retval === 'undefined') {
+    if (typeof process !== 'undefined' && typeof process.env?.[`REACT_${envVarName}`] !== 'undefined') {
+      retval = process.env[`REACT_${envVarName}`];
+      console.log(`ts-gist-pile: tryGetEnvVar(): During logger configuration, found process.env[REACT_${envVarName}] = ${retval}`);
     }
   }
 
-  return undefined;
+  return retval;
 }
