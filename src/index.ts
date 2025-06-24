@@ -10,6 +10,8 @@ export * as functionUtil from "./function/functionUtil"
 export * as extendedExceptionList from "./exception/extendedExceptionList"
 export * as arrayUtil from "./array/arrayUtil"
 export * as tryUtil from "./try/tryUtil"
+export * as radixUtil from "./radix/radixUtil"
+export * as uuidUtil from "./uuid/uuidUtil"
 
 
 export { getLogger } from "./log/getLogger"

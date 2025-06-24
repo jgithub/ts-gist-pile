@@ -8,3 +8,7 @@ export function generateV6(): string {
 export function generateV7(): string {
   return v7()
 }
+
+export function likeV7NanoId(): string {
+  return v7()
+}
