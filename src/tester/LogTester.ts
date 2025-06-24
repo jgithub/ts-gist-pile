@@ -8,8 +8,8 @@ import { context, trace, isSpanContextValid, Span, SpanStatusCode } from '@opent
 // import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
-process.env.LOG_DEBUG = "true"
-process.env.LOG_PREPEND_TIMESTAMP = "true"
+// process.env.LOG_DEBUG = "true"
+// process.env.LOG_PREPEND_TIMESTAMP = "true"
 
 const LOG = getLogger("log.LogTester");
 // TraceInitializer.getInstance("log.LogTester")
