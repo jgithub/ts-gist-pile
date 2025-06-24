@@ -35,4 +35,14 @@ describe('numberUtil', () => {
       })  
     })
   })  
+
+  describe('Base62 encoding and decoding', () => {
+    describe('based on some common test inputs', () => {
+      it('returns the expected result', () => {
+        expect(numberUtil.encodeNumberAsBase62(123456789)).to.eq('8M0kX')
+        expect(numberUtil.decodeBase62ToNumber('8M0kX')).to.eq(123456789)
+        expect(numberUtil.encodeNumberAsBase62(0)).to.eq('0')
+      })  
+    })
+  })  
 })
