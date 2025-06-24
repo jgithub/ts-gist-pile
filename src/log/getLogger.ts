@@ -1,4 +1,5 @@
 
+import { tryGetEnvVar } from "../env/internalEnvHelper";
 import { sendStatToKpitracks } from "../stat/statUtil";
 import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
 
@@ -37,7 +38,7 @@ class Logger {
   constructor(private readonly loggerName: string) {}
 
   private buildLogMsg(severity: string, msg: stringorstringfn, jsonContext: JSONContext): string {
-    if (isTruelike(process.env.LOG_USE_JSON_FORMAT)) {
+    if (isTruelike(tryGetEnvVar('LOG_USE_JSON_FORMAT'))) {
       return this.buildLogMsgJsonFormat(severity, msg, jsonContext);
     } else {
       return this.buildLogMsgPlainText(severity, msg, jsonContext);
@@ -46,7 +47,7 @@ class Logger {
 
   private buildLogMsgJsonFormat(severity: string, msg: stringorstringfn, jsonContext: JSONContext): string {
     const json: any = {}
-    if (isTruelike(process.env.LOG_PREPEND_TIMESTAMP)) {
+    if (typeof process !== 'undefined' && isTruelike(tryGetEnvVar('LOG_PREPEND_TIMESTAMP'))) {
       json["at"] = new Date().toISOString()
     }
 
@@ -105,7 +106,7 @@ class Logger {
 
   private buildLogMsgPlainText(severity: string, msg: stringorstringfn, jsonContext: JSONContext): string {
     const messageParts = [];
-    if (isTruelike(process.env.LOG_PREPEND_TIMESTAMP)) {
+    if (typeof process !== 'undefined' && isTruelike(tryGetEnvVar('LOG_PREPEND_TIMESTAMP'))) {
       messageParts.push(new Date().toUTCString())
     }
     messageParts.push(severity)
@@ -129,7 +130,7 @@ class Logger {
   }
 
   private writeLogMsgToTerminal(msg: string, ...extra: any[]): void {
-    if (isTruelike(process.env.LOG_TO_STDERR)) {
+    if (typeof process !== 'undefined' && isTruelike(tryGetEnvVar('LOG_TO_STDERR'))) {
       if (extra.length === 0) {
         console.error(msg)
       } else if (extra.length > 0) {
@@ -145,21 +146,21 @@ class Logger {
   }
 
   public trace(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
-    if (isTruelike(process.env.LOG_TRACE)) {
+    if (typeof process !== 'undefined' && isTruelike(tryGetEnvVar('LOG_TRACE'))) {
       const completeMsg = this.buildLogMsg("[ TRACE]", msg, jsonContext)
       this.writeLogMsgToTerminal(completeMsg)
     }
   }
 
   public debug(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
-    if (isTruelike(process.env.LOG_DEBUG)) {
+    if (typeof process !== 'undefined' && isTruelike(tryGetEnvVar('LOG_DEBUG'))) {
       const completeMsg = this.buildLogMsg("[ DEBUG]", msg, jsonContext)
       this.writeLogMsgToTerminal(completeMsg)
     }
   }
 
   public info(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
-    if (isTruelike(process.env.LOG_INFO)) {
+    if (typeof process !== 'undefined' && isTruelike(tryGetEnvVar('LOG_INFO'))) {
       const completeMsg = this.buildLogMsg("[  INFO]", msg, jsonContext)
       this.writeLogMsgToTerminal(completeMsg)
     }
@@ -172,7 +173,7 @@ class Logger {
 
 
   public fatal(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
-    if (process.env.STATHAT_EZ_KEY != null && process.env.STATHAT_EZ_KEY.trim()?.length > 0 && process.env.STATHAT_FATAL_KEY != null && process.env.STATHAT_FATAL_KEY.trim()?.length > 0) {
+    if (typeof process !== 'undefined' && process.env?.STATHAT_EZ_KEY != null && process.env?.STATHAT_EZ_KEY.trim()?.length > 0 && process.env?.STATHAT_FATAL_KEY != null && process.env?.STATHAT_FATAL_KEY.trim()?.length > 0) {
 
       const controller = new AbortController()
       // 1 second timeout:
@@ -210,7 +211,7 @@ class Logger {
       })
     }    
     
-    if (process.env.KPITRACKS_FATAL_KEY != null && process.env.KPITRACKS_FATAL_KEY.trim()?.length > 0) {
+    if (typeof process !== 'undefined' && process.env?.KPITRACKS_FATAL_KEY != null && process.env?.KPITRACKS_FATAL_KEY?.trim()?.length > 0) {
       sendStatToKpitracks(`stat=${process.env.KPITRACKS_FATAL_KEY?.trim()}&count=1`)
     }
     const completeMsg = this.buildLogMsg("[ FATAL]", msg, jsonContext)
@@ -218,7 +219,7 @@ class Logger {
   }
 
   public warn(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
-    if (process.env.STATHAT_EZ_KEY != null && process.env.STATHAT_EZ_KEY.trim()?.length > 0 && process.env.STATHAT_WARN_KEY != null && process.env.STATHAT_WARN_KEY.trim()?.length > 0) {
+    if (typeof process !== 'undefined' && process.env?.STATHAT_EZ_KEY != null && process.env?.STATHAT_EZ_KEY?.trim()?.length > 0 && process.env?.STATHAT_WARN_KEY != null && process.env?.STATHAT_WARN_KEY?.trim()?.length > 0) {
 
       const controller = new AbortController()
       // 1 second timeout:
@@ -256,7 +257,7 @@ class Logger {
       })
     }    
     
-    if (process.env.KPITRACKS_WARN_KEY != null && process.env.KPITRACKS_WARN_KEY.trim()?.length > 0) {
+    if (typeof process !== 'undefined' && process.env?.KPITRACKS_WARN_KEY != null && process.env?.KPITRACKS_WARN_KEY?.trim()?.length > 0) {
       sendStatToKpitracks(`stat=${process.env.KPITRACKS_WARN_KEY?.trim()}&count=1`)
     }
     const completeMsg = this.buildLogMsg("[  WARN]", msg, jsonContext)
@@ -267,7 +268,7 @@ class Logger {
   public error(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
     // console.log(`error(): STATHAT_EZ_KEY = '${process.env.STATHAT_EZ_KEY}',  STATHAT_ERROR_KEY = '${process.env.STATHAT_ERROR_KEY}'`)
 
-    if (process.env.STATHAT_EZ_KEY != null && process.env.STATHAT_EZ_KEY.trim()?.length > 0 && process.env.STATHAT_ERROR_KEY != null && process.env.STATHAT_ERROR_KEY.trim()?.length > 0) {
+    if (typeof process !== 'undefined' && process.env?.STATHAT_EZ_KEY != null && process.env?.STATHAT_EZ_KEY?.trim()?.length > 0 && process.env?.STATHAT_ERROR_KEY != null && process.env?.STATHAT_ERROR_KEY?.trim()?.length > 0) {
       // TODO: Change this to run as a promise
       // try {
         // stathat.trackEZCount(process.env.STATHAT_EZ_KEY?.trim(), process.env.STATHAT_ERROR_KEY?.trim(), 1, function(status: any, json: any) {});
@@ -314,7 +315,7 @@ class Logger {
       // } 
     }    
     
-    if (process.env.KPITRACKS_ERROR_KEY != null && process.env.KPITRACKS_ERROR_KEY.trim()?.length > 0) {
+    if (typeof process !== 'undefined' && process.env?.KPITRACKS_ERROR_KEY != null && process.env?.KPITRACKS_ERROR_KEY?.trim()?.length > 0) {
       sendStatToKpitracks(`stat=${process.env.KPITRACKS_ERROR_KEY?.trim()}&count=1`)
     }
 
