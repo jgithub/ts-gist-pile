@@ -12,4 +12,21 @@ describe('radixUtil', () => {
       })  
     })
   })  
+
+  describe('.convertHexToBase62', () => {
+    describe('based on some common test inputs', () => {
+      it('works as expected', () => {
+        const uuidSansDashes = 'f0049da2-0960-4c9d-8bc1-a774567ec568'.replace(/-/g, '');
+        expect(radixUtil.convertHexToBase62(uuidSansDashes)).to.eq('7IuGbjogtVbUYjlCejlrFQ')
+        expect(radixUtil.convertHexToBase62('f0049da2-0960-4c9d-8bc1-a774567ec600'.replace(/-/g, ''))).to.eq('7IuGbjogtVbUYjlCejlrHs')
+      })  
+    })
+
+    describe('when the input constains a dash', () => {
+      it('throws', () => {
+        expect(() => radixUtil.convertHexToBase62('1-2')).to.throw;
+        expect(() => radixUtil.convertHexToBase62('f0049da2-0960-4c9d-8bc1-a774567ec568')).to.throw;
+      })  
+    })
+  })
 })
