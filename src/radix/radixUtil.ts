@@ -1,3 +1,4 @@
+// radixUtil is a lower level library than is uuidUtil
 const BASE62_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
 export function encodeNumberAsBase62(num: number): string {

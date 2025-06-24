@@ -12,6 +12,7 @@ export * as arrayUtil from "./array/arrayUtil"
 export * as tryUtil from "./try/tryUtil"
 export * as radixUtil from "./radix/radixUtil"
 export * as uuidUtil from "./uuid/uuidUtil"
+export * as idUtil from "./id/idUtil"
 
 
 export { getLogger } from "./log/getLogger"
