@@ -1,5 +1,7 @@
 // radixUtil is a lower level library than is uuidUtil
 const BASE62_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const BASE64_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/';
+const NANOID_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz-'
 
 export function encodeNumberAsBase62(num: number): string {
   if (num === 0) return '0';
@@ -53,6 +55,35 @@ export function convertHexToBase62(hex: string): string {
   while (decimal !== '0') {
     const { quotient, remainder } = divideDecimalStringByInt(decimal, 62);
     result = BASE62_ALPHABET[parseInt(remainder, 10)] + result;
+    decimal = quotient;
+  }
+
+  return result;
+}
+
+/**
+ * Converts a hex string (base16) to a base62 string.
+ * Works in TypeScript without BigInt or external libraries.
+ */
+export function convertHexToNanoIdAlphabet(hex: string): string {
+  if (!/^[0-9a-fA-F]+$/.test(hex)) {
+    throw new Error('Invalid hex input');
+  }
+
+  let decimal = '0';
+
+  for (let i = 0; i < hex.length; i++) {
+    const digit = parseInt(hex[i], 16);
+    decimal = multiplyDecimalStringByInt(decimal, 16);
+    decimal = addDecimalStrings(decimal, digit.toString());
+  }
+
+  if (decimal === '0') return '0';
+
+  let result = '';
+  while (decimal !== '0') {
+    const { quotient, remainder } = divideDecimalStringByInt(decimal, 64);
+    result = NANOID_ALPHABET[parseInt(remainder, 10)] + result;
     decimal = quotient;
   }
 
