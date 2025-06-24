@@ -14,7 +14,11 @@ describe('idUtil', () => {
         console.log(`thirdNanoIdLike = ${thirdNanoIdLike}`)
 
         expect(generatedId).not.to.be.null;
+
         expect(generatedId.length).to.be.eq(21);
+        expect(anotherGeneratedId.length).to.be.eq(21);
+        expect(thirdNanoIdLike.length).to.be.eq(21);
+
         expect(generatedId.startsWith('3')).to.be.true
         expect(anotherGeneratedId.startsWith('3')).to.be.true
 
