@@ -8,3 +8,4 @@ export function generateV6(): string {
 export function generateV7(): string {
   return v7()
 }
+
