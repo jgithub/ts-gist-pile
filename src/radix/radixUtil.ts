@@ -1,7 +1,11 @@
 // radixUtil is a lower level library than is uuidUtil
 const BASE62_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const BASE64_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/';
+
+// https://github.com/JamoCA/cfml-nanoid/blob/main/README.md
+// https://zelark.github.io/nano-id-cc/
 const NANOID_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz-'
+const NOLOOKALIKES_ALPHABET = '346789ABCDEFGHJKLMNPQRTUVWXYabcdefghijkmnpqrtwxyz'
 
 export function encodeNumberAsBase62(num: number): string {
   if (num === 0) return '0';

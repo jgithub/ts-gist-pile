@@ -12,16 +12,16 @@ describe('idUtil', () => {
         console.log(`anotherGeneratedId = ${anotherGeneratedId}`)
 
         expect(generatedId).not.to.be.null;
-        expect(generatedId.length).to.be.greaterThanOrEqual(21);
+        expect(generatedId.length).to.be.eq(21);
         expect(generatedId.startsWith('3')).to.be.true
         expect(generatedId.startsWith('30')).to.be.true
         expect(generatedId.startsWith('30I')).to.be.true
 
-        const end1 = generatedId.replace(/[^0-9a-zA-Z]{19}/, '');
-        const end2 = anotherGeneratedId.replace(/[^0-9a-zA-Z]{19}/, '');
+        const end1 = generatedId.replace(/^[0-9a-zA-Z]{18}/, '');
+        const end2 = anotherGeneratedId.replace(/^[0-9a-zA-Z]{18}/, '');
 
-        expect(end1.length).to.be.greaterThanOrEqual(2);
-        expect(end2.length).to.be.greaterThanOrEqual(2);
+        expect(end1.length).to.be.eq(3);
+        expect(end2.length).to.be.eq(3);
 
 
         // entropy is at the end
