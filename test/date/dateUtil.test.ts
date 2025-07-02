@@ -20,7 +20,7 @@ describe('dateUtil', () => {
       it('generates the expected range', () => {
         const beforeAt = new Date()
         const buckets = dateUtil.generateSortedFiveMinuteBucketsForYearInSeconds(2024)
-        expect(dateUtil.getMillisecondsSinceDate(beforeAt)).to.be.lt(10)
+        expect(dateUtil.getMillisecondsBetweenDates(beforeAt, new Date())).to.be.lt(10)
         // 2024 is leap year
         expect(buckets.length).to.eq(366 * 24 * 12) 
         expect(buckets[0]).to.eq(1703980800)
