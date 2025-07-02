@@ -36,9 +36,39 @@ function padLeftWithZeros(input: any, notLessThanXDigits: number): string {
   return workingValue;
 }
 
-export function getMillisecondsSinceDate(dateStart: Date): number {
-  return new Date().getTime() - dateStart.getTime()
+
+/**
+ * This can return a negative number if the start date is after the end date.
+ * @param start 
+ * @param end 
+ * @returns a positive or negative number representing milliseconds between the two dates.
+ */
+export function getMillisecondsBetweenDates(start: Date, end: Date): number {
+  return end.getTime() - start.getTime()
 }
+
+/**
+ * This can return a negative number if the start date is after the end date.
+ * @param start 
+ * @param end 
+ * @returns a positive or negative number representing seconds between the two dates.
+ */
+export function getSecondsBetweenDates(start: Date, end: Date): number {
+  // Returns the number of seconds between two dates.
+  return Math.floor((end.getTime() - start.getTime()) / 1000);
+}
+
+
+export function getSecondsBetweenEpochAndDate(date: Date): number {
+  // Returns the number of seconds since the Unix epoch (January 1, 1970).
+  return Math.floor(date.getTime() / 1000);
+}
+
+export function getMillisecondsBetweenEpochAndDate(date: Date): number {
+  // Returns the number of milliseconds since the Unix epoch (January 1, 1970).
+  return date.getTime();
+} 
+
 
 // https://stackoverflow.com/questions/643782/how-to-check-whether-an-object-is-a-date
 export function isValidDateObject(obj: any): boolean {
