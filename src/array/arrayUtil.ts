@@ -13,6 +13,8 @@ export function tryParseStringToArray(input: string | undefined | null): Array<s
   input = input.replace(/\'/g, "")
 
   // common delimiters
+  // TODO:  colon is tricky, let's avoid it for now
+  // a:1,b:2.   I might want colon to be a sub-delimiter
   const parts = input.split(/[,;\s\t]/);
   const result: Array<string> = []
 
