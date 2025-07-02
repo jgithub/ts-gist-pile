@@ -58,6 +58,7 @@ export function getSecondsBetweenDates(start: Date, end: Date): number {
   return Math.floor((end.getTime() - start.getTime()) / 1000);
 }
 
+
 export function getSecondsBetweenEpochAndDate(date: Date): number {
   // Returns the number of seconds since the Unix epoch (January 1, 1970).
   return Math.floor(date.getTime() / 1000);
