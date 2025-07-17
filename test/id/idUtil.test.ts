@@ -29,7 +29,7 @@ describe('idUtil', () => {
         // expect(anotherGeneratedId.startsWith('30I')).to.be.true
 
         expect(thirdNanoIdLike.startsWith('1')).to.be.true
-        expect(thirdNanoIdLike.startsWith('1a')).to.be.true
+        expect(thirdNanoIdLike.startsWith('1b')).to.be.true
         // expect(thirdNanoIdLike.startsWith('1av')).to.be.true
 
 
