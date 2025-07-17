@@ -1,3 +1,4 @@
+export * as anyUtil from "./any/anyUtil"
 export * as objectUtil from "./object/objectUtil"
 export * as cloneUtil from "./clone/cloneUtil"
 export * as stringUtil from "./string/stringUtil"

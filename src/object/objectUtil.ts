@@ -6,11 +6,3 @@ import { cloneDeep as _theImplementation } from "lodash";
 // }
 
 
-export function isPresent(input: object | undefined | null): boolean {
-  if (typeof input === 'undefined' || input === null) {
-    return false;
-  }
-  return true;
-}
-
-export const exists = isPresent;
