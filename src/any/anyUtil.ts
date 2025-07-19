@@ -1,4 +1,4 @@
-export function isDefined(input: any): boolean {
+export function hasValue(input: any): boolean {
   if (typeof input === 'undefined' || input === null) {
     return false;
   }
