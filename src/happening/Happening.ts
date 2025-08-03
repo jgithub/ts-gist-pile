@@ -29,7 +29,8 @@ export interface Happening {
   os?: string,
   reason?: string,
   comment?: string,
-  exceptionName?: string,
+  errorType?: string,
+  exceptionMessage?: string,
   serviceVersion?: string,
   source?: string,
   target?: string,
@@ -75,8 +76,7 @@ export interface Happening {
   httpUrl?: string,
   httpRoute?: string,
   
-  // Error/Exception attributes
-  errorType?: string,
-  exceptionMessage?: string,
+  // Additional Error/Exception attributes
+
   exceptionStacktrace?: string,
 }
