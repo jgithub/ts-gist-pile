@@ -214,7 +214,7 @@ class Logger {
     if (typeof process !== 'undefined' && process.env?.KPITRACKS_FATAL_KEY != null && process.env?.KPITRACKS_FATAL_KEY?.trim()?.length > 0) {
       sendStatToKpitracks(`stat=${process.env.KPITRACKS_FATAL_KEY?.trim()}&count=1`)
     }
-    const completeMsg = this.buildLogMsg("[ FATAL]", msg, jsonContext)
+    const completeMsg = this.buildLogMsg("[ FATAL][ ERROR]", msg, jsonContext)
     this.writeLogMsgToTerminal(completeMsg)
   }
 

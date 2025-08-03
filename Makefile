@@ -21,6 +21,10 @@ publish:
 	cd ${ROOT_DIR} && npm publish
 
 
+.PHONY: bundle
+bundle: build
+	cd ${ROOT_DIR} && cp dist/index.js TsGistPile.js
+
 .PHONY: LogTester
 LogTester:
 	cd ${ROOT_DIR}/src && VITE_LOG_DEBUG=1 LOG_USE_JSON_FORMAT=1 LOG_PREPEND_TIMESTAMP=1 npx ts-node --files tester/LogTester.ts
