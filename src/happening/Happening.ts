@@ -52,4 +52,31 @@ export interface Happening {
   attributes: { [key: string]: string | number | boolean }
   spanId?: string,
   traceId?: string,
+  
+  // Network/Protocol attributes
+  serverPort?: number,
+  clientPort?: number,
+  networkTransport?: string,
+  networkProtocolName?: string,
+  networkProtocolVersion?: string,
+  
+  // Service/Environment attributes
+  peerService?: string,
+  serviceNamespace?: string,
+  serviceInstanceId?: string,
+  
+  // Execution context
+  threadId?: string,
+  threadName?: string,
+  
+  // HTTP-specific attributes
+  httpMethod?: string,
+  httpStatusCode?: number,
+  httpUrl?: string,
+  httpRoute?: string,
+  
+  // Error/Exception attributes
+  errorType?: string,
+  exceptionMessage?: string,
+  exceptionStacktrace?: string,
 }
