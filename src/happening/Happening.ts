@@ -3,15 +3,15 @@
 export interface Happening {
   eventAt: Date,
   appName: string,
-  eventCategory: string,
-  eventCode: string,
+  category: string, // event category, e.g. "authentication", "data-access", "system", "error", "transaction", "security", "audit", "performance"
+  code: string, // event code
   eventValue?: string,
   // eventName?: string,
   description?: string,
   resourceType?: string,
   resourceAction?: string,
   subResource?: string,
-  resourceResult?: string,
+  result?: string,
   resourceId?: string,
   resourceInstanceName?: string,
   initiatorAction?: string,
@@ -25,15 +25,18 @@ export interface Happening {
   snapshotUserName?: string,
   subResourceId?: string,
   userAgent?: string,
-  ipAddress?: string,
+  clientIpAddress?: string,
   derivedUserAgent?: string,
-  derivedIpAddress?: string,
+  derivedClientIpAddress?: string,
+  serverIpAddress?: string
+  serverPort?: number,
   tags?: string,
   browser?: string,
   os?: string,
   reason?: string,
   comment?: string,
-  exceptionName?: string,
+  errorType?: string,
+  errorValue?: string,
   appVersion?: string,
   source?: string,
   target?: string,
@@ -62,5 +65,6 @@ export interface Happening {
   spanId?: string,
   traceId?: string,
   severity?: string,
-  duration?: number
+  duration?: number,
+  hostname?: string
 }
