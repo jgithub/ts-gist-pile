@@ -3,12 +3,15 @@
 export interface Happening {
   eventAt: Date,
   appName: string,
-  code: string,
+  eventCategory: string,
+  eventCode: string,
+  eventValue?: string,
+  // eventName?: string,
   description?: string,
   resourceType?: string,
-  resourceCrudl?: string,
+  resourceAction?: string,
   subResource?: string,
-  resourceCrudlResult?: string,
+  resourceResult?: string,
   resourceId?: string,
   resourceInstanceName?: string,
   initiatorAction?: string,
@@ -17,7 +20,7 @@ export interface Happening {
   param3?: string,  
   referrer?: string,
   groupId?: string,
-  snapshotGroupName?: string,
+  snapshotGroupName?: string, 
   userId?: string,
   snapshotUserName?: string,
   subResourceId?: string,
@@ -34,12 +37,14 @@ export interface Happening {
   appVersion?: string,
   source?: string,
   target?: string,
+  eventId?: string,
   document?: string,
   authToken?: string,
   sessionId?: string,
   uniqueBrowserToken?: string
-  recordCreatedAt?: Date,
+  recordCreatedAt?: Date,   // This is the timestamp.
   serverName?: string,
+  responseCode?: number,
   batchStamp?: string,
   postalCode?: string,
   latitude?: string,
@@ -53,4 +58,6 @@ export interface Happening {
   attributes: { [key: string]: string | number | boolean }
   spanId?: string,
   traceId?: string,
+  severity?: string,
+  duration?: number
 }
