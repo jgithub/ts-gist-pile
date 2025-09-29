@@ -44,7 +44,10 @@ export interface Happening {
   uniqueBrowserToken?: string
   recordCreatedAt?: Date,   // This is the timestamp.
   serverName?: string,
-  responseCode?: number,
+  statusCode?: string,
+  statusMessage?: string,
+  url?: string,
+  path?: string,
   batchStamp?: string,
   postalCode?: string,
   latitude?: string,
