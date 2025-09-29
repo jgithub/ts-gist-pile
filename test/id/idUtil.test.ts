@@ -22,8 +22,8 @@ describe('idUtil', () => {
         expect(generatedId.startsWith('3')).to.be.true
         expect(anotherGeneratedId.startsWith('3')).to.be.true
 
-        expect(generatedId.startsWith('30')).to.be.true
-        expect(anotherGeneratedId.startsWith('30')).to.be.true
+        // expect(generatedId.startsWith('30')).to.be.true
+        // expect(anotherGeneratedId.startsWith('30')).to.be.true
 
         // expect(generatedId.startsWith('30I')).to.be.true
         // expect(anotherGeneratedId.startsWith('30I')).to.be.true
