@@ -15,6 +15,7 @@ import {
   SEMATTRS_DB_OPERATION,
   ATTR_ERROR_TYPE
 } from "../../src/opentelemetry/api";
+import { ATTR_USER_ID } from '@opentelemetry/semantic-conventions/incubating';
 
 describe('OpenTelemetry Facade', () => {
   describe('trace.getTracer()', () => {
@@ -42,7 +43,7 @@ describe('OpenTelemetry Facade', () => {
       const tracer = trace.getTracer('test-tracer');
       const span = tracer.startSpan('test-span');
       
-      span.setAttribute(SEMATTRS_ENDUSER_ID, 12345);
+      span.setAttribute(ATTR_USER_ID, 12345);
       span.setAttribute(SEMATTRS_HTTP_METHOD, 'POST');
       span.setAttributes({
         [SEMRESATTRS_SERVICE_NAME]: 'my-service',
