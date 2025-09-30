@@ -193,7 +193,7 @@ class LoggingSpan implements Span {
   }
 
   addEvent(name: string, attributes?: Record<string, any>, time?: Date | number): this {
-    LOG.info(`Span event: ${this._name}`, {
+    LOG.notice(`addEvent(): Span event: ${this._name}`, {
       span_id: this._spanContext.spanId,
       trace_id: this._spanContext.traceId,
       event_name: name,
