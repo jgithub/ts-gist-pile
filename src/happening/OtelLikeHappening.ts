@@ -1,55 +1,114 @@
 export type OtelLikeHappening = {
-  // Event identity
-  "event.domain": "security" | "system" | "transaction" | "audit" | "browser" | string;
-  // If you don't set LogRecord.EventName, set this:
-  "event.name"?: string;
+  event_at: Date,  // timestamp
+  
+  service: {
+    name: string;           // from appName
+    version?: string;       // from appVersion
+    namespace?: string; // from appEnvironment
+  },
 
-  // HTTP / URL / Net
-  "url.full"?: string;
-  "url.path"?: string;
-  "http.response.status_code"?: number;
-  "client.address"?: string;
-  "client.port"?: number;
-  "server.address"?: string;
-  "server.port"?: number;
+  event: {
+    domain?: "security" | "system" | "transaction" | "audit" | "browser" | string;
+    name: string;
+    id?: string;        // from eventId
+    value?: string;     // from eventValue, delimited?
+  },
 
-  // User / Session / UA
-  "user.id"?: string;
-  "session.id"?: string;
-  "user_agent.original"?: string;
-  "user_agent.name"?: string;
-  "user_agent.version"?: string;
+  url?: {
+    full?: string;
+    path?: string;
+  }, 
 
-  // Geo (optional)
-  "client.geo.country"?: string;
-  "client.geo.region"?: string;
-  "client.geo.city"?: string;
-  "client.geo.postal_code"?: string;
-  "client.geo.latitude"?: number;
-  "client.geo.longitude"?: number;
+  // what about route?   query?
 
-  // Exceptions
-  "exception.type"?: string;
-  "exception.message"?: string;
-  "exception.stacktrace"?: string;
+  http?: {
+    response?: {
+      status_code?: number;
+    }
+  },
 
-  // Your domain fields (namespaced)
-  "resource.type"?: string;
-  "resource.action"?: string;
-  "resource.id"?: string;
-  "resource.subresource"?: string;
-  "target.id"?: string;
-  "auth.reason"?: string;
-  "auth.result"?: string;
+  client?: {
+    address?: string;
+    port?: number;
+    geo?: {
+      country?: string;
+      region?: string;
+      city?: string;
+      postal_code?: string;
+      latitude?: number;
+      longitude?: number;
+    },
+  },
 
-  // Anything else you had as "attributes" stays here as first-class attributes.
+  server?: {
+    address?: string;
+    port?: number;
+    // name?: string; // from serverName/hostname
+  },
+
+  // https://opentelemetry.io/docs/specs/semconv/registry/attributes/
+  // https://opentelemetry.io/docs/specs/semconv/registry/attributes/user/
+  user?: {
+    id?: string;
+    name?: string;   // from snapshotUserName
+  },
+
+  // group?: {
+  //   id?: string;
+  // },
+
+  // What about source?
+
+  session?: {
+    id?: string;
+  },
+
+  user_agent?: {
+    original?: string;
+    name?: string;
+    version?: string;
+  },
+
+  // auth?: {
+  //   reason?: string;
+  //   result?: string;
+  // },
+
+  // target?: {
+  //   id?: string;
+  //   name?: string;
+  // },
+
+  // trace?: {
+  //   traceId?: string;
+  //   spanId?: string;
+  //   traceFlags?: number;
+  // },
+
+  // Exception (if any)
+  error?: {
+    type?: string;
+    message?: string;
+    stacktrace?: string;
+  },
+
+  // resource?: {
+  //   type?: string;
+  //   action?: string;
+  //   id?: string;
+  //   subresource?: {
+  //     id?: string;
+  //   };
+  // },
+
   [k: `${string}.${string}`]: string | number | boolean | string[] | number[] | boolean[];
-};
 
-// Resource attributes (set once per emitter, not per-event)
-export type OtelResource = {
-  "service.name": string;           // from appName
-  "service.version"?: string;       // from appVersion
-  "host.name"?: string;             // from serverName/hostname
-  "deployment.environment.name"?: string;
+  deployment?: {
+    environment?: {
+      name?: string;       // from appEnvironment
+    }
+  },
+
+  record_created_at?: Date;  // from recordCreatedAt
+  tags?: string[];
 };
