@@ -1,3 +1,7 @@
+import { getLogger } from '../../log/getLogger'
+
+const LOG = getLogger('opentelemetry.trace')
+
 export interface SpanContext {
   traceId: string
   spanId: string
@@ -54,71 +58,251 @@ export interface TraceAPI {
   wrapSpanContext(spanContext: SpanContext): any
 }
 
+const tracers = new Map<string, Tracer>()
+let globalTracerProvider: TracerProvider | undefined
+let activeSpan: Span | undefined
+
 export const trace: TraceAPI = {
   getTracer(name: string, version?: string): Tracer {
-    return createNoopTracer()
-  },
-  getTracerProvider(): TracerProvider {
-    return {
-      getTracer: (name: string, version?: string) => createNoopTracer()
+    const key = version ? `${name}@${version}` : name
+    if (!tracers.has(key)) {
+      tracers.set(key, new LoggingTracer(name))
     }
+    return tracers.get(key)!
   },
+  
+  getTracerProvider(): TracerProvider {
+    if (!globalTracerProvider) {
+      globalTracerProvider = {
+        getTracer: (name: string, version?: string) => trace.getTracer(name, version)
+      }
+    }
+    return globalTracerProvider
+  },
+  
   setGlobalTracerProvider(provider: TracerProvider): TracerProvider {
+    globalTracerProvider = provider
     return provider
   },
-  disable(): void {},
+  
+  disable(): void {
+    tracers.clear()
+    globalTracerProvider = undefined
+    activeSpan = undefined
+    LOG.info('OpenTelemetry tracing disabled')
+  },
+  
   getSpan(context: any): Span | undefined {
-    return undefined
+    if (context && typeof context.getValue === 'function') {
+      const spanKey = Symbol.for('opentelemetry.trace.span')
+      return context.getValue(spanKey) as Span | undefined
+    }
+    return activeSpan
   },
+  
   getActiveSpan(): Span | undefined {
-    return undefined
+    return activeSpan
   },
+  
   setSpan(context: any, span: Span): any {
+    activeSpan = span
+    if (context && typeof context.setValue === 'function') {
+      const spanKey = Symbol.for('opentelemetry.trace.span')
+      return context.setValue(spanKey, span)
+    }
     return context
   },
+  
   deleteSpan(context: any): any {
+    activeSpan = undefined
+    if (context && typeof context.deleteValue === 'function') {
+      const spanKey = Symbol.for('opentelemetry.trace.span')
+      return context.deleteValue(spanKey)
+    }
     return context
   },
+  
   getSpanContext(context: any): SpanContext | undefined {
-    return undefined
+    const span = this.getSpan(context)
+    return span?.spanContext()
   },
+  
   wrapSpanContext(spanContext: SpanContext): any {
     return spanContext
   }
 }
 
-function createNoopSpan(): Span {
-  return {
-    spanContext(): SpanContext {
-      return {
-        traceId: '00000000000000000000000000000000',
-        spanId: '0000000000000000',
-        traceFlags: 0
-      }
-    },
-    setAttribute(key: string, value: any) { return this },
-    setAttributes(attributes: Record<string, any>) { return this },
-    addEvent(name: string, attributes?: Record<string, any>, time?: Date | number) { return this },
-    setStatus(status: { code: number; message?: string }) { return this },
-    updateName(name: string) { return this },
-    end(endTime?: Date | number) {},
-    isRecording() { return false },
-    recordException(exception: Error | string, time?: Date | number) {}
+let spanIdCounter = 0
+let traceIdCounter = 0
+
+function generateSpanId(): string {
+  return (++spanIdCounter).toString(16).padStart(16, '0')
+}
+
+function generateTraceId(): string {
+  return (++traceIdCounter).toString(16).padStart(32, '0')
+}
+
+class LoggingSpan implements Span {
+  private _spanContext: SpanContext
+  private _name: string
+  private _attributes: Record<string, any> = {}
+  private _status?: { code: number; message?: string }
+  private _isRecording = true
+  private _startTime: number
+
+  constructor(name: string, traceId?: string, parentSpanId?: string) {
+    this._name = name
+    this._startTime = Date.now()
+    this._spanContext = {
+      traceId: traceId || generateTraceId(),
+      spanId: generateSpanId(),
+      traceFlags: 1
+    }
+    
+    LOG.info(`Span started: ${name}`, {
+      span_id: this._spanContext.spanId,
+      trace_id: this._spanContext.traceId,
+      parent_span_id: parentSpanId
+    })
+  }
+
+  spanContext(): SpanContext {
+    return this._spanContext
+  }
+
+  setAttribute(key: string, value: any): this {
+    this._attributes[key] = value
+    LOG.info(`Span attribute set: ${this._name}`, {
+      span_id: this._spanContext.spanId,
+      trace_id: this._spanContext.traceId,
+      attribute_key: key,
+      attribute_value: value
+    })
+    return this
+  }
+
+  setAttributes(attributes: Record<string, any>): this {
+    Object.assign(this._attributes, attributes)
+    LOG.info(`Span attributes set: ${this._name}`, {
+      span_id: this._spanContext.spanId,
+      trace_id: this._spanContext.traceId,
+      attributes
+    })
+    return this
+  }
+
+  addEvent(name: string, attributes?: Record<string, any>, time?: Date | number): this {
+    LOG.info(`Span event: ${this._name}`, {
+      span_id: this._spanContext.spanId,
+      trace_id: this._spanContext.traceId,
+      event_name: name,
+      event_attributes: attributes,
+      event_time: time
+    })
+    return this
+  }
+
+  setStatus(status: { code: number; message?: string }): this {
+    this._status = status
+    LOG.info(`Span status set: ${this._name}`, {
+      span_id: this._spanContext.spanId,
+      trace_id: this._spanContext.traceId,
+      status_code: status.code,
+      status_message: status.message
+    })
+    return this
+  }
+
+  updateName(name: string): this {
+    const oldName = this._name
+    this._name = name
+    LOG.info(`Span renamed: ${oldName} -> ${name}`, {
+      span_id: this._spanContext.spanId,
+      trace_id: this._spanContext.traceId
+    })
+    return this
+  }
+
+  end(endTime?: Date | number): void {
+    if (!this._isRecording) return
+    
+    this._isRecording = false
+    const duration = (endTime ? new Date(endTime).getTime() : Date.now()) - this._startTime
+    
+    LOG.info(`Span ended: ${this._name}`, {
+      span_id: this._spanContext.spanId,
+      trace_id: this._spanContext.traceId,
+      duration_ms: duration,
+      attributes: this._attributes,
+      status: this._status
+    })
+  }
+
+  isRecording(): boolean {
+    return this._isRecording
+  }
+
+  recordException(exception: Error | string, time?: Date | number): void {
+    const errorMessage = exception instanceof Error ? exception.message : exception
+    const errorStack = exception instanceof Error ? exception.stack : undefined
+    
+    LOG.info(`Span exception: ${this._name}`, {
+      span_id: this._spanContext.spanId,
+      trace_id: this._spanContext.traceId,
+      exception_message: errorMessage,
+      exception_stack: errorStack,
+      exception_time: time
+    })
   }
 }
 
-function createNoopTracer(): Tracer {
-  const noopSpan = createNoopSpan()
-  return {
-    startSpan(name: string, options?: any): Span {
-      return noopSpan
-    },
-    startActiveSpan(...args: any[]): any {
-      const fn = args[args.length - 1]
-      if (typeof fn === 'function') {
-        return fn(noopSpan)
-      }
-      return undefined
+class LoggingTracer implements Tracer {
+  private _name: string
+  private _currentTraceId?: string
+
+  constructor(name: string) {
+    this._name = name
+  }
+
+  startSpan(name: string, options?: any): Span {
+    const parentSpan = options?.parent || activeSpan
+    const traceId = parentSpan ? parentSpan.spanContext().traceId : this._currentTraceId
+    const span = new LoggingSpan(name, traceId, parentSpan?.spanContext().spanId)
+    
+    if (!this._currentTraceId) {
+      this._currentTraceId = span.spanContext().traceId
+    }
+    
+    return span
+  }
+
+  startActiveSpan(...args: any[]): any {
+    const name = args[0]
+    let options: any = {}
+    let fn: Function
+    
+    if (args.length === 2 && typeof args[1] === 'function') {
+      fn = args[1]
+    } else if (args.length === 3 && typeof args[2] === 'function') {
+      options = args[1]
+      fn = args[2]
+    } else if (args.length === 4 && typeof args[3] === 'function') {
+      options = args[1]
+      fn = args[3]
+    } else {
+      fn = args[args.length - 1]
+    }
+    
+    const span = this.startSpan(name, options)
+    const previousActiveSpan = activeSpan
+    activeSpan = span
+    
+    try {
+      return fn(span)
+    } finally {
+      span.end()
+      activeSpan = previousActiveSpan
     }
   }
 }

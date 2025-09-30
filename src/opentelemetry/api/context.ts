@@ -1,3 +1,7 @@
+import { getLogger } from '../../log/getLogger'
+
+const LOG = getLogger('opentelemetry.context')
+
 export interface Context {
   getValue(key: symbol): unknown
   setValue(key: symbol, value: unknown): Context
@@ -56,10 +60,19 @@ export const context: ContextAPI = {
   ): ReturnType<F> {
     const previousContext = activeContext
     activeContext = context as BaseContext
+    
+    LOG.info('Context switched', {
+      previous_context_keys: Array.from((previousContext as any)._currentContext?.keys() || []).map((k: any) => String(k.toString())),
+      new_context_keys: Array.from((context as any)._currentContext?.keys() || []).map((k: any) => String(k.toString()))
+    })
+    
     try {
       return fn.call(thisArg as any, ...args)
     } finally {
       activeContext = previousContext
+      LOG.info('Context restored', {
+        restored_context_keys: Array.from((activeContext as any)._currentContext?.keys() || []).map((k: any) => String(k.toString()))
+      })
     }
   },
 
@@ -69,9 +82,12 @@ export const context: ContextAPI = {
 
   disable(): void {
     activeContext = new BaseContext()
+    LOG.info('Context API disabled')
   },
 
   createKey(description: string): symbol {
-    return Symbol(description)
+    const key = Symbol(description)
+    LOG.info('Context key created', { description })
+    return key
   }
 }
