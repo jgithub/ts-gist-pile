@@ -4,6 +4,16 @@
   "description": "tired of finding this on stackoverflow",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./opentelemetry/api": {
+      "types": "./dist/opentelemetry/api/index.d.ts",
+      "default": "./dist/opentelemetry/api/index.js"
+    }
+  },
   "devDependencies": {
     "@types/chai": "^4.3.5",
     "@types/lodash.clonedeep": "^4.5.9",

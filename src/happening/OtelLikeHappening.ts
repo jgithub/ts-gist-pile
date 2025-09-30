@@ -10,8 +10,8 @@ export type OtelLikeHappening = {
   event: {
     domain?: "security" | "system" | "transaction" | "audit" | "browser" | string;
     name: string;
-    id?: string;        // from eventId
-    value?: string;     // from eventValue, delimited?
+    // id?: string;        // from eventId - NOT IN SEMCONV
+    // value?: string;     // from eventValue, delimited? - NOT IN SEMCONV
   },
 
   url?: {
@@ -30,14 +30,14 @@ export type OtelLikeHappening = {
   client?: {
     address?: string;
     port?: number;
-    geo?: {
-      country?: string;
-      region?: string;
-      city?: string;
-      postal_code?: string;
-      latitude?: number;
-      longitude?: number;
-    },
+    // geo?: {              // NOT IN SEMCONV
+    //   country?: string;
+    //   region?: string;
+    //   city?: string;
+    //   postal_code?: string;
+    //   latitude?: number;
+    //   longitude?: number;
+    // },
   },
 
   server?: {
@@ -89,7 +89,7 @@ export type OtelLikeHappening = {
   error?: {
     type?: string;
     message?: string;
-    stacktrace?: string;
+    // stacktrace?: string;  // NOT IN SEMCONV - use exception.stacktrace instead
   },
 
   // resource?: {
