@@ -167,11 +167,11 @@ class LoggingSpan implements Span {
     })
   }
 
-  spanContext(): SpanContext {
+  public spanContext(): SpanContext {
     return this._spanContext
   }
 
-  setAttribute(key: string, value: any): this {
+  public setAttribute(key: string, value: any): this {
     this._attributes[key] = value
     LOG.info(`Span attribute set: ${this._name}`, {
       span_id: this._spanContext.spanId,
@@ -182,7 +182,7 @@ class LoggingSpan implements Span {
     return this
   }
 
-  setAttributes(attributes: Record<string, any>): this {
+  public setAttributes(attributes: Record<string, any>): this {
     Object.assign(this._attributes, attributes)
     LOG.info(`Span attributes set: ${this._name}`, {
       span_id: this._spanContext.spanId,
@@ -192,7 +192,7 @@ class LoggingSpan implements Span {
     return this
   }
 
-  addEvent(name: string, attributes?: Record<string, any>, time?: Date | number): this {
+  public addEvent(name: string, attributes?: Record<string, any>, time?: Date | number): this {
     LOG.notice(`addEvent(): Span event: ${this._name}`, {
       span_id: this._spanContext.spanId,
       trace_id: this._spanContext.traceId,
@@ -203,7 +203,7 @@ class LoggingSpan implements Span {
     return this
   }
 
-  setStatus(status: { code: number; message?: string }): this {
+  public setStatus(status: { code: number; message?: string }): this {
     this._status = status
     LOG.info(`Span status set: ${this._name}`, {
       span_id: this._spanContext.spanId,
@@ -214,7 +214,7 @@ class LoggingSpan implements Span {
     return this
   }
 
-  updateName(name: string): this {
+  public updateName(name: string): this {
     const oldName = this._name
     this._name = name
     LOG.info(`Span renamed: ${oldName} -> ${name}`, {
@@ -224,7 +224,7 @@ class LoggingSpan implements Span {
     return this
   }
 
-  end(endTime?: Date | number): void {
+  public end(endTime?: Date | number): void {
     if (!this._isRecording) return
     
     this._isRecording = false
@@ -239,11 +239,11 @@ class LoggingSpan implements Span {
     })
   }
 
-  isRecording(): boolean {
+  public isRecording(): boolean {
     return this._isRecording
   }
 
-  recordException(exception: Error | string, time?: Date | number): void {
+  public recordException(exception: Error | string, time?: Date | number): void {
     const errorMessage = exception instanceof Error ? exception.message : exception
     const errorStack = exception instanceof Error ? exception.stack : undefined
     
@@ -265,7 +265,7 @@ class LoggingTracer implements Tracer {
     this._name = name
   }
 
-  startSpan(name: string, options?: any): Span {
+  public startSpan(name: string, options?: any): Span {
     const parentSpan = options?.parent || activeSpan
     const traceId = parentSpan ? parentSpan.spanContext().traceId : this._currentTraceId
     const span = new LoggingSpan(name, traceId, parentSpan?.spanContext().spanId)
@@ -277,7 +277,7 @@ class LoggingTracer implements Tracer {
     return span
   }
 
-  startActiveSpan(...args: any[]): any {
+  public startActiveSpan(...args: any[]): any {
     const name = args[0]
     let options: any = {}
     let fn: Function

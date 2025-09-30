@@ -13,3 +13,6 @@ export {
   type ContextAPI 
 } from './context'
 export { SpanStatusCode } from './SpanStatusCode'
+
+// Re-export official OpenTelemetry semantic conventions
+export * from '@opentelemetry/semantic-conventions'
