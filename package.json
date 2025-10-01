@@ -1,9 +1,19 @@
 {
   "name": "@jgithub/ts-gist-pile",
-  "version": "0.0.226",
+  "version": "0.0.227",
   "description": "tired of finding this on stackoverflow",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./opentelemetry/api": {
+      "types": "./dist/opentelemetry/api/index.d.ts",
+      "default": "./dist/opentelemetry/api/index.js"
+    }
+  },
   "devDependencies": {
     "@types/chai": "^4.3.5",
     "@types/lodash.clonedeep": "^4.5.9",
@@ -35,6 +45,7 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/semantic-conventions": "^1.37.0",
     "@types/uuid": "^10.0.0",
     "lodash.clonedeep": "^4.5.0",
     "uuid": "^11.1.0"
