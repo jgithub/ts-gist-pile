@@ -10,8 +10,8 @@ const LOG = getLogger("NoOpSpanEndHandler");
  * This handler does nothing when spanEndJustInvoked is called.
  */
 export class NoOpSpanEndHandler implements SpanEndHandlingService {
-  spanEndJustInvoked(span: Span): void {
+  public spanEndJustInvoked(span: Span): void {
     // No-op: does nothing
-    LOG.notice(`spanEndJustInvoked(): Entering with span = ${d4l(span)}`);
+    LOG.debug(() => `spanEndJustInvoked(): Entering with span = ${d4l(span)}`);
   }
 }
