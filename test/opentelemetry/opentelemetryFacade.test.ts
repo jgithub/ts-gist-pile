@@ -24,10 +24,10 @@ import {
 
 describe('OpenTelemetry Facade', () => {
   // Register no-op handlers before tests and clean up after
-  // beforeEach(() => {
-  //   registerAddEventHandler(new NoOpAddEventHandler());
-  //   registerSpanEndHandler(new NoOpSpanEndHandler());
-  // });
+  beforeEach(() => {
+    registerAddEventHandler(new NoOpAddEventHandler());
+    registerSpanEndHandler(new NoOpSpanEndHandler());
+  });
   
   afterEach(() => {
     clearAddEventHandlers();
@@ -36,8 +36,10 @@ describe('OpenTelemetry Facade', () => {
   
   describe('handler registration requirement', () => {
     it('should throw error when no AddEventHandler is registered', () => {
-      // Clear AddEvent handlers but keep SpanEnd handlers
+      // Clear all handlers first, then register only SpanEnd handler
       clearAddEventHandlers();
+      clearSpanEndHandlers();
+      registerSpanEndHandler(new NoOpSpanEndHandler());
       
       const tracer = trace.getTracer('test-tracer');
       
@@ -47,8 +49,10 @@ describe('OpenTelemetry Facade', () => {
     });
     
     it('should throw error when no SpanEndHandler is registered', () => {
-      // Clear SpanEnd handlers but keep AddEvent handlers
+      // Clear all handlers first, then register only AddEvent handler
+      clearAddEventHandlers();
       clearSpanEndHandlers();
+      registerAddEventHandler(new NoOpAddEventHandler());
       
       const tracer = trace.getTracer('test-tracer');
       
