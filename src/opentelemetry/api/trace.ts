@@ -360,9 +360,11 @@ class LoggingTracer implements Tracer {
   public startSpan(name: string, options?: any): Span {
     // Ensure at least one handler of each type is registered
     if (eventHandlers.length === 0) {
+      LOG.fatal('startSpan(): No AddEventHandler registered when starting span', { tracer: this._name, span_name: name })
       throw new Error('At least one AddEventHandler must be registered before creating spans. Call registerAddEventHandler() first.')
     }
     if (spanEndHandlers.length === 0) {
+      LOG.fatal('startSpan(): No SpanEndHandler registered when starting span', { tracer: this._name, span_name: name })
       throw new Error('At least one SpanEndHandler must be registered before creating spans. Call registerSpanEndHandler() first.')
     }
     

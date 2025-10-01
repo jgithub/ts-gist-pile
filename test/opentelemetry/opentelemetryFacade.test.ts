@@ -24,10 +24,10 @@ import {
 
 describe('OpenTelemetry Facade', () => {
   // Register no-op handlers before tests and clean up after
-  beforeEach(() => {
-    registerAddEventHandler(new NoOpAddEventHandler());
-    registerSpanEndHandler(new NoOpSpanEndHandler());
-  });
+  // beforeEach(() => {
+  //   registerAddEventHandler(new NoOpAddEventHandler());
+  //   registerSpanEndHandler(new NoOpSpanEndHandler());
+  // });
   
   afterEach(() => {
     clearAddEventHandlers();
