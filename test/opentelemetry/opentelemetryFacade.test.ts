@@ -3,6 +3,9 @@ import {
   trace, 
   context, 
   SpanStatusCode, 
+  registerAddEventHandler,
+  clearAddEventHandlers,
+  NoOpAddEventHandler,
   SEMATTRS_ENDUSER_ID,
   SEMATTRS_HTTP_METHOD,
   SEMATTRS_HTTP_STATUS_CODE,
@@ -17,6 +20,41 @@ import {
 } from "../../src/opentelemetry/api";
 
 describe('OpenTelemetry Facade', () => {
+  // Register a no-op handler before tests and clean up after
+  beforeEach(() => {
+    registerAddEventHandler(new NoOpAddEventHandler());
+  });
+  
+  afterEach(() => {
+    clearAddEventHandlers();
+  });
+  
+  describe('handler registration requirement', () => {
+    it('should throw error when no handlers are registered', () => {
+      // Clear handlers to test the requirement
+      clearAddEventHandlers();
+      
+      const tracer = trace.getTracer('test-tracer');
+      
+      expect(() => {
+        tracer.startSpan('test-span');
+      }).to.throw('At least one AddEventHandler must be registered before creating spans. Call registerAddEventHandler() first.');
+    });
+    
+    it('should allow span creation when a handler is registered', () => {
+      // Clear and register a handler
+      clearAddEventHandlers();
+      registerAddEventHandler(new NoOpAddEventHandler());
+      
+      const tracer = trace.getTracer('test-tracer');
+      
+      expect(() => {
+        const span = tracer.startSpan('test-span');
+        span.end();
+      }).to.not.throw();
+    });
+  });
+
   describe('trace.getTracer()', () => {
     it('should create spans with events and logging', () => {
       const tracer = trace.getTracer('my-tracer');

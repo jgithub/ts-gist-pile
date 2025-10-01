@@ -20,5 +20,6 @@ export { SpanStatusCode } from './SpanStatusCode'
 // Re-export official OpenTelemetry semantic conventions
 export * from '@opentelemetry/semantic-conventions'
 
-// Export AddEventHandlerService interface
+// Export AddEventHandlerService interface and no-op implementation
 export { type AddEventHandlerService } from '../AddEventHandlerService'
+export { NoOpAddEventHandler } from './NoOpAddEventHandler'

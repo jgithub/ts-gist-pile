@@ -135,10 +135,18 @@ describe('AddEventHandler Callback System', () => {
       }
     }
     
-    const handler = new CountingEventHandler();
+    class AlwaysPresentHandler implements AddEventHandlerService {
+      addEvent(tracer: Tracer, span: Span, name: string, attributes?: Record<string, any>, time?: Date | number): void {
+        // This handler stays registered to satisfy the requirement
+      }
+    }
     
-    // Register the handler
-    registerAddEventHandler(handler);
+    const countingHandler = new CountingEventHandler();
+    const alwaysPresentHandler = new AlwaysPresentHandler();
+    
+    // Register both handlers
+    registerAddEventHandler(countingHandler);
+    registerAddEventHandler(alwaysPresentHandler);
     
     // Create a span and call addEvent
     const tracer = trace.getTracer('unregister-tracer');
@@ -148,15 +156,15 @@ describe('AddEventHandler Callback System', () => {
     
     expect(handlerCallCount).to.equal(1);
     
-    // Unregister the handler
-    unregisterAddEventHandler(handler);
+    // Unregister only the counting handler (keep the always-present one)
+    unregisterAddEventHandler(countingHandler);
     
     // Create another span and call addEvent
     const span2 = tracer.startSpan('span-2');
     span2.addEvent('event-2');
     span2.end();
     
-    // Handler should not be called again
+    // Counting handler should not be called again
     expect(handlerCallCount).to.equal(1);
   });
   
@@ -217,15 +225,15 @@ describe('AddEventHandler Callback System', () => {
     // Clear all handlers
     clearAddEventHandlers();
     
-    // Create a span and call addEvent
+    // Verify that creating a span now throws an error (no handlers registered)
     const tracer = trace.getTracer('clear-tracer');
-    const span = tracer.startSpan('clear-span');
-    span.addEvent('clear-event');
     
-    // Neither handler should be called
+    expect(() => {
+      tracer.startSpan('clear-span');
+    }).to.throw('At least one AddEventHandler must be registered before creating spans. Call registerAddEventHandler() first.');
+    
+    // Neither handler should have been called
     expect(handler1Called).to.be.false;
     expect(handler2Called).to.be.false;
-    
-    span.end();
   });
 });

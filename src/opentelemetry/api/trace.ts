@@ -314,6 +314,11 @@ class LoggingTracer implements Tracer {
   }
 
   public startSpan(name: string, options?: any): Span {
+    // Ensure at least one handler is registered
+    if (eventHandlers.length === 0) {
+      throw new Error('At least one AddEventHandler must be registered before creating spans. Call registerAddEventHandler() first.')
+    }
+    
     const parentSpan = options?.parent || activeSpan
     const traceId = parentSpan ? parentSpan.spanContext().traceId : this._currentTraceId
     const span = new LoggingSpan(this, name, traceId, parentSpan?.spanContext().spanId)
