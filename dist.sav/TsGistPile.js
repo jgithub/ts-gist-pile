@@ -1,7 +1,7 @@
 (function (global) {
   const TsGistPile = {};
 
-  TsGistPile.VERSION = "0.0.227";
+  TsGistPile.VERSION = "0.0.228";
   TsGistPile.LOG_TRACE = false;
   TsGistPile.LOG_DEBUG = false;
   TsGistPile.LOG_INFO = false;
