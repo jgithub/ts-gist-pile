@@ -4,6 +4,9 @@ import {
   registerAddEventHandler,
   unregisterAddEventHandler,
   clearAddEventHandlers,
+  registerSpanEndHandler,
+  clearSpanEndHandlers,
+  NoOpSpanEndHandler,
   type AddEventHandlerService,
   type Span,
   type Tracer
@@ -11,9 +14,14 @@ import {
 
 describe('AddEventHandler Callback System', () => {
   
-  // Clear handlers after each test to avoid side effects
+  // Register required handlers and clear after each test to avoid side effects
+  beforeEach(() => {
+    registerSpanEndHandler(new NoOpSpanEndHandler());
+  });
+  
   afterEach(() => {
     clearAddEventHandlers();
+    clearSpanEndHandlers();
   });
   
   it('should call registered handler when addEvent is invoked', () => {

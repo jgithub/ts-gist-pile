@@ -4,8 +4,11 @@ import {
   context, 
   SpanStatusCode, 
   registerAddEventHandler,
+  registerSpanEndHandler,
   clearAddEventHandlers,
+  clearSpanEndHandlers,
   NoOpAddEventHandler,
+  NoOpSpanEndHandler,
   SEMATTRS_ENDUSER_ID,
   SEMATTRS_HTTP_METHOD,
   SEMATTRS_HTTP_STATUS_CODE,
@@ -20,18 +23,20 @@ import {
 } from "../../src/opentelemetry/api";
 
 describe('OpenTelemetry Facade', () => {
-  // Register a no-op handler before tests and clean up after
+  // Register no-op handlers before tests and clean up after
   beforeEach(() => {
     registerAddEventHandler(new NoOpAddEventHandler());
+    registerSpanEndHandler(new NoOpSpanEndHandler());
   });
   
   afterEach(() => {
     clearAddEventHandlers();
+    clearSpanEndHandlers();
   });
   
   describe('handler registration requirement', () => {
-    it('should throw error when no handlers are registered', () => {
-      // Clear handlers to test the requirement
+    it('should throw error when no AddEventHandler is registered', () => {
+      // Clear AddEvent handlers but keep SpanEnd handlers
       clearAddEventHandlers();
       
       const tracer = trace.getTracer('test-tracer');
@@ -41,10 +46,23 @@ describe('OpenTelemetry Facade', () => {
       }).to.throw('At least one AddEventHandler must be registered before creating spans. Call registerAddEventHandler() first.');
     });
     
-    it('should allow span creation when a handler is registered', () => {
-      // Clear and register a handler
+    it('should throw error when no SpanEndHandler is registered', () => {
+      // Clear SpanEnd handlers but keep AddEvent handlers
+      clearSpanEndHandlers();
+      
+      const tracer = trace.getTracer('test-tracer');
+      
+      expect(() => {
+        tracer.startSpan('test-span');
+      }).to.throw('At least one SpanEndHandler must be registered before creating spans. Call registerSpanEndHandler() first.');
+    });
+    
+    it('should allow span creation when both handlers are registered', () => {
+      // Clear and register both handler types
       clearAddEventHandlers();
+      clearSpanEndHandlers();
       registerAddEventHandler(new NoOpAddEventHandler());
+      registerSpanEndHandler(new NoOpSpanEndHandler());
       
       const tracer = trace.getTracer('test-tracer');
       

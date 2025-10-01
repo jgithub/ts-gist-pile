@@ -4,6 +4,9 @@ export {
   registerAddEventHandler,
   unregisterAddEventHandler,
   clearAddEventHandlers,
+  registerSpanEndHandler,
+  unregisterSpanEndHandler,
+  clearSpanEndHandlers,
   type Span,
   type SpanContext,
   type Tracer,
@@ -23,3 +26,7 @@ export * from '@opentelemetry/semantic-conventions'
 // Export AddEventHandlerService interface and no-op implementation
 export { type AddEventHandlerService } from '../AddEventHandlerService'
 export { NoOpAddEventHandler } from './NoOpAddEventHandler'
+
+// Export SpanEndHandlingService interface and no-op implementation  
+export { type SpanEndHandlingService } from '../SpanEndHandlingService'
+export { NoOpSpanEndHandler } from './NoOpSpanEndHandler'

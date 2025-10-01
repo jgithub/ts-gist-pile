@@ -1,10 +1,14 @@
 import { getLogger } from '../../log/getLogger'
 import { AddEventHandlerService } from '../AddEventHandlerService'
+import { SpanEndHandlingService } from '../SpanEndHandlingService'
 
 const LOG = getLogger('opentelemetry.trace')
 
 // Registry for event handlers
 const eventHandlers: AddEventHandlerService[] = []
+
+// Registry for span end handlers
+const spanEndHandlers: SpanEndHandlingService[] = []
 
 /**
  * Register an AddEventHandlerService that will be called on every span.addEvent()
@@ -31,6 +35,33 @@ export function unregisterAddEventHandler(handler: AddEventHandlerService): void
 export function clearAddEventHandlers(): void {
   eventHandlers.length = 0
   LOG.info('Cleared all AddEventHandlers')
+}
+
+/**
+ * Register a SpanEndHandlingService that will be called on every span.end()
+ */
+export function registerSpanEndHandler(handler: SpanEndHandlingService): void {
+  spanEndHandlers.push(handler)
+  LOG.info(`Registered SpanEndHandler: ${handler.constructor.name}`)
+}
+
+/**
+ * Unregister a SpanEndHandlingService
+ */
+export function unregisterSpanEndHandler(handler: SpanEndHandlingService): void {
+  const index = spanEndHandlers.indexOf(handler)
+  if (index !== -1) {
+    spanEndHandlers.splice(index, 1)
+    LOG.info(`Unregistered SpanEndHandler: ${handler.constructor.name}`)
+  }
+}
+
+/**
+ * Clear all registered span end handlers
+ */
+export function clearSpanEndHandlers(): void {
+  spanEndHandlers.length = 0
+  LOG.info('Cleared all SpanEndHandlers')
 }
 
 export interface SpanContext {
@@ -285,6 +316,19 @@ class LoggingSpan implements Span {
       attributes: this._attributes,
       status: this._status
     })
+    
+    // Call all registered span end handlers
+    for (const handler of spanEndHandlers) {
+      try {
+        handler.spanEndJustInvoked(this)
+      } catch (error) {
+        LOG.error(`Error in SpanEndHandler: ${error}`, {
+          handler: handler.constructor.name,
+          span_id: this._spanContext.spanId,
+          trace_id: this._spanContext.traceId
+        })
+      }
+    }
   }
 
   public isRecording(): boolean {
@@ -314,9 +358,12 @@ class LoggingTracer implements Tracer {
   }
 
   public startSpan(name: string, options?: any): Span {
-    // Ensure at least one handler is registered
+    // Ensure at least one handler of each type is registered
     if (eventHandlers.length === 0) {
       throw new Error('At least one AddEventHandler must be registered before creating spans. Call registerAddEventHandler() first.')
+    }
+    if (spanEndHandlers.length === 0) {
+      throw new Error('At least one SpanEndHandler must be registered before creating spans. Call registerSpanEndHandler() first.')
     }
     
     const parentSpan = options?.parent || activeSpan
