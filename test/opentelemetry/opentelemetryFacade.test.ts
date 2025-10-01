@@ -15,7 +15,6 @@ import {
   SEMATTRS_DB_OPERATION,
   ATTR_ERROR_TYPE
 } from "../../src/opentelemetry/api";
-import { ATTR_USER_ID } from '@opentelemetry/semantic-conventions/incubating';
 
 describe('OpenTelemetry Facade', () => {
   describe('trace.getTracer()', () => {
@@ -43,7 +42,7 @@ describe('OpenTelemetry Facade', () => {
       const tracer = trace.getTracer('test-tracer');
       const span = tracer.startSpan('test-span');
       
-      span.setAttribute(ATTR_USER_ID, 12345);
+      span.setAttribute(SEMATTRS_ENDUSER_ID, 12345);
       span.setAttribute(SEMATTRS_HTTP_METHOD, 'POST');
       span.setAttributes({
         [SEMRESATTRS_SERVICE_NAME]: 'my-service',
@@ -194,6 +193,7 @@ describe('OpenTelemetry Facade', () => {
       expect(SEMATTRS_ENDUSER_ID).to.equal('enduser.id');
       expect(SEMATTRS_HTTP_METHOD).to.equal('http.method');
       expect(SEMATTRS_HTTP_STATUS_CODE).to.equal('http.status_code');
+      expect(SEMATTRS_HTTP_URL).to.equal('http.url');
       expect(SEMRESATTRS_SERVICE_NAME).to.equal('service.name');
       expect(SEMATTRS_DB_SYSTEM).to.equal('db.system');
       expect(ATTR_ERROR_TYPE).to.equal('error.type');
