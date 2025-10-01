@@ -1,6 +1,37 @@
 import { getLogger } from '../../log/getLogger'
+import { AddEventHandlerService } from '../AddEventHandlerService'
 
 const LOG = getLogger('opentelemetry.trace')
+
+// Registry for event handlers
+const eventHandlers: AddEventHandlerService[] = []
+
+/**
+ * Register an AddEventHandlerService that will be called on every span.addEvent()
+ */
+export function registerAddEventHandler(handler: AddEventHandlerService): void {
+  eventHandlers.push(handler)
+  LOG.info(`Registered AddEventHandler: ${handler.constructor.name}`)
+}
+
+/**
+ * Unregister an AddEventHandlerService
+ */
+export function unregisterAddEventHandler(handler: AddEventHandlerService): void {
+  const index = eventHandlers.indexOf(handler)
+  if (index !== -1) {
+    eventHandlers.splice(index, 1)
+    LOG.info(`Unregistered AddEventHandler: ${handler.constructor.name}`)
+  }
+}
+
+/**
+ * Clear all registered event handlers
+ */
+export function clearAddEventHandlers(): void {
+  eventHandlers.length = 0
+  LOG.info('Cleared all AddEventHandlers')
+}
 
 export interface SpanContext {
   traceId: string
@@ -150,8 +181,10 @@ class LoggingSpan implements Span {
   private _status?: { code: number; message?: string }
   private _isRecording = true
   private _startTime: number
+  private _tracer: Tracer
 
-  constructor(name: string, traceId?: string, parentSpanId?: string) {
+  constructor(tracer: Tracer, name: string, traceId?: string, parentSpanId?: string) {
+    this._tracer = tracer
     this._name = name
     this._startTime = Date.now()
     this._spanContext = {
@@ -200,6 +233,21 @@ class LoggingSpan implements Span {
       event_attributes: attributes,
       event_time: time
     })
+    
+    // Call all registered event handlers
+    for (const handler of eventHandlers) {
+      try {
+        handler.addEvent(this._tracer, this, name, attributes, time)
+      } catch (error) {
+        LOG.error(`Error in AddEventHandler: ${error}`, {
+          handler: handler.constructor.name,
+          span_id: this._spanContext.spanId,
+          trace_id: this._spanContext.traceId,
+          event_name: name
+        })
+      }
+    }
+    
     return this
   }
 
@@ -268,7 +316,7 @@ class LoggingTracer implements Tracer {
   public startSpan(name: string, options?: any): Span {
     const parentSpan = options?.parent || activeSpan
     const traceId = parentSpan ? parentSpan.spanContext().traceId : this._currentTraceId
-    const span = new LoggingSpan(name, traceId, parentSpan?.spanContext().spanId)
+    const span = new LoggingSpan(this, name, traceId, parentSpan?.spanContext().spanId)
     
     if (!this._currentTraceId) {
       this._currentTraceId = span.spanContext().traceId

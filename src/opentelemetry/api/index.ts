@@ -1,6 +1,9 @@
 export { 
   trace, 
   isSpanContextValid,
+  registerAddEventHandler,
+  unregisterAddEventHandler,
+  clearAddEventHandlers,
   type Span,
   type SpanContext,
   type Tracer,
@@ -16,3 +19,6 @@ export { SpanStatusCode } from './SpanStatusCode'
 
 // Re-export official OpenTelemetry semantic conventions
 export * from '@opentelemetry/semantic-conventions'
+
+// Export AddEventHandlerService interface
+export { type AddEventHandlerService } from '../AddEventHandlerService'
