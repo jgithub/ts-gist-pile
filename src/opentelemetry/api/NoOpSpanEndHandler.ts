@@ -1,5 +1,9 @@
 import { SpanEndHandlingService } from '../SpanEndHandlingService'
 import { Span } from './trace'
+import { getLogger } from "../../log/getLogger"
+import { d4l } from "../../log/logUtil"
+
+const LOG = getLogger("NoOpSpanEndHandler");
 
 /**
  * A no-op implementation of SpanEndHandlingService for testing purposes.
@@ -8,5 +12,6 @@ import { Span } from './trace'
 export class NoOpSpanEndHandler implements SpanEndHandlingService {
   spanEndJustInvoked(span: Span): void {
     // No-op: does nothing
+    LOG.notice(`spanEndJustInvoked(): Entering with span = ${d4l(span)}`);
   }
 }
