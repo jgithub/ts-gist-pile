@@ -1,0 +1,4 @@
+{
+  "main": "../../dist/opentelemetry/api/index.js",
+  "types": "../../dist/opentelemetry/api/index.d.ts"
+}
