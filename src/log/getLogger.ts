@@ -78,9 +78,9 @@ class Logger {
   private buildCompleteJsonContext(jsonContext: JSONContext): JSONContext {
     if (asyncLocalStorage != null) {
       try {
-        const mapOfStuffInLocalStorage = asyncLocalStorage.getStore();
-        if (mapOfStuffInLocalStorage instanceof Map) {
-          const storeId = mapOfStuffInLocalStorage.get('storeId')
+        const storeInLocalStorage = asyncLocalStorage.getStore();
+        if (storeInLocalStorage != null && typeof storeInLocalStorage === 'object') {
+          const storeId = storeInLocalStorage.storeId;
           if (storeId != null) {
             jsonContext = Object.assign({}, jsonContext, { storeId });
           }
@@ -329,16 +329,14 @@ export function getLogger(loggerName: string): Logger {
 } 
 
 export function withStoreId(storeId: string, fn: () => any) {
-  // @ts-ignore
   if (typeof asyncLocalStorage != 'undefined' && asyncLocalStorage != null) {
-    // @ts-ignore
-    let mapOfStuffInLocalStorage: Map<string, string> = asyncLocalStorage.getStore(); 
-    if (mapOfStuffInLocalStorage == null) {
-      mapOfStuffInLocalStorage = new Map<string, string>()
+    let storeInLocalStorage: { storeId?: string } = asyncLocalStorage.getStore();
+    if (storeInLocalStorage == null) {
+      storeInLocalStorage = {}
     }
-    mapOfStuffInLocalStorage.set('storeId', storeId)
+    storeInLocalStorage.storeId = storeId;
 
-    return asyncLocalStorage.run(mapOfStuffInLocalStorage, fn);
+    return asyncLocalStorage.run(storeInLocalStorage, fn);
   } else {
     return fn();
   }
