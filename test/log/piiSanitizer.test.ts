@@ -278,6 +278,131 @@ describe('PII Sanitizer', () => {
         expect(result).to.not.have.property('principalId');
         expect(result).to.not.have.property('_phone');
       });
+
+      it('should handle case-agnostic field names: USER_ID variations', () => {
+        const input = {
+          USER_ID: '1',
+          User_Id: '2',
+          user_id: '3',
+          UserId: '4',
+          userId: '5',
+          USERID: '6'
+        };
+
+        const result = sanitizePII(input);
+
+        // All variations should be hashed
+        expect(result).to.have.property('USER_ID_hash');
+        expect(result).to.have.property('User_Id_hash');
+        expect(result).to.have.property('user_id_hash');
+        expect(result).to.have.property('UserId_hash');
+        expect(result).to.have.property('userId_hash');
+        expect(result).to.have.property('USERID_hash');
+
+        // None of the original fields should remain
+        expect(result).to.not.have.property('USER_ID');
+        expect(result).to.not.have.property('User_Id');
+        expect(result).to.not.have.property('user_id');
+        expect(result).to.not.have.property('UserId');
+        expect(result).to.not.have.property('userId');
+        expect(result).to.not.have.property('USERID');
+      });
+
+      it('should handle case-agnostic field names: USERNAME variations', () => {
+        const input = {
+          USERNAME: 'alice',
+          UserName: 'bob',
+          username: 'charlie',
+          UsERnaME: 'dave'
+        };
+
+        const result = sanitizePII(input);
+
+        expect(result).to.have.property('USERNAME_hash');
+        expect(result).to.have.property('UserName_hash');
+        expect(result).to.have.property('username_hash');
+        expect(result).to.have.property('UsERnaME_hash');
+
+        expect(result).to.not.have.property('USERNAME');
+        expect(result).to.not.have.property('UserName');
+        expect(result).to.not.have.property('username');
+        expect(result).to.not.have.property('UsERnaME');
+      });
+
+      it('should handle case-agnostic with underscores: _user_Id variations', () => {
+        const input = {
+          _USER_ID: '1',
+          _User_Id: '2',
+          _user_id: '3',
+          _UserId: '4',
+          _userId: '5'
+        };
+
+        const result = sanitizePII(input);
+
+        expect(result).to.have.property('_USER_ID_hash');
+        expect(result).to.have.property('_User_Id_hash');
+        expect(result).to.have.property('_user_id_hash');
+        expect(result).to.have.property('_UserId_hash');
+        expect(result).to.have.property('_userId_hash');
+
+        expect(result).to.not.have.property('_USER_ID');
+        expect(result).to.not.have.property('_User_Id');
+        expect(result).to.not.have.property('_user_id');
+        expect(result).to.not.have.property('_UserId');
+        expect(result).to.not.have.property('_userId');
+      });
+
+      it('should handle case-agnostic EMAIL variations', () => {
+        const input = {
+          EMAIL: 'test1@example.com',
+          Email: 'test2@example.com',
+          email: 'test3@example.com',
+          EmAiL: 'test4@example.com',
+          _EMAIL: 'test5@example.com',
+          _email: 'test6@example.com'
+        };
+
+        const result = sanitizePII(input);
+
+        expect(result).to.have.property('EMAIL_hash');
+        expect(result).to.have.property('Email_hash');
+        expect(result).to.have.property('email_hash');
+        expect(result).to.have.property('EmAiL_hash');
+        expect(result).to.have.property('_EMAIL_hash');
+        expect(result).to.have.property('_email_hash');
+
+        expect(result).to.not.have.property('EMAIL');
+        expect(result).to.not.have.property('Email');
+        expect(result).to.not.have.property('email');
+        expect(result).to.not.have.property('EmAiL');
+        expect(result).to.not.have.property('_EMAIL');
+        expect(result).to.not.have.property('_email');
+      });
+
+      it('should handle case-agnostic PRINCIPAL_ID variations', () => {
+        const input = {
+          PRINCIPAL_ID: 'principal-1',
+          Principal_Id: 'principal-2',
+          principal_id: 'principal-3',
+          PrincipalId: 'principal-4',
+          principalId: 'principal-5'
+        };
+
+        const result = sanitizePII(input);
+
+        expect(result).to.have.property('PRINCIPAL_ID_hash');
+        expect(result).to.have.property('Principal_Id_hash');
+        expect(result).to.have.property('principal_id_hash');
+        expect(result).to.have.property('PrincipalId_hash');
+        expect(result).to.have.property('principalId_hash');
+
+        expect(result).to.not.have.property('PRINCIPAL_ID');
+        expect(result).to.not.have.property('Principal_Id');
+        expect(result).to.not.have.property('principal_id');
+        expect(result).to.not.have.property('PrincipalId');
+        expect(result).to.not.have.property('principalId');
+      });
     });
   });
 
