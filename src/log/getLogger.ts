@@ -2,6 +2,7 @@
 import { tryGetEnvVar } from "../env/internalEnvHelper";
 import { sendStatToKpitracks } from "../stat/statUtil";
 import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
+import { sanitizePII } from './piiSanitizer';
 
 let AsyncLocalStorage: any | undefined;
 
@@ -88,9 +89,9 @@ class Logger {
       } catch (err) {
       }
     }
-    
 
-    const span = trace.getSpan(context.active()); 
+
+    const span = trace.getSpan(context.active());
     if (span) {
       const { traceId, spanId } = span.spanContext();
       // console.log(`traceId = '${traceId}', spanId = '${spanId}'`)
@@ -99,6 +100,9 @@ class Logger {
     } else {
       // console.log("No Span")
     }
+
+    // Sanitize PII fields if LOG_HASH_SECRET is set
+    jsonContext = sanitizePII(jsonContext);
 
     return jsonContext
   }
