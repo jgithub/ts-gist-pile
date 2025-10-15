@@ -403,6 +403,39 @@ describe('PII Sanitizer', () => {
         expect(result).to.not.have.property('PrincipalId');
         expect(result).to.not.have.property('principalId');
       });
+
+      it('should handle case-agnostic nested in _attrs pattern', () => {
+        const input = {
+          _attrs: {
+            USER_ID: '123',
+            user_id: '456',
+            Email: 'test@example.com',
+            PRINCIPAL_ID: 'principal-xyz'
+          },
+          metadata: {
+            UserId: '789',
+            USERNAME: 'testuser'
+          }
+        };
+
+        const result = sanitizePII(input);
+
+        // Check _attrs nested fields are hashed
+        expect(result._attrs).to.not.have.property('USER_ID');
+        expect(result._attrs).to.have.property('USER_ID_hash');
+        expect(result._attrs).to.not.have.property('user_id');
+        expect(result._attrs).to.have.property('user_id_hash');
+        expect(result._attrs).to.not.have.property('Email');
+        expect(result._attrs).to.have.property('Email_hash');
+        expect(result._attrs).to.not.have.property('PRINCIPAL_ID');
+        expect(result._attrs).to.have.property('PRINCIPAL_ID_hash');
+
+        // Check metadata nested fields are hashed
+        expect(result.metadata).to.not.have.property('UserId');
+        expect(result.metadata).to.have.property('UserId_hash');
+        expect(result.metadata).to.not.have.property('USERNAME');
+        expect(result.metadata).to.have.property('USERNAME_hash');
+      });
     });
   });
 
