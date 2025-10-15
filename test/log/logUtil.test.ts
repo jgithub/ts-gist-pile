@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { d4l, safeStringify, dateUtil } from "../../src/index";
+import { d4l, d4lPii, safeStringify, dateUtil } from "../../src/index";
 
 
 describe('logUtil', () => {
@@ -121,5 +121,166 @@ FROM table WHERE id = 1' (string, 33)`)
     it('works', () => {
       expect(safeStringify({ toJSON: () => { throw new Error() } })).to.be.undefined
     })
+  });
+
+  describe('.d4lPii()', () => {
+    const originalEnv = process.env.LOG_HASH_SECRET;
+
+    afterEach(() => {
+      // Restore original environment
+      if (originalEnv) {
+        process.env.LOG_HASH_SECRET = originalEnv;
+      } else {
+        delete process.env.LOG_HASH_SECRET;
+      }
+    });
+
+    describe('when LOG_HASH_SECRET is NOT set', () => {
+      beforeEach(() => {
+        delete process.env.LOG_HASH_SECRET;
+      });
+
+      it('should behave like d4l for strings', () => {
+        const input = 'user-12345';
+        const result = d4lPii(input);
+        expect(result).to.equal(d4l(input));
+        expect(result).to.equal("'user-12345' (string, 10)");
+      });
+
+      it('should behave like d4l for numbers', () => {
+        const input = 42;
+        const result = d4lPii(input);
+        expect(result).to.equal(d4l(input));
+        expect(result).to.equal("42 (number)");
+      });
+
+      it('should behave like d4l for booleans', () => {
+        const input = true;
+        const result = d4lPii(input);
+        expect(result).to.equal(d4l(input));
+        expect(result).to.equal("TRUE (boolean)");
+      });
+
+      it('should behave like d4l for objects', () => {
+        const input = { userId: '123', email: 'test@example.com' };
+        const result = d4lPii(input);
+        expect(result).to.equal(d4l(input));
+        expect(result).to.include('"userId":"123"');
+        expect(result).to.include('"email":"test@example.com"');
+      });
+
+      it('should behave like d4l for null', () => {
+        const result = d4lPii(null);
+        expect(result).to.equal(d4l(null));
+        expect(result).to.equal("<null> (null)");
+      });
+
+      it('should behave like d4l for undefined', () => {
+        const result = d4lPii(undefined);
+        expect(result).to.equal(d4l(undefined));
+        expect(result).to.equal("<undefined> (undefined)");
+      });
+    });
+
+    describe('when LOG_HASH_SECRET is SET', () => {
+      beforeEach(() => {
+        process.env.LOG_HASH_SECRET = 'test-secret-key-123';
+      });
+
+      it('should hash strings instead of showing them', () => {
+        const input = 'user-12345';
+        const result = d4lPii(input);
+
+        expect(result).to.not.equal(d4l(input));
+        expect(result).to.not.include('user-12345');
+        expect(result).to.include('(hashed)');
+        expect(result).to.match(/^[a-f0-9]{12} \(hashed\)$/);
+      });
+
+      it('should hash numbers', () => {
+        const input = 12345;
+        const result = d4lPii(input);
+
+        expect(result).to.not.equal(d4l(input));
+        expect(result).to.not.include('12345');
+        expect(result).to.include('(hashed)');
+        expect(result).to.match(/^[a-f0-9]{12} \(hashed\)$/);
+      });
+
+      it('should hash booleans', () => {
+        const input = true;
+        const result = d4lPii(input);
+
+        expect(result).to.not.equal(d4l(input));
+        expect(result).to.include('(hashed)');
+        expect(result).to.match(/^[a-f0-9]{12} \(hashed\)$/);
+      });
+
+      it('should hash objects', () => {
+        const input = { userId: '123', email: 'test@example.com' };
+        const result = d4lPii(input);
+
+        expect(result).to.not.equal(d4l(input));
+        expect(result).to.not.include('userId');
+        expect(result).to.not.include('test@example.com');
+        expect(result).to.include('(hashed)');
+        expect(result).to.match(/^[a-f0-9]{12} \(hashed\)$/);
+      });
+
+      it('should create consistent hashes for same input', () => {
+        const input = 'user-12345';
+        const result1 = d4lPii(input);
+        const result2 = d4lPii(input);
+
+        expect(result1).to.equal(result2);
+      });
+
+      it('should create different hashes for different inputs', () => {
+        const input1 = 'user-12345';
+        const input2 = 'user-67890';
+        const result1 = d4lPii(input1);
+        const result2 = d4lPii(input2);
+
+        expect(result1).to.not.equal(result2);
+      });
+
+      it('should handle null', () => {
+        const result = d4lPii(null);
+        expect(result).to.equal('null (hashed)');
+      });
+
+      it('should handle undefined', () => {
+        const result = d4lPii(undefined);
+        expect(result).to.equal('null (hashed)');
+      });
+
+      it('should hash Error objects', () => {
+        const input = new Error('test error message');
+        const result = d4lPii(input);
+
+        expect(result).to.not.include('test error message');
+        expect(result).to.include('(hashed)');
+        expect(result).to.match(/^[a-f0-9]{12} \(hashed\)$/);
+      });
+    });
+
+    describe('typical usage in log messages', () => {
+      beforeEach(() => {
+        process.env.LOG_HASH_SECRET = 'test-secret-key-123';
+      });
+
+      it('can be used in template strings', () => {
+        const userId = 'user-12345';
+        const email = 'john@example.com';
+
+        const logMessage = `User logged in: userId=${d4lPii(userId)}, email=${d4lPii(email)}`;
+
+        expect(logMessage).to.not.include('user-12345');
+        expect(logMessage).to.not.include('john@example.com');
+        expect(logMessage).to.include('userId=');
+        expect(logMessage).to.include('email=');
+        expect(logMessage).to.include('(hashed)');
+      });
+    });
   });
 })

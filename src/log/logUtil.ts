@@ -1,4 +1,5 @@
 import { safeStringify } from "../string/safeStringify"
+import { isPIISecureModeEnabled, hashPIIValue } from "./piiSanitizer"
 
 export function d4l(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}): string {
   if (typeof input === 'undefined') {
@@ -99,6 +100,56 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
 
 export function d4lObfuscate(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}) {
   return d4l(input, { ...logOptions, obfuscate: true })
+}
+
+/**
+ * Debug-for-logging for PII (Personally Identifiable Information) values.
+ *
+ * When LOG_HASH_SECRET is UNSET:
+ *   - Behaves exactly like d4l() - logs the value normally
+ *
+ * When LOG_HASH_SECRET is SET:
+ *   - Returns a hashed version of the value for PII-secure logging
+ *   - Hash is consistent (same input = same hash)
+ *   - Hash is irreversible (cannot recover original value)
+ *
+ * Use this for values that might contain PII (emails, user IDs, etc.)
+ *
+ * @example
+ * logger.info(`User logged in: ${d4lPii(userId)}`)
+ * // Without LOG_HASH_SECRET: "User logged in: 'user-12345' (string, 10)"
+ * // With LOG_HASH_SECRET: "User logged in: 1c62cfe7d8b3 (hashed)"
+ */
+export function d4lPii(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}): string {
+  if (!isPIISecureModeEnabled()) {
+    // PII mode not enabled - use regular d4l
+    return d4l(input, logOptions);
+  }
+
+  // PII mode enabled - hash the value
+  if (input == null) {
+    return hashPIIValue(input) + " (hashed)";
+  }
+
+  // Convert input to string for hashing
+  let valueToHash: string;
+  if (typeof input === 'string') {
+    valueToHash = input;
+  } else if (typeof input === 'number' || typeof input === 'boolean') {
+    valueToHash = String(input);
+  } else if (input instanceof Error) {
+    valueToHash = input.message;
+  } else if (typeof input === 'object') {
+    try {
+      valueToHash = JSON.stringify(input);
+    } catch (err) {
+      valueToHash = String(input);
+    }
+  } else {
+    valueToHash = String(input);
+  }
+
+  return hashPIIValue(valueToHash) + " (hashed)";
 }
 
 export type LogOptions = {
