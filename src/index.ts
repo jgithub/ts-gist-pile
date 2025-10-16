@@ -16,6 +16,7 @@ export * as uuidUtil from "./uuid/uuidUtil"
 export * as idUtil from "./id/idUtil"
 export * as emailUtil from "./email/emailUtil"
 export * as phoneUtil from "./phone/phoneUtil"
+export * as diceUtil from "./dice/diceUtil"
 
 
 export { getLogger } from "./log/getLogger"
