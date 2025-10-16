@@ -3,7 +3,7 @@
 const memoized = new Map<string, true>();
 export function tryGetEnvVar(envVarName: string): string | undefined {
   // @ts-ignore: import.meta may not be recognized depending on tsconfig/module system
-  let retval: string | undefined = undefined; 
+  let retval: string | undefined = undefined;
 
   if (typeof retval === 'undefined') {
     if (typeof process !== 'undefined' && typeof process.env?.[envVarName] !== 'undefined') {
@@ -21,7 +21,7 @@ export function tryGetEnvVar(envVarName: string): string | undefined {
 
     if (/* typeof window !== "undefined" && */ typeof retval === 'undefined') {
       const effectiveEnvVarName = `${prefix}${envVarName}`;
-  
+
       if (typeof process !== 'undefined' && typeof process.env?.[effectiveEnvVarName] !== 'undefined') {
         retval = process.env[effectiveEnvVarName];
         if (!memoized.has(`process.env.${effectiveEnvVarName}`)) {
@@ -29,8 +29,23 @@ export function tryGetEnvVar(envVarName: string): string | undefined {
           memoized.set(`process.env.${effectiveEnvVarName}`, true);
         }
       }
-    } 
+    }
   }
 
   return retval;
+}
+
+export function isProductionEnv(): boolean {
+  const nodeEnv = tryGetEnvVar('NODE_ENV');
+  return nodeEnv === 'production' || nodeEnv === 'prod';
+}
+
+export function isDevelopmentEnv(): boolean {
+  const nodeEnv = tryGetEnvVar('NODE_ENV');
+  return nodeEnv === 'development' || nodeEnv === 'dev';
+}
+
+export function isStagingEnv(): boolean {
+  const nodeEnv = tryGetEnvVar('NODE_ENV');
+  return nodeEnv === 'staging' || nodeEnv === 'stage';
 }

@@ -43,7 +43,10 @@ export function isWellFormedCanonicalUuid(input: string | undefined | null): boo
     return false
   }
   if (typeof input === 'string') {
-    const regexp = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    // Changed 2025: Updated regex from [0-5] to [0-7] to support UUID v6 and v7
+    // UUIDv7 is now commonly used for time-ordered identifiers
+    // Format: xxxxxxxx-xxxx-Vxxx-Nxxx-xxxxxxxxxxxx where V = version (0-7), N = variant (8,9,a,b)
+    const regexp = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-7][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
     if (input.toLowerCase().match(regexp)) {
       return true
     }
