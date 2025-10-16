@@ -143,3 +143,29 @@ export interface SimplestKeyValueStore {
    */
   delete(key: string): Promise<boolean>;
 }
+
+/**
+ * Alias for SimplestKeyValueStore - semantically represents a cache.
+ *
+ * Use this type when your use case is primarily caching data with TTL expiration.
+ *
+ * @example
+ * const cache: SimplestCacheService = new SimplestKeyValueStoreInMemImpl({
+ *   maxAggregateMemoryInBytes: 100 * 1024 * 1024, // 100 MB cache
+ *   evictionMode: EvictionMode.LRU
+ * });
+ */
+export type SimplestCacheService = SimplestKeyValueStore;
+
+/**
+ * Alias for SimplestKeyValueStore - semantically represents blob storage.
+ *
+ * Use this type when your use case is storing binary blobs (files, images, etc.).
+ *
+ * @example
+ * const blobStorage: SimplestBlobStorageService = new SimplestKeyValueStoreInMemImpl({
+ *   maxAggregateMemoryInBytes: 500 * 1024 * 1024, // 500 MB for blobs
+ *   evictionMode: EvictionMode.LRU
+ * });
+ */
+export type SimplestBlobStorageService = SimplestKeyValueStore;
