@@ -452,4 +452,139 @@ describe('PII Sanitizer', () => {
       expect(fields).to.include('emailSanitized');
     });
   });
+
+  describe('hashPIIValue', () => {
+    const { hashPIIValue } = require('../../src/log/piiSanitizer');
+
+    beforeEach(() => {
+      process.env.LOG_HASH_SECRET = 'test-secret-key-123';
+    });
+
+    afterEach(() => {
+      if (originalEnv) {
+        process.env.LOG_HASH_SECRET = originalEnv;
+      } else {
+        delete process.env.LOG_HASH_SECRET;
+      }
+    });
+
+    it('should hash a string value', () => {
+      const result = hashPIIValue('test-value');
+      expect(result).to.be.a('string');
+      expect(result).to.have.lengthOf(12);
+      expect(result).to.match(/^[a-f0-9]{12}$/);
+    });
+
+    it('should hash null as "null"', () => {
+      const result = hashPIIValue(null);
+      expect(result).to.equal('null');
+    });
+
+    it('should hash undefined as "null"', () => {
+      const result = hashPIIValue(undefined);
+      expect(result).to.equal('null');
+    });
+
+    it('should create consistent hashes for the same value', () => {
+      const value = 'consistent-value';
+      const hash1 = hashPIIValue(value);
+      const hash2 = hashPIIValue(value);
+      expect(hash1).to.equal(hash2);
+    });
+
+    it('should create different hashes for different values', () => {
+      const hash1 = hashPIIValue('value-1');
+      const hash2 = hashPIIValue('value-2');
+      expect(hash1).to.not.equal(hash2);
+    });
+
+    it('should handle empty string', () => {
+      const result = hashPIIValue('');
+      expect(result).to.be.a('string');
+      expect(result).to.have.lengthOf(12);
+      expect(result).to.match(/^[a-f0-9]{12}$/);
+    });
+
+    it('should handle very long strings', () => {
+      const longValue = 'x'.repeat(10000);
+      const result = hashPIIValue(longValue);
+      expect(result).to.be.a('string');
+      expect(result).to.have.lengthOf(12);
+      expect(result).to.match(/^[a-f0-9]{12}$/);
+    });
+
+    it('should handle strings with special characters', () => {
+      const specialValue = '!@#$%^&*()_+-=[]{}|;:,.<>?/~`';
+      const result = hashPIIValue(specialValue);
+      expect(result).to.be.a('string');
+      expect(result).to.have.lengthOf(12);
+      expect(result).to.match(/^[a-f0-9]{12}$/);
+    });
+
+    it('should handle unicode characters', () => {
+      const unicodeValue = '你好世界🌍🌎🌏';
+      const result = hashPIIValue(unicodeValue);
+      expect(result).to.be.a('string');
+      expect(result).to.have.lengthOf(12);
+      expect(result).to.match(/^[a-f0-9]{12}$/);
+    });
+
+    it('should handle email addresses', () => {
+      const email = 'user@example.com';
+      const result = hashPIIValue(email);
+      expect(result).to.be.a('string');
+      expect(result).to.have.lengthOf(12);
+      expect(result).to.match(/^[a-f0-9]{12}$/);
+    });
+
+    it('should handle phone numbers', () => {
+      const phone = '+1-555-123-4567';
+      const result = hashPIIValue(phone);
+      expect(result).to.be.a('string');
+      expect(result).to.have.lengthOf(12);
+      expect(result).to.match(/^[a-f0-9]{12}$/);
+    });
+
+    it('should handle SSN format', () => {
+      const ssn = '123-45-6789';
+      const result = hashPIIValue(ssn);
+      expect(result).to.be.a('string');
+      expect(result).to.have.lengthOf(12);
+      expect(result).to.match(/^[a-f0-9]{12}$/);
+    });
+
+    it('should produce different hashes with different secrets', () => {
+      process.env.LOG_HASH_SECRET = 'secret1';
+      const hash1 = hashPIIValue('test-value');
+
+      process.env.LOG_HASH_SECRET = 'secret2';
+      const hash2 = hashPIIValue('test-value');
+
+      expect(hash1).to.not.equal(hash2);
+    });
+
+    it('should handle multiline strings', () => {
+      const multiline = 'line1\nline2\nline3';
+      const result = hashPIIValue(multiline);
+      expect(result).to.be.a('string');
+      expect(result).to.have.lengthOf(12);
+      expect(result).to.match(/^[a-f0-9]{12}$/);
+    });
+
+    it('should handle strings with only whitespace', () => {
+      const whitespace = '   \t\n  ';
+      const result = hashPIIValue(whitespace);
+      expect(result).to.be.a('string');
+      expect(result).to.have.lengthOf(12);
+      expect(result).to.match(/^[a-f0-9]{12}$/);
+    });
+
+    it('should handle numeric strings', () => {
+      const numeric = '1234567890';
+      const result = hashPIIValue(numeric);
+      expect(result).to.be.a('string');
+      expect(result).to.have.lengthOf(12);
+      expect(result).to.match(/^[a-f0-9]{12}$/);
+    });
+  });
 });
