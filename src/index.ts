@@ -18,6 +18,7 @@ export * as emailUtil from "./email/emailUtil"
 export * as phoneUtil from "./phone/phoneUtil"
 export * as diceUtil from "./dice/diceUtil"
 
+export { Container } from "./di/Container"
 
 export { getLogger } from "./log/getLogger"
 export { d4l, d4lObfuscate, d4lPii } from "./log/logUtil"
