@@ -36,6 +36,7 @@
     "opentelemetry"
   ],
   "keywords": [],
+  "license": "MIT",
   "author": "jgithub",
   "repository": {
     "type": "git",
