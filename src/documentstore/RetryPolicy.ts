@@ -67,7 +67,7 @@ export interface RetryPolicy {
 export const DEFAULT_RETRY_POLICY: RetryPolicy = {
   maxAttempts: 3,
   initialDelayMs: 100,
-  maxDelayMs: 5000,
+  maxDelayMs: 2000,
   backoffMultiplier: 2,
   jitter: 0.1,
   retryableOperations: ['get', 'query'], // Only retry reads by default
