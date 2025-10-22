@@ -66,3 +66,10 @@ export { SpanEndHandlingService } from "./opentelemetry/SpanEndHandlingService"
 export { NoOpAddEventHandler } from "./opentelemetry/api/NoOpAddEventHandler"
 export { NoOpSpanEndHandler } from "./opentelemetry/api/NoOpSpanEndHandler"
 // export { Tracer, Span, context, SpanStatusCode } from "./opentelemetry/api/trace"
+
+// Document Store interfaces
+export type { DocumentStoreService, DocumentQuery, DocumentQueryResult } from "./documentstore/DocumentStoreService"
+export type { RetryPolicy } from "./documentstore/RetryPolicy"
+export { DEFAULT_RETRY_POLICY, AGGRESSIVE_RETRY_POLICY } from "./documentstore/RetryPolicy"
+export type { ReadAfterWriteOptions } from "./documentstore/ReadAfterWriteOptions"
+export { DEFAULT_READ_AFTER_WRITE_OPTIONS, FAST_READ_AFTER_WRITE_OPTIONS, PATIENT_READ_AFTER_WRITE_OPTIONS } from "./documentstore/ReadAfterWriteOptions"
