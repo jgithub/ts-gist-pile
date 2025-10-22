@@ -94,3 +94,15 @@ export { DEFAULT_READ_AFTER_WRITE_OPTIONS, FAST_READ_AFTER_WRITE_OPTIONS, PATIEN
 // Retry utility
 export type { RetryOptions } from "./retry/retryUtil"
 export { retryWithBackoff, DEFAULT_RETRY_OPTIONS } from "./retry/retryUtil"
+
+// Metrics & Instrumentation
+export type { MetricsService } from "./metrics/MetricsService"
+
+// Feature Flags
+export type { FeatureFlagService, FlagContext } from "./featureflags/FeatureFlagService"
+
+// Background Job Processing
+export type { JobQueueService, JobOptions, JobHandler, Job } from "./jobqueue/JobQueueService"
+
+// Audit Logging
+export type { AuditService, AuditEntry, AuditQueryOptions } from "./audit/AuditService"
