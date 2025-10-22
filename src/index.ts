@@ -17,6 +17,7 @@ export * as idUtil from "./id/idUtil"
 export * as emailUtil from "./email/emailUtil"
 export * as phoneUtil from "./phone/phoneUtil"
 export * as diceUtil from "./dice/diceUtil"
+export * as retryUtil from "./retry/retryUtil"
 
 export { Container } from "./di/Container"
 
@@ -88,3 +89,7 @@ export type { RetryPolicy } from "./documentstore/RetryPolicy"
 export { DEFAULT_RETRY_POLICY, AGGRESSIVE_RETRY_POLICY } from "./documentstore/RetryPolicy"
 export type { ReadAfterWriteOptions } from "./documentstore/ReadAfterWriteOptions"
 export { DEFAULT_READ_AFTER_WRITE_OPTIONS, FAST_READ_AFTER_WRITE_OPTIONS, PATIENT_READ_AFTER_WRITE_OPTIONS } from "./documentstore/ReadAfterWriteOptions"
+
+// Retry utility
+export type { RetryOptions } from "./retry/retryUtil"
+export { retryWithBackoff, DEFAULT_RETRY_OPTIONS } from "./retry/retryUtil"

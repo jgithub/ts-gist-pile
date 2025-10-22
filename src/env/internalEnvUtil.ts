@@ -35,17 +35,17 @@ export function tryGetEnvVar(envVarName: string): string | undefined {
   return retval;
 }
 
-export function isProductionEnv(): boolean {
+export function isProductionLikeEnv(): boolean {
   const nodeEnv = tryGetEnvVar('NODE_ENV');
   return nodeEnv === 'production' || nodeEnv === 'prod';
 }
 
-export function isDevelopmentEnv(): boolean {
+export function isDevelopmentLikeEnv(): boolean {
   const nodeEnv = tryGetEnvVar('NODE_ENV');
   return nodeEnv === 'development' || nodeEnv === 'dev';
 }
 
-export function isStagingEnv(): boolean {
+export function isStagingLikeEnv(): boolean {
   const nodeEnv = tryGetEnvVar('NODE_ENV');
   return nodeEnv === 'staging' || nodeEnv === 'stage';
 }
