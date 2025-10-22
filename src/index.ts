@@ -68,7 +68,7 @@ export { NoOpSpanEndHandler } from "./opentelemetry/api/NoOpSpanEndHandler"
 // export { Tracer, Span, context, SpanStatusCode } from "./opentelemetry/api/trace"
 
 // Document Store interfaces
-export type { DocumentStoreService, DocumentQuery, DocumentQueryResult } from "./documentstore/DocumentStoreService"
+export type { DocumentStoreService, DocumentQuery, DocumentQueryResult, ReadConsistency, ReadOptions } from "./documentstore/DocumentStoreService"
 export type { RetryPolicy } from "./documentstore/RetryPolicy"
 export { DEFAULT_RETRY_POLICY, AGGRESSIVE_RETRY_POLICY } from "./documentstore/RetryPolicy"
 export type { ReadAfterWriteOptions } from "./documentstore/ReadAfterWriteOptions"

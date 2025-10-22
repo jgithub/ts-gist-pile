@@ -23,6 +23,23 @@
  *   async saveUser(user: User): Promise<void> {
  *     await this.docStore.putDocument('users', user);
  *   }
+ *
+ *   async getUserStrong(userId: string): Promise<User | null> {
+ *     // Strong consistency - guaranteed latest data
+ *     return await this.docStore.getDocument<User>(
+ *       'users',
+ *       { userId },
+ *       { consistency: 'strong' }
+ *     );
+ *   }
+ *
+ *   async queryUsersEventual(role: string): Promise<User[]> {
+ *     // Eventual consistency - faster, may be slightly stale
+ *     return await this.docStore.queryDocuments<User>('users', {
+ *       filter: { role },
+ *       consistency: 'eventual'  // or omit for default
+ *     });
+ *   }
  * }
  * ```
  */
@@ -32,11 +49,13 @@ export interface DocumentStoreService {
    *
    * @param tableName - Name of the table/collection
    * @param key - Primary key identifying the document
+   * @param options - Read options (consistency level, etc.)
    * @returns The document if found, null otherwise
    */
   getDocument<T>(
     tableName: string,
-    key: Record<string, unknown>
+    key: Record<string, unknown>,
+    options?: ReadOptions
   ): Promise<T | null>;
 
   /**
@@ -78,11 +97,13 @@ export interface DocumentStoreService {
    *
    * @param tableName - Name of the table/collection
    * @param keys - Array of primary keys
+   * @param options - Read options (consistency level, etc.)
    * @returns Array of documents (may be fewer than requested if some don't exist)
    */
   batchGetDocuments<T>(
     tableName: string,
-    keys: Record<string, unknown>[]
+    keys: Record<string, unknown>[],
+    options?: ReadOptions
   ): Promise<T[]>;
 
   /**
@@ -100,9 +121,32 @@ export interface DocumentStoreService {
 }
 
 /**
+ * Read consistency level for document queries
+ *
+ * Maps to database-specific consistency options:
+ * - DynamoDB: eventual = ConsistentRead:false, strong = ConsistentRead:true
+ * - MongoDB: eventual = readConcern:'local', strong = readConcern:'majority'
+ * - Cassandra: eventual = ONE, strong = QUORUM
+ */
+export type ReadConsistency =
+  | 'eventual'  // Fast reads, may return stale data (default)
+  | 'strong';   // Consistent reads, guaranteed latest data
+
+/**
+ * Options for read operations
+ */
+export interface ReadOptions {
+  /**
+   * Read consistency level
+   * @default 'eventual'
+   */
+  consistency?: ReadConsistency;
+}
+
+/**
  * Query specification for document queries
  */
-export interface DocumentQuery {
+export interface DocumentQuery extends ReadOptions {
   /** Filter conditions (field: value pairs) */
   filter?: Record<string, unknown>;
 

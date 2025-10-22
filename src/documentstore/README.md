@@ -35,8 +35,62 @@ class UserService {
       limit: 100
     });
   }
+
+  async getUserWithStrongConsistency(userId: string): Promise<User | null> {
+    // Critical read - need guaranteed latest data
+    return await this.docStore.getDocument<User>(
+      'users',
+      { userId },
+      { consistency: 'strong' }
+    );
+  }
+
+  async getUserWithEventualConsistency(userId: string): Promise<User | null> {
+    // Fast read - can tolerate slightly stale data
+    return await this.docStore.getDocument<User>(
+      'users',
+      { userId },
+      { consistency: 'eventual' }  // or omit for default
+    );
+  }
 }
 ```
+
+### Read Consistency
+
+Control read consistency per-query for critical vs performance-optimized reads:
+
+```typescript
+import { ReadConsistency } from 'ts-gist-pile';
+
+// Strong consistency - read from leader, guaranteed latest
+const user = await docStore.getDocument<User>(
+  'users',
+  { userId },
+  { consistency: 'strong' }
+);
+
+// Eventual consistency - faster, may return slightly stale data (default)
+const users = await docStore.queryDocuments<User>('users', {
+  filter: { status: 'active' },
+  consistency: 'eventual'
+});
+```
+
+**When to use strong consistency:**
+- Reading data immediately after writing it
+- Financial transactions or other critical operations
+- When correctness is more important than performance
+
+**When to use eventual consistency:**
+- Read-heavy workloads where performance matters
+- Data that changes infrequently
+- When slight staleness is acceptable (e.g., dashboards, analytics)
+
+**Database mappings:**
+- **DynamoDB**: `eventual` = `ConsistentRead: false`, `strong` = `ConsistentRead: true`
+- **MongoDB**: `eventual` = `readConcern: 'local'`, `strong` = `readConcern: 'majority'`
+- **Cassandra**: `eventual` = `ONE`, `strong` = `QUORUM`
 
 ### RetryPolicy
 
