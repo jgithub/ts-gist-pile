@@ -1,8 +1,5 @@
-import { cloneDeep as _theImplementation } from "lodash";
-
 // This was moved to cloneUtil
-// export function cloneDeep<T>(obj: T): T {
-//   return _theImplementation(obj);
-// }
+// cloneDeep now uses native structuredClone()
 
-
+// Empty export to make this a module
+export {}

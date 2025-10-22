@@ -1,6 +1,3 @@
-import cloneDeep from 'lodash/cloneDeep'
-
-
 export function recursivelyFilterPropertiesInPlace<T>(obj: T, listOfPropertyNamesToRemove: Array<string>): void {
   if(Array.isArray(obj)){
     obj.forEach((item) => {
@@ -16,7 +13,7 @@ export function recursivelyFilterPropertiesInPlace<T>(obj: T, listOfPropertyName
 }
 
 export function recursivelyFilterPropertiesCopy<T>(obj: T, listOfPropertyNamesToRemove: Array<string>): T {
-  const clone = cloneDeep(obj)
+  const clone = structuredClone(obj)
   recursivelyFilterPropertiesInPlace(clone, listOfPropertyNamesToRemove)
   return clone;
 }
