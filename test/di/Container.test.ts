@@ -18,10 +18,7 @@ interface UserService {
 }
 
 class UserServiceImpl implements UserService {
-  constructor(private readonly logger: Logger) {}
-
   public getUser(id: string): string {
-    this.logger.log(`Getting user ${id}`);
     return `User ${id}`;
   }
 }
@@ -52,7 +49,7 @@ describe('Container', () => {
       const logger = new ConsoleLogger();
       container.bind<Logger>(TYPES.Logger).toConstantValue(logger);
 
-      const userService = new UserServiceImpl(logger);
+      const userService = new UserServiceImpl();
       container.bind<UserService>(TYPES.UserService).toConstantValue(userService);
 
       // Retrieve services
@@ -176,7 +173,7 @@ describe('Container', () => {
     it('should remove all bindings', () => {
       const container = new Container();
       const logger = new ConsoleLogger();
-      const userService = new UserServiceImpl(logger);
+      const userService = new UserServiceImpl();
 
       container.bind<Logger>(TYPES.Logger).toConstantValue(logger);
       container.bind<UserService>(TYPES.UserService).toConstantValue(userService);
@@ -202,7 +199,7 @@ describe('Container', () => {
 
       expect(container.size).to.equal(1);
 
-      const userService = new UserServiceImpl(logger);
+      const userService = new UserServiceImpl();
       container.bind<UserService>(TYPES.UserService).toConstantValue(userService);
 
       expect(container.size).to.equal(2);
