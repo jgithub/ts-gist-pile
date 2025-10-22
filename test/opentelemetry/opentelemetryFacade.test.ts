@@ -1,14 +1,16 @@
 import { expect } from 'chai';
-import { 
-  trace, 
-  context, 
-  SpanStatusCode, 
+import {
+  trace,
+  context,
+  SpanStatusCode,
   registerAddEventHandler,
   registerSpanEndHandler,
   clearAddEventHandlers,
   clearSpanEndHandlers,
   NoOpAddEventHandler,
-  NoOpSpanEndHandler,
+  NoOpSpanEndHandler
+} from "../../src/opentelemetry/api";
+import {
   SEMATTRS_ENDUSER_ID,
   SEMATTRS_HTTP_METHOD,
   SEMATTRS_HTTP_STATUS_CODE,
@@ -20,7 +22,7 @@ import {
   SEMATTRS_DB_STATEMENT,
   SEMATTRS_DB_OPERATION,
   ATTR_ERROR_TYPE
-} from "../../src/opentelemetry/api";
+} from "@opentelemetry/semantic-conventions";
 
 describe('OpenTelemetry Facade', () => {
   // Register no-op handlers before tests and clean up after
