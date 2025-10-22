@@ -24,6 +24,23 @@
  *     await this.docStore.putDocument('users', user);
  *   }
  *
+ *   async saveUserWithAcknowledgment(user: User): Promise<void> {
+ *     // Wait for majority of replicas to acknowledge
+ *     await this.docStore.putDocument('users', user, {
+ *       acknowledgment: 'majority'
+ *     });
+ *   }
+ *
+ *   async updateUserWithOptimisticLock(userId: string, updates: Partial<User>, expectedVersion: number): Promise<void> {
+ *     // Conditional write - only update if version matches
+ *     await this.docStore.updateDocument<User>(
+ *       'users',
+ *       { userId },
+ *       updates,
+ *       { condition: { version: expectedVersion } }
+ *     );
+ *   }
+ *
  *   async getUserStrong(userId: string): Promise<User | null> {
  *     // Strong consistency - guaranteed latest data
  *     return await this.docStore.getDocument<User>(
@@ -55,7 +72,7 @@ export interface DocumentStoreService {
   getDocument<T>(
     tableName: string,
     key: Record<string, unknown>,
-    options?: ReadOptions
+    readOptions?: ReadOptions
   ): Promise<T | null>;
 
   /**
@@ -63,10 +80,12 @@ export interface DocumentStoreService {
    *
    * @param tableName - Name of the table/collection
    * @param document - Document to store
+   * @param writeOptions - Write options (acknowledgment level, conditions, etc.)
    */
   putDocument<T>(
     tableName: string,
-    document: T
+    document: T,
+    writeOptions?: WriteOptions
   ): Promise<void>;
 
   /**
@@ -86,10 +105,12 @@ export interface DocumentStoreService {
    *
    * @param tableName - Name of the table/collection
    * @param key - Primary key identifying the document to delete
+   * @param writeOptions - Write options (acknowledgment level, conditions, etc.)
    */
   deleteDocument(
     tableName: string,
-    key: Record<string, unknown>
+    key: Record<string, unknown>,
+    writeOptions?: WriteOptions
   ): Promise<void>;
 
   /**
@@ -103,7 +124,7 @@ export interface DocumentStoreService {
   batchGetDocuments<T>(
     tableName: string,
     keys: Record<string, unknown>[],
-    options?: ReadOptions
+    readOptions?: ReadOptions
   ): Promise<T[]>;
 
   /**
@@ -112,11 +133,13 @@ export interface DocumentStoreService {
    * @param tableName - Name of the table/collection
    * @param key - Primary key identifying the document
    * @param updates - Partial document with fields to update
+   * @param writeOptions - Write options (acknowledgment level, conditions, etc.)
    */
   updateDocument<T>(
     tableName: string,
     key: Record<string, unknown>,
-    updates: Partial<T>
+    updates: Partial<T>,
+    writeOptions?: WriteOptions
   ): Promise<void>;
 }
 
@@ -141,6 +164,45 @@ export interface ReadOptions {
    * @default 'eventual'
    */
   consistency?: ReadConsistency;
+}
+
+/**
+ * Write acknowledgment level for document operations
+ *
+ * Maps to database-specific write concern/consistency:
+ * - DynamoDB: All writes are 'majority' (no configuration needed)
+ * - MongoDB: fast = w:1, majority = w:'majority', all = w:'all'
+ * - Cassandra: fast = ONE, majority = QUORUM, all = ALL
+ */
+export type WriteAcknowledgment =
+  | 'fast'      // Acknowledged by primary/one replica only
+  | 'majority'  // Acknowledged by majority of replicas (default)
+  | 'all';      // Acknowledged by all replicas (slowest, most durable)
+
+/**
+ * Options for write operations
+ */
+export interface WriteOptions {
+  /**
+   * Write acknowledgment level
+   * @default 'majority'
+   */
+  acknowledgment?: WriteAcknowledgment;
+
+  /**
+   * Condition expression for conditional writes
+   * Only perform write if condition is met (optimistic locking)
+   *
+   * Example: { version: 5 } - only write if current version is 5
+   */
+  condition?: Record<string, unknown>;
+
+  /**
+   * Return the old document value before the write
+   * Useful for optimistic locking patterns
+   * @default false
+   */
+  returnOldValue?: boolean;
 }
 
 /**

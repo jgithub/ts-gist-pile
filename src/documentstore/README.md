@@ -56,6 +56,71 @@ class UserService {
 }
 ```
 
+### Write Options
+
+Control write acknowledgment, conditional writes, and optimistic locking:
+
+```typescript
+import { WriteAcknowledgment, WriteOptions } from 'ts-gist-pile';
+
+// Fast write - acknowledged by primary only
+await docStore.putDocument('users', user, {
+  acknowledgment: 'fast'
+});
+
+// Majority write - acknowledged by majority of replicas (default)
+await docStore.putDocument('users', user, {
+  acknowledgment: 'majority'
+});
+
+// All replicas write - slowest but most durable
+await docStore.putDocument('users', user, {
+  acknowledgment: 'all'
+});
+
+// Conditional write - optimistic locking pattern
+await docStore.updateDocument<User>(
+  'users',
+  { userId: '123' },
+  { status: 'active' },
+  {
+    condition: { version: 5 },  // Only update if version is 5
+    acknowledgment: 'majority'
+  }
+);
+
+// Delete with condition
+await docStore.deleteDocument(
+  'users',
+  { userId: '123' },
+  {
+    condition: { status: 'inactive' }  // Only delete if inactive
+  }
+);
+```
+
+**Write acknowledgment levels:**
+- **`fast`** - Acknowledged by primary/one replica only (fastest, least durable)
+- **`majority`** - Acknowledged by majority of replicas (balanced, default)
+- **`all`** - Acknowledged by all replicas (slowest, most durable)
+
+**Conditional writes:**
+Use `condition` for optimistic locking to prevent lost updates:
+```typescript
+// Pattern: Read-modify-write with version check
+const user = await docStore.getDocument<User>('users', { userId });
+const updatedUser = { ...user, status: 'active', version: user.version + 1 };
+
+await docStore.putDocument('users', updatedUser, {
+  condition: { version: user.version }  // Fails if someone else updated
+});
+```
+
+**Database mappings:**
+- **DynamoDB**: All writes are majority (no config), `condition` → ConditionExpression
+- **MongoDB**: `fast` = `w:1`, `majority` = `w:'majority'`, `all` = `w:'all'`
+- **Cassandra**: `fast` = `ONE`, `majority` = `QUORUM`, `all` = `ALL`
+
 ### Read Consistency
 
 Control read consistency per-query for critical vs performance-optimized reads:
