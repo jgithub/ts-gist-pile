@@ -1,5 +1,5 @@
 
-import { tryGetEnvVar } from "../env/internalEnvUtil";
+import { tryGetEnvVar } from "../env/envUtil";
 import { sendStatToKpitracks } from "../stat/statUtil";
 import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
 import { sanitizePII } from './piiSanitizer';

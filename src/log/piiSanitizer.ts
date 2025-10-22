@@ -1,4 +1,4 @@
-import { tryGetEnvVar } from "../env/internalEnvUtil";
+import { tryGetEnvVar } from "../env/envUtil";
 
 // Conditionally import crypto only in Node.js
 let nodeCrypto: any;
