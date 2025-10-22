@@ -1,6 +1,8 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { Container } from '../../src/di/Container';
+import { DateProviderService } from '../../src/date/DateProviderService';
+import { DateProviderServiceImpl } from '../../src/date/DateProviderServiceImpl';
 
 // Example service interfaces and implementations
 interface Logger {
@@ -15,17 +17,29 @@ class ConsoleLogger implements Logger {
 
 interface UserService {
   getUser(id: string): string;
+  getCreatedAt(): Date;
 }
 
 class UserServiceImpl implements UserService {
+  private readonly dateProvider: DateProviderService;
+
+  constructor(dateProvider: DateProviderService) {
+    this.dateProvider = dateProvider;
+  }
+
   public getUser(id: string): string {
     return `User ${id}`;
+  }
+
+  public getCreatedAt(): Date {
+    return this.dateProvider.getNow();
   }
 }
 
 // Service identifiers (like DI_TYPES in relito)
 const TYPES = {
   Logger: 'Logger',
+  DateProviderService: 'DateProviderService',
   UserService: 'UserService',
   SymbolTest: Symbol('SymbolTest'),
 };
@@ -45,19 +59,21 @@ describe('Container', () => {
     it('should support dependency injection pattern', () => {
       const container = new Container();
 
-      // Register dependencies in order
-      const logger = new ConsoleLogger();
-      container.bind<Logger>(TYPES.Logger).toConstantValue(logger);
+      // Register dependencies in order (dependency first, then dependent service)
+      const dateProvider = new DateProviderServiceImpl();
+      container.bind<DateProviderService>(TYPES.DateProviderService).toConstantValue(dateProvider);
 
-      const userService = new UserServiceImpl();
+      const userService = new UserServiceImpl(dateProvider);
       container.bind<UserService>(TYPES.UserService).toConstantValue(userService);
 
       // Retrieve services
-      const retrievedLogger = container.get<Logger>(TYPES.Logger);
+      const retrievedDateProvider = container.get<DateProviderService>(TYPES.DateProviderService);
       const retrievedUserService = container.get<UserService>(TYPES.UserService);
 
-      expect(retrievedLogger).to.equal(logger);
+      expect(retrievedDateProvider).to.equal(dateProvider);
       expect(retrievedUserService).to.equal(userService);
+      expect(retrievedUserService.getUser('123')).to.equal('User 123');
+      expect(retrievedUserService.getCreatedAt()).to.be.instanceOf(Date);
     });
 
     it('should support Symbol as service identifier', () => {
@@ -173,7 +189,8 @@ describe('Container', () => {
     it('should remove all bindings', () => {
       const container = new Container();
       const logger = new ConsoleLogger();
-      const userService = new UserServiceImpl();
+      const dateProvider = new DateProviderServiceImpl();
+      const userService = new UserServiceImpl(dateProvider);
 
       container.bind<Logger>(TYPES.Logger).toConstantValue(logger);
       container.bind<UserService>(TYPES.UserService).toConstantValue(userService);
@@ -199,7 +216,8 @@ describe('Container', () => {
 
       expect(container.size).to.equal(1);
 
-      const userService = new UserServiceImpl();
+      const dateProvider = new DateProviderServiceImpl();
+      const userService = new UserServiceImpl(dateProvider);
       container.bind<UserService>(TYPES.UserService).toConstantValue(userService);
 
       expect(container.size).to.equal(2);
