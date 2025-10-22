@@ -141,6 +141,92 @@ export interface DocumentStoreService {
     updates: Partial<T>,
     writeOptions?: WriteOptions
   ): Promise<void>;
+
+  /**
+   * Scan entire table/collection (full table scan)
+   *
+   * WARNING: Expensive operation - reads all documents
+   * Use queryDocuments() with indexes when possible
+   *
+   * @param tableName - Name of the table/collection
+   * @param options - Scan options (filter, projection, etc.)
+   * @returns Array of matching documents
+   */
+  scanDocuments<T>(
+    tableName: string,
+    options?: ScanOptions
+  ): Promise<T[]>;
+
+  /**
+   * Atomic update operations (increment, append, etc.)
+   *
+   * Performs thread-safe updates without read-modify-write
+   *
+   * @param tableName - Name of the table/collection
+   * @param key - Primary key identifying the document
+   * @param operations - Atomic operations to perform
+   * @param writeOptions - Write options (acknowledgment level, conditions, etc.)
+   */
+  atomicUpdate(
+    tableName: string,
+    key: Record<string, unknown>,
+    operations: AtomicOperations,
+    writeOptions?: WriteOptions
+  ): Promise<void>;
+
+  /**
+   * Batch write operations (puts, updates, deletes)
+   *
+   * Executes multiple write operations in a single batch
+   * More efficient than individual operations
+   *
+   * @param tableName - Name of the table/collection
+   * @param operations - Batch operations to perform
+   * @param writeOptions - Write options (acknowledgment level, etc.)
+   */
+  batchWrite(
+    tableName: string,
+    operations: BatchWriteOperations,
+    writeOptions?: WriteOptions
+  ): Promise<void>;
+
+  /**
+   * Execute operations in a transaction (ACID)
+   *
+   * All operations succeed or all fail atomically
+   *
+   * @param operations - Transaction callback with transactional operations
+   * @returns Result of the transaction
+   */
+  transact<T>(
+    operations: (txn: TransactionContext) => Promise<T>
+  ): Promise<T>;
+
+  /**
+   * Execute database-specific native operation (escape hatch)
+   *
+   * Use this for operations not covered by the interface (20% edge cases)
+   * Implementation will vary by database
+   *
+   * @param operation - Database-specific operation descriptor
+   * @returns Result of the native operation
+   *
+   * @example
+   * // DynamoDB - execute custom query
+   * await docStore.executeNative({
+   *   command: 'query',
+   *   params: { TableName: 'users', KeyConditionExpression: '...' }
+   * });
+   *
+   * @example
+   * // MongoDB - run aggregation pipeline
+   * await docStore.executeNative({
+   *   command: 'aggregate',
+   *   collection: 'users',
+   *   pipeline: [{ $group: { _id: '$status', count: { $sum: 1 } } }]
+   * });
+   */
+  executeNative<T = unknown>(operation: NativeOperation): Promise<T>;
 }
 
 /**
@@ -164,6 +250,15 @@ export interface ReadOptions {
    * @default 'eventual'
    */
   consistency?: ReadConsistency;
+
+  /**
+   * Fields to return (projection)
+   * If specified, only these fields will be returned
+   * Reduces data transfer and improves performance
+   *
+   * @example ['name', 'email', 'address.city']
+   */
+  projection?: string[];
 }
 
 /**
@@ -206,11 +301,61 @@ export interface WriteOptions {
 }
 
 /**
+ * Query operators for flexible filtering
+ */
+export interface QueryOperators<T = unknown> {
+  /** Equal to */
+  $eq?: T;
+  /** Not equal to */
+  $ne?: T;
+  /** Greater than */
+  $gt?: T;
+  /** Greater than or equal */
+  $gte?: T;
+  /** Less than */
+  $lt?: T;
+  /** Less than or equal */
+  $lte?: T;
+  /** In array */
+  $in?: T[];
+  /** Not in array */
+  $nin?: T[];
+  /** Exists */
+  $exists?: boolean;
+  /** Pattern match (regex) */
+  $regex?: string;
+  /** Between (inclusive) */
+  $between?: [T, T];
+  /** Begins with (strings) */
+  $beginsWith?: string;
+  /** Contains (strings/arrays) */
+  $contains?: T;
+}
+
+/**
+ * Filter value - can be a direct value or query operators
+ */
+export type FilterValue = unknown | QueryOperators;
+
+/**
  * Query specification for document queries
  */
 export interface DocumentQuery extends ReadOptions {
-  /** Filter conditions (field: value pairs) */
-  filter?: Record<string, unknown>;
+  /**
+   * Filter conditions
+   * Can use equality: { status: 'active' }
+   * Or operators: { age: { $gte: 18, $lt: 65 } }
+   */
+  filter?: Record<string, FilterValue>;
+
+  /**
+   * Index name to use for the query
+   * Required for DynamoDB GSI/LSI queries
+   * Optional hint for MongoDB query planner
+   *
+   * @example 'email-index', 'createdAt-index'
+   */
+  indexName?: string;
 
   /** Sort field and direction */
   sort?: {
@@ -234,4 +379,114 @@ export interface DocumentQueryResult<T> {
 
   /** Token for fetching the next page (undefined if no more results) */
   nextToken?: string;
+}
+
+/**
+ * Scan options for full table scans
+ */
+export interface ScanOptions extends ReadOptions {
+  /** Filter to apply after scanning (not indexed) */
+  filter?: Record<string, FilterValue>;
+
+  /** Maximum number of results */
+  limit?: number;
+
+  /** Pagination token for next page */
+  nextToken?: string;
+}
+
+/**
+ * Atomic operations for thread-safe updates
+ */
+export interface AtomicOperations {
+  /**
+   * Increment numeric fields
+   * @example { viewCount: 1, likes: -1 }
+   */
+  increment?: Record<string, number>;
+
+  /**
+   * Append to array fields
+   * @example { tags: ['new-tag'], comments: [comment] }
+   */
+  append?: Record<string, unknown[]>;
+
+  /**
+   * Remove from array fields
+   * @example { tags: ['old-tag'] }
+   */
+  remove?: Record<string, unknown[]>;
+
+  /**
+   * Set field if it doesn't exist
+   * @example { createdAt: Date.now() }
+   */
+  setIfNotExists?: Record<string, unknown>;
+
+  /**
+   * Delete fields from document
+   * @example ['temporaryField', 'oldData']
+   */
+  deleteFields?: string[];
+}
+
+/**
+ * Batch write operations
+ */
+export interface BatchWriteOperations {
+  /** Documents to put (insert or update) */
+  puts?: unknown[];
+
+  /** Keys of documents to delete */
+  deletes?: Record<string, unknown>[];
+
+  /** Update operations */
+  updates?: Array<{
+    key: Record<string, unknown>;
+    updates: Record<string, unknown>;
+  }>;
+}
+
+/**
+ * Transaction context for executing transactional operations
+ */
+export interface TransactionContext {
+  /** Get a document within the transaction */
+  getDocument<T>(
+    tableName: string,
+    key: Record<string, unknown>
+  ): Promise<T | null>;
+
+  /** Put a document within the transaction */
+  putDocument<T>(
+    tableName: string,
+    document: T
+  ): Promise<void>;
+
+  /** Update a document within the transaction */
+  updateDocument<T>(
+    tableName: string,
+    key: Record<string, unknown>,
+    updates: Partial<T>
+  ): Promise<void>;
+
+  /** Delete a document within the transaction */
+  deleteDocument(
+    tableName: string,
+    key: Record<string, unknown>
+  ): Promise<void>;
+}
+
+/**
+ * Native operation descriptor (escape hatch)
+ *
+ * Structure varies by database implementation
+ * This is intentionally loosely typed to allow database-specific operations
+ */
+export interface NativeOperation {
+  /** Command name (database-specific) */
+  command: string;
+
+  /** Additional parameters (database-specific) */
+  [key: string]: unknown;
 }

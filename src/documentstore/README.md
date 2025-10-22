@@ -2,6 +2,28 @@
 
 Abstract interfaces for swappable document database implementations.
 
+## Design Philosophy: 80/20 Rule
+
+This interface is designed to cover **80% of common document database operations** while providing **clear escape hatches for the remaining 20%** of database-specific needs.
+
+### The 80% - Core Operations Covered
+- ✅ CRUD operations (get, put, update, delete)
+- ✅ Querying with indexes
+- ✅ Batch operations
+- ✅ Transactions (ACID)
+- ✅ Atomic updates (increment, append)
+- ✅ Projections (select specific fields)
+- ✅ Consistency levels (eventual vs strong)
+- ✅ Conditional writes (optimistic locking)
+- ✅ Full table scans
+- ✅ Query operators (range, IN, comparison)
+
+### The 20% - Escape Hatches
+For database-specific features not in the interface:
+- Use `executeNative()` for custom operations
+- Extend the interface in your implementation
+- Examples: aggregations, text search, geospatial queries, change streams
+
 ## Purpose
 
 These interfaces enable **programming to an interface** rather than implementation, allowing you to swap document database implementations (DynamoDB, MongoDB, Firestore, etc.) without changing business logic.
@@ -120,6 +142,226 @@ await docStore.putDocument('users', updatedUser, {
 - **DynamoDB**: All writes are majority (no config), `condition` → ConditionExpression
 - **MongoDB**: `fast` = `w:1`, `majority` = `w:'majority'`, `all` = `w:'all'`
 - **Cassandra**: `fast` = `ONE`, `majority` = `QUORUM`, `all` = `ALL`
+
+### Projections
+
+Select only specific fields to reduce data transfer and improve performance:
+
+```typescript
+// Get only name and email (not entire 5MB user document)
+const user = await docStore.getDocument<Partial<User>>(
+  'users',
+  { userId: '123' },
+  { projection: ['name', 'email', 'address.city'] }
+);
+
+// Query with projection
+const users = await docStore.queryDocuments<Partial<User>>('users', {
+  filter: { status: 'active' },
+  projection: ['name', 'email']
+});
+```
+
+### Index Selection
+
+Specify which index to query (critical for DynamoDB GSI/LSI):
+
+```typescript
+// Query using a specific index
+const users = await docStore.queryDocuments<User>('users', {
+  indexName: 'email-index',  // DynamoDB GSI
+  filter: { email: 'user@example.com' }
+});
+
+// Query using createdAt index
+const recentUsers = await docStore.queryDocuments<User>('users', {
+  indexName: 'createdAt-index',
+  filter: { createdAt: { $gte: Date.now() - 86400000 } }
+});
+```
+
+### Query Operators
+
+Flexible filtering beyond simple equality:
+
+```typescript
+// Range query
+const adults = await docStore.queryDocuments<User>('users', {
+  filter: {
+    age: { $gte: 18, $lt: 65 },
+    status: { $in: ['active', 'pending'] }
+  }
+});
+
+// Pattern matching
+const johnUsers = await docStore.queryDocuments<User>('users', {
+  filter: {
+    name: { $beginsWith: 'John' }
+  }
+});
+
+// Complex query
+const filteredUsers = await docStore.queryDocuments<User>('users', {
+  filter: {
+    age: { $between: [18, 65] },
+    'address.city': 'Seattle',
+    tags: { $contains: 'premium' }
+  }
+});
+```
+
+### Scan Operations
+
+Full table scan when indexes aren't available (use sparingly):
+
+```typescript
+// Scan entire table with filter
+const allActiveUsers = await docStore.scanDocuments<User>('users', {
+  filter: { status: 'active' },
+  limit: 1000
+});
+
+// Scan with projection
+const userEmails = await docStore.scanDocuments<Partial<User>>('users', {
+  projection: ['email']
+});
+```
+
+### Atomic Operations
+
+Thread-safe updates without read-modify-write race conditions:
+
+```typescript
+// Atomic increment (no race condition)
+await docStore.atomicUpdate('posts', { postId: '123' }, {
+  increment: { viewCount: 1, likes: 1 },
+  append: { tags: ['trending'] },
+  setIfNotExists: { createdAt: Date.now() }
+});
+
+// Atomic array operations
+await docStore.atomicUpdate('users', { userId: '123' }, {
+  append: { tags: ['premium', 'verified'] },
+  remove: { tags: ['trial'] },
+  deleteFields: ['temporaryData']
+});
+
+// Update view count safely (compare to race-prone alternative)
+// ❌ BAD: Race condition
+const post = await docStore.getDocument('posts', { postId });
+await docStore.putDocument('posts', { ...post, viewCount: post.viewCount + 1 });
+
+// ✅ GOOD: Atomic
+await docStore.atomicUpdate('posts', { postId }, {
+  increment: { viewCount: 1 }
+});
+```
+
+### Batch Operations
+
+Execute multiple operations efficiently in a single batch:
+
+```typescript
+await docStore.batchWrite('users', {
+  puts: [user1, user2, user3],
+  deletes: [{ userId: '456' }, { userId: '789' }],
+  updates: [
+    { key: { userId: '123' }, updates: { status: 'active' } }
+  ]
+});
+```
+
+### Transactions
+
+Multi-document ACID operations:
+
+```typescript
+// Transfer credits between accounts (atomic)
+await docStore.transact(async (txn) => {
+  const account1 = await txn.getDocument<Account>('accounts', { id: 'A' });
+  const account2 = await txn.getDocument<Account>('accounts', { id: 'B' });
+
+  if (account1.balance < 100) {
+    throw new Error('Insufficient balance');
+  }
+
+  await txn.updateDocument('accounts', { id: 'A' }, {
+    balance: account1.balance - 100
+  });
+
+  await txn.updateDocument('accounts', { id: 'B' }, {
+    balance: account2.balance + 100
+  });
+});
+```
+
+### Escape Hatch (The 20%)
+
+For database-specific operations not covered by the interface:
+
+```typescript
+// DynamoDB - Custom query with complex expressions
+const result = await docStore.executeNative<User[]>({
+  command: 'query',
+  params: {
+    TableName: 'users',
+    KeyConditionExpression: 'pk = :pk AND sk BETWEEN :start AND :end',
+    FilterExpression: 'attribute_exists(#email)',
+    ExpressionAttributeNames: { '#email': 'email' },
+    ExpressionAttributeValues: {
+      ':pk': 'USER',
+      ':start': '2024-01-01',
+      ':end': '2024-12-31'
+    }
+  }
+});
+
+// MongoDB - Aggregation pipeline
+const stats = await docStore.executeNative<{ _id: string; count: number }[]>({
+  command: 'aggregate',
+  collection: 'users',
+  pipeline: [
+    { $match: { status: 'active' } },
+    { $group: { _id: '$country', count: { $sum: 1 } } },
+    { $sort: { count: -1 } }
+  ]
+});
+
+// MongoDB - Text search
+const searchResults = await docStore.executeNative<User[]>({
+  command: 'find',
+  collection: 'users',
+  filter: { $text: { $search: 'john developer seattle' } }
+});
+
+// MongoDB - Geospatial query
+const nearbyUsers = await docStore.executeNative<User[]>({
+  command: 'find',
+  collection: 'users',
+  filter: {
+    location: {
+      $near: {
+        $geometry: { type: 'Point', coordinates: [-122.3321, 47.6062] },
+        $maxDistance: 5000
+      }
+    }
+  }
+});
+```
+
+**When to use `executeNative()`:**
+- Aggregations (group by, sum, count)
+- Full-text search
+- Geospatial queries
+- Change streams / triggers
+- Database-specific optimizations
+- Complex queries not expressible in the interface
+
+**Best practice:**
+- Use interface methods for 80% of operations
+- Use `executeNative()` only when necessary
+- Wrap `executeNative()` calls in your own service methods
+- Document what database features you're using
 
 ### Read Consistency
 
