@@ -1,6 +1,16 @@
 
 
 const memoized = new Map<string, true>();
+
+/**
+ * Resets the memoization cache for tryGetEnvVar.
+ * This is primarily useful for testing.
+ * @internal
+ */
+export function resetEnvVarCache(): void {
+  memoized.clear();
+}
+
 export function tryGetEnvVar(envVarName: string): string | undefined {
   // @ts-ignore: import.meta may not be recognized depending on tsconfig/module system
   let retval: string | undefined = undefined;

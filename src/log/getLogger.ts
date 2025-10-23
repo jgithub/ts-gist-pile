@@ -1,5 +1,5 @@
 
-import { tryGetEnvVar } from "../env/envUtil";
+import { tryGetEnvVar, resetEnvVarCache } from "../env/envUtil";
 import { sendStatToKpitracks } from "../stat/statUtil";
 import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
 import { sanitizePII } from './piiSanitizer';
@@ -30,6 +30,10 @@ class LoggerFactory {
       LoggerFactory.mapOfLoggers.set(loggerName, logger)
     }
     return logger
+  }
+
+  public static resetLoggerCache(): void {
+    LoggerFactory.mapOfLoggers = new Map();
   }
 }
 
@@ -150,21 +154,21 @@ class Logger {
   }
 
   public trace(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
-    if (typeof process !== 'undefined' && isTruelike(tryGetEnvVar('LOG_TRACE'))) {
+    if (isLogLevelEnabled(this.loggerName, 'TRACE')) {
       const completeMsg = this.buildLogMsg("[ TRACE]", msg, jsonContext)
       this.writeLogMsgToTerminal(completeMsg)
     }
   }
 
   public debug(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
-    if (typeof process !== 'undefined' && isTruelike(tryGetEnvVar('LOG_DEBUG'))) {
+    if (isLogLevelEnabled(this.loggerName, 'DEBUG')) {
       const completeMsg = this.buildLogMsg("[ DEBUG]", msg, jsonContext)
       this.writeLogMsgToTerminal(completeMsg)
     }
   }
 
   public info(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
-    if (typeof process !== 'undefined' && isTruelike(tryGetEnvVar('LOG_INFO'))) {
+    if (isLogLevelEnabled(this.loggerName, 'INFO')) {
       const completeMsg = this.buildLogMsg("[  INFO]", msg, jsonContext)
       this.writeLogMsgToTerminal(completeMsg)
     }
@@ -359,3 +363,208 @@ function isTruelike(input: boolean | string | number | undefined): boolean {
 }
 
 type JSONContext = { [key: string]: any }
+
+// Log level configuration types
+type LogLevel = 'TRACE' | 'DEBUG' | 'INFO' | 'NOTICE' | 'WARN' | 'ERROR' | 'FATAL';
+
+interface LogLevelRule {
+  pattern: string;
+  level: LogLevel;
+}
+
+/**
+ * Determines if a logger name matches a pattern.
+ * Supports:
+ * - Exact matches: "api.users" matches "api.users"
+ * - Prefix wildcards: "*.users" matches "api.users", "db.users"
+ * - Suffix wildcards: "api.*" matches "api.users", "api.products"
+ * - Middle wildcards: "api.*.service" matches "api.users.service", "api.products.service"
+ *
+ * @param loggerName The logger name to match
+ * @param pattern The pattern to match against
+ * @returns true if the logger name matches the pattern
+ */
+function matchesPattern(loggerName: string, pattern: string): boolean {
+  // Exact match
+  if (pattern === loggerName) {
+    return true;
+  }
+
+  // No wildcard - must be exact match (already checked above)
+  if (!pattern.includes('*')) {
+    return false;
+  }
+
+  // Convert pattern to regex
+  // Escape special regex characters except *
+  const regexPattern = pattern
+    .split('*')
+    .map(part => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+    .join('.*');
+
+  const regex = new RegExp(`^${regexPattern}$`);
+  return regex.test(loggerName);
+}
+
+/**
+ * Parses log level rules from environment variable LOG_LEVEL_RULES.
+ * Expected format: JSON array of objects with "pattern" and "level" keys.
+ *
+ * Rules are evaluated in order (first match wins), so put the most
+ * specific patterns first and general fallback patterns last.
+ *
+ * Example (correct order - most specific first):
+ * [
+ *   {"pattern": "api.users.controller", "level": "TRACE"},
+ *   {"pattern": "api.users.*", "level": "DEBUG"},
+ *   {"pattern": "api.*", "level": "INFO"},
+ *   {"pattern": "*", "level": "WARN"}
+ * ]
+ *
+ * @returns Array of log level rules, or empty array if not configured
+ */
+function parseLogLevelRules(): LogLevelRule[] {
+  if (typeof process === 'undefined') {
+    return [];
+  }
+
+  const rulesJson = tryGetEnvVar('LOG_LEVEL_RULES');
+  if (!rulesJson || rulesJson.trim().length === 0) {
+    return [];
+  }
+
+  try {
+    const rules = JSON.parse(rulesJson);
+    if (!Array.isArray(rules)) {
+      console.error('[LOG CONFIG] LOG_LEVEL_RULES must be a JSON array');
+      return [];
+    }
+
+    return rules.filter((rule: any) => {
+      if (typeof rule !== 'object' || rule === null) {
+        console.error('[LOG CONFIG] Invalid rule (not an object):', rule);
+        return false;
+      }
+      if (typeof rule.pattern !== 'string' || typeof rule.level !== 'string') {
+        console.error('[LOG CONFIG] Invalid rule (missing pattern or level):', rule);
+        return false;
+      }
+      return true;
+    });
+  } catch (err) {
+    console.error('[LOG CONFIG] Failed to parse LOG_LEVEL_RULES:', err);
+    return [];
+  }
+}
+
+/**
+ * Finds the first matching rule for a logger name.
+ * Rules are evaluated in order from first to last.
+ * The first rule that matches is used (first match wins).
+ *
+ * This allows users to put the most specific rules at the front
+ * and more general fallback rules towards the back.
+ *
+ * Example:
+ * [
+ *   {"pattern": "api.users.controller", "level": "TRACE"},  // Most specific
+ *   {"pattern": "api.users.*", "level": "DEBUG"},           // More general
+ *   {"pattern": "api.*", "level": "INFO"},                  // Even more general
+ *   {"pattern": "*", "level": "WARN"}                       // Fallback
+ * ]
+ *
+ * @param loggerName The logger name to find a rule for
+ * @param rules The array of log level rules (in priority order)
+ * @returns The matching log level, or null if no rule matches
+ */
+function findMatchingLogLevel(loggerName: string, rules: LogLevelRule[]): LogLevel | null {
+  if (rules.length === 0) {
+    return null;
+  }
+
+  // Find the first matching rule
+  for (const rule of rules) {
+    if (matchesPattern(loggerName, rule.pattern)) {
+      return rule.level;
+    }
+  }
+
+  return null;
+}
+
+// Cache parsed rules to avoid reparsing on every log call
+let cachedLogLevelRules: LogLevelRule[] | null = null;
+
+/**
+ * Gets the configured log level rules, using a cache to avoid reparsing.
+ * @returns Array of log level rules
+ */
+function getLogLevelRules(): LogLevelRule[] {
+  if (cachedLogLevelRules === null) {
+    cachedLogLevelRules = parseLogLevelRules();
+  }
+  return cachedLogLevelRules;
+}
+
+/**
+ * Resets the cached log level rules and logger instances.
+ * This is primarily useful for testing, to force re-reading the configuration
+ * and recreating logger instances with the new configuration.
+ *
+ * Note: This does NOT reset the environment variable memoization cache,
+ * as that would cause tryGetEnvVar to log debug messages again.
+ * @internal
+ */
+export function resetLogLevelRulesCache(): void {
+  cachedLogLevelRules = null;
+  LoggerFactory.resetLoggerCache();
+}
+
+/**
+ * Determines if a specific log level should be enabled for a logger.
+ *
+ * Priority order:
+ * 1. Pattern-based rules (LOG_LEVEL_RULES) - most specific match wins
+ * 2. Legacy environment variables (LOG_TRACE, LOG_DEBUG, LOG_INFO)
+ * 3. Default behavior (NOTICE and above always enabled)
+ *
+ * @param loggerName The logger name
+ * @param level The log level to check
+ * @returns true if the log level is enabled
+ */
+function isLogLevelEnabled(loggerName: string, level: LogLevel): boolean {
+  // Check for pattern-based configuration first
+  const rules = getLogLevelRules();
+  const configuredLevel = findMatchingLogLevel(loggerName, rules);
+
+  if (configuredLevel !== null) {
+    // Use pattern-based configuration
+    const levelHierarchy: LogLevel[] = ['TRACE', 'DEBUG', 'INFO', 'NOTICE', 'WARN', 'ERROR', 'FATAL'];
+    const configuredIndex = levelHierarchy.indexOf(configuredLevel);
+    const requestedIndex = levelHierarchy.indexOf(level);
+    return requestedIndex >= configuredIndex;
+  }
+
+  // Fall back to legacy environment variable checks
+  if (typeof process === 'undefined') {
+    // In browser, only NOTICE and above are enabled by default
+    return ['NOTICE', 'WARN', 'ERROR', 'FATAL'].includes(level);
+  }
+
+  // Legacy environment variable behavior
+  switch (level) {
+    case 'TRACE':
+      return isTruelike(tryGetEnvVar('LOG_TRACE'));
+    case 'DEBUG':
+      return isTruelike(tryGetEnvVar('LOG_DEBUG'));
+    case 'INFO':
+      return isTruelike(tryGetEnvVar('LOG_INFO'));
+    case 'NOTICE':
+    case 'WARN':
+    case 'ERROR':
+    case 'FATAL':
+      return true;
+    default:
+      return false;
+  }
+}
