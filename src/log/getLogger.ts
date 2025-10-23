@@ -407,19 +407,77 @@ function matchesPattern(loggerName: string, pattern: string): boolean {
 }
 
 /**
- * Parses log level rules from environment variable LOG_LEVEL_RULES.
- * Expected format: JSON array of objects with "pattern" and "level" keys.
+ * Loads log level rules from a JavaScript file using require().
+ * The file should export an object with a 'rules' property.
+ *
+ * @param filePath Absolute or relative path to the JS file
+ * @returns Array of log level rules, or null if file cannot be loaded
+ */
+function loadRulesFromJsFile(filePath: string): LogLevelRule[] | null {
+  if (typeof require === 'undefined') {
+    return null; // Not in Node.js environment
+  }
+
+  try {
+    // Use require to load at runtime (not bundled)
+    // resolve the path relative to process.cwd()
+    const path = require('path');
+    const resolvedPath = path.resolve(process.cwd(), filePath);
+
+    // Delete from cache to allow hot-reloading on restart
+    delete require.cache[resolvedPath];
+
+    const config = require(resolvedPath);
+
+    if (!config || !Array.isArray(config.rules)) {
+      console.error(`[LOG CONFIG] ${filePath} must export an object with a 'rules' array property`);
+      return null;
+    }
+
+    // Validate rules
+    const validRules = config.rules.filter((rule: any) => {
+      if (typeof rule !== 'object' || rule === null) {
+        console.error('[LOG CONFIG] Invalid rule (not an object):', rule);
+        return false;
+      }
+      if (typeof rule.pattern !== 'string' || typeof rule.level !== 'string') {
+        console.error('[LOG CONFIG] Invalid rule (missing pattern or level):', rule);
+        return false;
+      }
+      return true;
+    });
+
+    console.log(`[LOG CONFIG] Loaded ${validRules.length} log level rules from ${filePath}`);
+    return validRules;
+  } catch (err: any) {
+    // File not found or other error - this is OK, just return null
+    if (err.code !== 'MODULE_NOT_FOUND') {
+      console.error(`[LOG CONFIG] Error loading log level rules from ${filePath}:`, err.message);
+    }
+    return null;
+  }
+}
+
+/**
+ * Parses log level rules from multiple sources in priority order:
+ * 1. JavaScript file specified in LOG_LEVEL_RULES_FILE env var
+ * 2. Default JavaScript file locations (./log-level-rules.js, ./config/log-level-rules.js)
+ * 3. JSON string in LOG_LEVEL_RULES env var
  *
  * Rules are evaluated in order (first match wins), so put the most
  * specific patterns first and general fallback patterns last.
  *
- * Example (correct order - most specific first):
- * [
- *   {"pattern": "api.users.controller", "level": "TRACE"},
- *   {"pattern": "api.users.*", "level": "DEBUG"},
- *   {"pattern": "api.*", "level": "INFO"},
- *   {"pattern": "*", "level": "WARN"}
- * ]
+ * Example JS file (log-level-rules.js):
+ * ```javascript
+ * module.exports = {
+ *   rules: [
+ *     { pattern: "api.users.controller", level: "TRACE" },
+ *     { pattern: "api.users.*", level: "DEBUG" },
+ *     { pattern: "api.*", level: "INFO" },
+ *     { pattern: "*", level: "WARN" }
+ *   ]
+ * };
+ * ```
  *
  * @returns Array of log level rules, or empty array if not configured
  */
@@ -428,6 +486,30 @@ function parseLogLevelRules(): LogLevelRule[] {
     return [];
   }
 
+  // Priority 1: Explicit file path from env var
+  const configFilePath = tryGetEnvVar('LOG_LEVEL_RULES_FILE');
+  if (configFilePath) {
+    const rules = loadRulesFromJsFile(configFilePath);
+    if (rules !== null) {
+      return rules;
+    }
+    console.error(`[LOG CONFIG] LOG_LEVEL_RULES_FILE specified (${configFilePath}) but could not be loaded`);
+  }
+
+  // Priority 2: Default file locations
+  const defaultLocations = [
+    './log-level-rules.js',
+    './config/log-level-rules.js'
+  ];
+
+  for (const location of defaultLocations) {
+    const rules = loadRulesFromJsFile(location);
+    if (rules !== null) {
+      return rules;
+    }
+  }
+
+  // Priority 3: JSON from env var (backward compatibility)
   const rulesJson = tryGetEnvVar('LOG_LEVEL_RULES');
   if (!rulesJson || rulesJson.trim().length === 0) {
     return [];

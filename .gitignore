@@ -1,3 +1,14 @@
 node_modules/
 dist/
 CLAUDE.md
+
+# Log level configuration (local overrides)
+# Keep log-level-rules.example.js but ignore the actual config files
+log-level-rules.js
+config/log-level-rules.js
+custom-log-rules.js
+
+# Debug/test scripts
+debug_test*.ts
+test_js_config*.ts
+test_env_override.ts
