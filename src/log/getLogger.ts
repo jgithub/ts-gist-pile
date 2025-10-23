@@ -393,7 +393,22 @@ interface LogLevelRule {
  * ];
  * ```
  *
- * Rules are evaluated in order (first match wins).
+ * **Priority:** Rules are evaluated in order (first match wins).
+ * If a logger name matches ANY pattern in LOG_RULES.levels, that rule
+ * takes complete precedence over legacy env vars (LOG_DEBUG, LOG_TRACE, etc.),
+ * regardless of whether the rule is more or less restrictive.
+ *
+ * **Example:**
+ * ```typescript
+ * LOG_RULES.levels = [{ pattern: '*', level: 'WARN' }];
+ * process.env.LOG_DEBUG = '1';  // This is IGNORED for all loggers
+ *
+ * const logger = getLogger('MyService');
+ * logger.debug('test');  // Won't appear (WARN level from rule)
+ * logger.warn('test');   // Will appear
+ * ```
+ *
+ * Only loggers that don't match any pattern will fall back to env vars.
  */
 export const LOG_RULES: { levels: LogLevelRule[] } = {
   levels: []
@@ -527,9 +542,20 @@ export function resetLogLevelRulesCache(): void {
  * Determines if a specific log level should be enabled for a logger.
  *
  * Priority order:
- * 1. Pattern-based rules (LOG_LEVEL_RULES) - most specific match wins
- * 2. Legacy environment variables (LOG_TRACE, LOG_DEBUG, LOG_INFO)
+ * 1. Pattern-based rules (LOG_RULES.levels) - If ANY pattern matches, uses that rule exclusively
+ * 2. Legacy environment variables (LOG_TRACE, LOG_DEBUG, LOG_INFO) - Only if no pattern matched
  * 3. Default behavior (NOTICE and above always enabled)
+ *
+ * IMPORTANT: If a pattern matches in LOG_RULES.levels, the rule takes complete precedence
+ * over legacy env vars, regardless of whether it's more or less restrictive.
+ *
+ * Example:
+ * ```
+ * LOG_RULES.levels = [{ pattern: '*', level: 'WARN' }];
+ * process.env.LOG_DEBUG = '1';  // IGNORED - rule matches all loggers
+ *
+ * getLogger('MyService').debug('test');  // Won't appear (WARN from rule)
+ * ```
  *
  * @param loggerName The logger name
  * @param level The log level to check
