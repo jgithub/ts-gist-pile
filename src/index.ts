@@ -22,7 +22,7 @@ export * as envUtil from "./env/envUtil"
 
 export { Container } from "./di/Container"
 
-export { getLogger } from "./log/getLogger"
+export { getLogger, LOG_RULES } from "./log/getLogger"
 export { d4l, d4lObfuscate, d4lPii } from "./log/logUtil"
 // export { TraceInitializer } from "./trace/TraceInitializer"
 export { withStoreId } from "./log/getLogger"
