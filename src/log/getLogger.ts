@@ -434,76 +434,26 @@ function matchesPattern(loggerName: string, pattern: string): boolean {
 }
 
 /**
- * Loads log level rules from a JavaScript file using require().
- * The file should export an object with a 'rules' property.
- *
- * @param filePath Absolute or relative path to the JS file
- * @returns Array of log level rules, or null if file cannot be loaded
- */
-function loadRulesFromJsFile(filePath: string): LogLevelRule[] | null {
-  if (typeof require === 'undefined') {
-    return null; // Not in Node.js environment
-  }
-
-  try {
-    // Use require to load at runtime (not bundled)
-    // resolve the path relative to process.cwd()
-    const path = require('path');
-    const resolvedPath = path.resolve(process.cwd(), filePath);
-
-    // Delete from cache to allow hot-reloading on restart
-    delete require.cache[resolvedPath];
-
-    const config = require(resolvedPath);
-
-    if (!config || !Array.isArray(config.rules)) {
-      console.error(`[LOG CONFIG] ${filePath} must export an object with a 'rules' array property`);
-      return null;
-    }
-
-    // Validate rules
-    const validRules = config.rules.filter((rule: any) => {
-      if (typeof rule !== 'object' || rule === null) {
-        console.error('[LOG CONFIG] Invalid rule (not an object):', rule);
-        return false;
-      }
-      if (typeof rule.pattern !== 'string' || typeof rule.level !== 'string') {
-        console.error('[LOG CONFIG] Invalid rule (missing pattern or level):', rule);
-        return false;
-      }
-      return true;
-    });
-
-    console.log(`[LOG CONFIG] Loaded ${validRules.length} log level rules from ${filePath}`);
-    return validRules;
-  } catch (err: any) {
-    // File not found or other error - this is OK, just return null
-    if (err.code !== 'MODULE_NOT_FOUND') {
-      console.error(`[LOG CONFIG] Error loading log level rules from ${filePath}:`, err.message);
-    }
-    return null;
-  }
-}
-
-/**
  * Parses log level rules from multiple sources in priority order:
- * 1. LOG_RULES.levels (directly set in code)
- * 2. JavaScript file specified in LOG_LEVEL_RULES_FILE env var
- * 3. Default JavaScript file locations (./log-level-rules.js, ./config/log-level-rules.js)
- * 4. JSON string in LOG_LEVEL_RULES env var
+ * 1. LOG_RULES.levels (directly set in code - RECOMMENDED)
+ * 2. JSON string in LOG_LEVEL_RULES env var (legacy fallback)
  *
  * Rules are evaluated in order (first match wins), so put the most
  * specific patterns first and general fallback patterns last.
  *
- * Example usage in your app:
+ * Recommended usage in your app:
  * ```typescript
+ * // In your app's config/log-levels.ts
  * import { LOG_RULES } from 'ts-gist-pile';
  *
- * LOG_RULES.levels.push(
+ * LOG_RULES.levels = [
  *   { pattern: "api.users.*", level: "DEBUG" },
  *   { pattern: "api.*", level: "INFO" },
  *   { pattern: "*", level: "WARN" }
- * );
+ * ];
+ *
+ * // Then in your app entry point:
+ * import './config/log-levels';  // Load FIRST, before creating loggers
  * ```
  *
  * @returns Array of log level rules, or empty array if not configured
@@ -518,30 +468,7 @@ function parseLogLevelRules(): LogLevelRule[] {
     return [];
   }
 
-  // Priority 2: Explicit file path from env var
-  const configFilePath = tryGetEnvVar('LOG_LEVEL_RULES_FILE');
-  if (configFilePath) {
-    const rules = loadRulesFromJsFile(configFilePath);
-    if (rules !== null) {
-      return rules;
-    }
-    console.error(`[LOG CONFIG] LOG_LEVEL_RULES_FILE specified (${configFilePath}) but could not be loaded`);
-  }
-
-  // Priority 3: Default file locations
-  const defaultLocations = [
-    './log-level-rules.js',
-    './config/log-level-rules.js'
-  ];
-
-  for (const location of defaultLocations) {
-    const rules = loadRulesFromJsFile(location);
-    if (rules !== null) {
-      return rules;
-    }
-  }
-
-  // Priority 4: JSON from env var (backward compatibility)
+  // Priority 2: JSON from env var (legacy fallback)
   const rulesJson = tryGetEnvVar('LOG_LEVEL_RULES');
   if (!rulesJson || rulesJson.trim().length === 0) {
     return [];
