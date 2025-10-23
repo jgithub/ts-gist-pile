@@ -365,9 +365,9 @@ function isTruelike(input: boolean | string | number | undefined): boolean {
 type JSONContext = { [key: string]: any }
 
 // Log level configuration types
-type LogLevel = 'TRACE' | 'DEBUG' | 'INFO' | 'NOTICE' | 'WARN' | 'ERROR' | 'FATAL';
+export type LogLevel = 'TRACE' | 'DEBUG' | 'INFO' | 'NOTICE' | 'WARN' | 'ERROR' | 'FATAL';
 
-interface LogLevelRule {
+export interface LogLevelRule {
   pattern: string;
   level: LogLevel;
 }
