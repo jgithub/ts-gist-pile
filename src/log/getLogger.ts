@@ -373,6 +373,33 @@ interface LogLevelRule {
 }
 
 /**
+ * Global log level rules configuration.
+ *
+ * You can directly modify this from your application code:
+ *
+ * ```typescript
+ * import { LOG_RULES } from 'ts-gist-pile';
+ *
+ * // Add rules
+ * LOG_RULES.levels.push(
+ *   { pattern: 'api.users', level: 'TRACE' },
+ *   { pattern: 'api.*', level: 'DEBUG' },
+ *   { pattern: '*', level: 'INFO' }
+ * );
+ *
+ * // Or replace entirely
+ * LOG_RULES.levels = [
+ *   { pattern: 'api.*', level: 'DEBUG' }
+ * ];
+ * ```
+ *
+ * Rules are evaluated in order (first match wins).
+ */
+export const LOG_RULES: { levels: LogLevelRule[] } = {
+  levels: []
+};
+
+/**
  * Determines if a logger name matches a pattern.
  * Supports:
  * - Exact matches: "api.users" matches "api.users"
@@ -460,33 +487,38 @@ function loadRulesFromJsFile(filePath: string): LogLevelRule[] | null {
 
 /**
  * Parses log level rules from multiple sources in priority order:
- * 1. JavaScript file specified in LOG_LEVEL_RULES_FILE env var
- * 2. Default JavaScript file locations (./log-level-rules.js, ./config/log-level-rules.js)
- * 3. JSON string in LOG_LEVEL_RULES env var
+ * 1. LOG_RULES.levels (directly set in code)
+ * 2. JavaScript file specified in LOG_LEVEL_RULES_FILE env var
+ * 3. Default JavaScript file locations (./log-level-rules.js, ./config/log-level-rules.js)
+ * 4. JSON string in LOG_LEVEL_RULES env var
  *
  * Rules are evaluated in order (first match wins), so put the most
  * specific patterns first and general fallback patterns last.
  *
- * Example JS file (log-level-rules.js):
- * ```javascript
- * module.exports = {
- *   rules: [
- *     { pattern: "api.users.controller", level: "TRACE" },
- *     { pattern: "api.users.*", level: "DEBUG" },
- *     { pattern: "api.*", level: "INFO" },
- *     { pattern: "*", level: "WARN" }
- *   ]
- * };
+ * Example usage in your app:
+ * ```typescript
+ * import { LOG_RULES } from 'ts-gist-pile';
+ *
+ * LOG_RULES.levels.push(
+ *   { pattern: "api.users.*", level: "DEBUG" },
+ *   { pattern: "api.*", level: "INFO" },
+ *   { pattern: "*", level: "WARN" }
+ * );
  * ```
  *
  * @returns Array of log level rules, or empty array if not configured
  */
 function parseLogLevelRules(): LogLevelRule[] {
+  // Priority 1: Directly set via LOG_RULES export
+  if (LOG_RULES.levels.length > 0) {
+    return LOG_RULES.levels;
+  }
+
   if (typeof process === 'undefined') {
     return [];
   }
 
-  // Priority 1: Explicit file path from env var
+  // Priority 2: Explicit file path from env var
   const configFilePath = tryGetEnvVar('LOG_LEVEL_RULES_FILE');
   if (configFilePath) {
     const rules = loadRulesFromJsFile(configFilePath);
@@ -496,7 +528,7 @@ function parseLogLevelRules(): LogLevelRule[] {
     console.error(`[LOG CONFIG] LOG_LEVEL_RULES_FILE specified (${configFilePath}) but could not be loaded`);
   }
 
-  // Priority 2: Default file locations
+  // Priority 3: Default file locations
   const defaultLocations = [
     './log-level-rules.js',
     './config/log-level-rules.js'
@@ -509,7 +541,7 @@ function parseLogLevelRules(): LogLevelRule[] {
     }
   }
 
-  // Priority 3: JSON from env var (backward compatibility)
+  // Priority 4: JSON from env var (backward compatibility)
   const rulesJson = tryGetEnvVar('LOG_LEVEL_RULES');
   if (!rulesJson || rulesJson.trim().length === 0) {
     return [];
