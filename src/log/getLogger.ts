@@ -434,14 +434,12 @@ function matchesPattern(loggerName: string, pattern: string): boolean {
 }
 
 /**
- * Parses log level rules from multiple sources in priority order:
- * 1. LOG_RULES.levels (directly set in code - RECOMMENDED)
- * 2. JSON string in LOG_LEVEL_RULES env var (legacy fallback)
+ * Parses log level rules from LOG_RULES.levels.
  *
  * Rules are evaluated in order (first match wins), so put the most
  * specific patterns first and general fallback patterns last.
  *
- * Recommended usage in your app:
+ * Usage in your app:
  * ```typescript
  * // In your app's config/log-levels.ts
  * import { LOG_RULES } from 'ts-gist-pile';
@@ -459,43 +457,7 @@ function matchesPattern(loggerName: string, pattern: string): boolean {
  * @returns Array of log level rules, or empty array if not configured
  */
 function parseLogLevelRules(): LogLevelRule[] {
-  // Priority 1: Directly set via LOG_RULES export
-  if (LOG_RULES.levels.length > 0) {
-    return LOG_RULES.levels;
-  }
-
-  if (typeof process === 'undefined') {
-    return [];
-  }
-
-  // Priority 2: JSON from env var (legacy fallback)
-  const rulesJson = tryGetEnvVar('LOG_LEVEL_RULES');
-  if (!rulesJson || rulesJson.trim().length === 0) {
-    return [];
-  }
-
-  try {
-    const rules = JSON.parse(rulesJson);
-    if (!Array.isArray(rules)) {
-      console.error('[LOG CONFIG] LOG_LEVEL_RULES must be a JSON array');
-      return [];
-    }
-
-    return rules.filter((rule: any) => {
-      if (typeof rule !== 'object' || rule === null) {
-        console.error('[LOG CONFIG] Invalid rule (not an object):', rule);
-        return false;
-      }
-      if (typeof rule.pattern !== 'string' || typeof rule.level !== 'string') {
-        console.error('[LOG CONFIG] Invalid rule (missing pattern or level):', rule);
-        return false;
-      }
-      return true;
-    });
-  } catch (err) {
-    console.error('[LOG CONFIG] Failed to parse LOG_LEVEL_RULES:', err);
-    return [];
-  }
+  return LOG_RULES.levels;
 }
 
 /**
