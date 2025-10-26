@@ -27,7 +27,7 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "prepare": "npm run build",
+    "prepack": "npm run build",
     "prepublishOnly": "npm test",
     "build": "tsc",
     "test": "env TZ='America/Chicago' env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.test.ts'"

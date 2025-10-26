@@ -1,0 +1,10 @@
+export declare function generateSortedFiveMinuteBucketsForYearInSeconds(year: number): number[];
+export declare function dateToYyyyMmDdStringAtUtc(date: Date): string;
+export declare function getDateInLondon(date: Date): Date;
+export declare function getMillisecondsBetweenDates(start: Date, end: Date): number;
+export declare function getSecondsBetweenDates(start: Date, end: Date): number;
+export declare function getSecondsBetweenEpochAndDate(date: Date): number;
+export declare function getMillisecondsBetweenEpochAndDate(date: Date): number;
+export declare function isValidDateObject(obj: any): boolean;
+export declare function isIso8601(input: string): boolean;
+export declare function isIso8601Utc(input: string): boolean;

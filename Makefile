@@ -16,6 +16,10 @@ cleandist:
 test:
 	cd ${ROOT_DIR} && npm test
 
+.PHONY: pack
+pack:
+	cd ${ROOT_DIR} && npm pack
+
 .PHONY: publish
 publish:
 	cd ${ROOT_DIR} && npm publish

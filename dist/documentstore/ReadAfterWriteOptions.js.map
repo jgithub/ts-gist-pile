@@ -1,0 +1,1 @@
+{"version":3,"file":"ReadAfterWriteOptions.js","sourceRoot":"","sources":["../../src/documentstore/ReadAfterWriteOptions.ts"],"names":[],"mappings":";;;AA0Da,QAAA,gCAAgC,GAA0B;IACrE,SAAS,EAAE,IAAI;IACf,cAAc,EAAE,GAAG;CACpB,CAAC;AAKW,QAAA,6BAA6B,GAA0B;IAClE,SAAS,EAAE,IAAI;IACf,cAAc,EAAE,EAAE;CACnB,CAAC;AAKW,QAAA,gCAAgC,GAA0B;IACrE,SAAS,EAAE,KAAK;IAChB,cAAc,EAAE,GAAG;CACpB,CAAC"}
