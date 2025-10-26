@@ -59,3 +59,8 @@ export function isStagingLikeEnv(): boolean {
   const nodeEnv = tryGetEnvVar('NODE_ENV');
   return nodeEnv === 'staging' || nodeEnv === 'stage';
 }
+
+export function isTestLikeEnv(): boolean {
+  const nodeEnv = tryGetEnvVar('NODE_ENV');
+  return nodeEnv === 'test';
+}

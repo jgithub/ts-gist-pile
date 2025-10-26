@@ -3,7 +3,8 @@ ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 .PHONY: dist
 dist: cleandist
-	cd ${ROOT_DIR} && npm run build
+#	cd ${ROOT_DIR} && npm run build
+	cd ${ROOT_DIR} && npm pack
 
 .PHONY: build
 build: dist

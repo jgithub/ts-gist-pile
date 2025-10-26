@@ -5,6 +5,7 @@ exports.tryGetEnvVar = tryGetEnvVar;
 exports.isProductionLikeEnv = isProductionLikeEnv;
 exports.isDevelopmentLikeEnv = isDevelopmentLikeEnv;
 exports.isStagingLikeEnv = isStagingLikeEnv;
+exports.isTestLikeEnv = isTestLikeEnv;
 var memoized = new Map();
 function resetEnvVarCache() {
     memoized.clear();
@@ -48,5 +49,9 @@ function isDevelopmentLikeEnv() {
 function isStagingLikeEnv() {
     var nodeEnv = tryGetEnvVar('NODE_ENV');
     return nodeEnv === 'staging' || nodeEnv === 'stage';
+}
+function isTestLikeEnv() {
+    var nodeEnv = tryGetEnvVar('NODE_ENV');
+    return nodeEnv === 'test';
 }
 //# sourceMappingURL=envUtil.js.map
