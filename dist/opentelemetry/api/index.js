@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NoOpSpanEndHandler = exports.NoOpAddEventHandler = exports.SpanStatusCode = exports.context = exports.clearSpanEndHandlers = exports.unregisterSpanEndHandler = exports.registerSpanEndHandler = exports.clearAddEventHandlers = exports.unregisterAddEventHandler = exports.registerAddEventHandler = exports.isSpanContextValid = exports.trace = void 0;
+var trace_1 = require("./trace");
+Object.defineProperty(exports, "trace", { enumerable: true, get: function () { return trace_1.trace; } });
+Object.defineProperty(exports, "isSpanContextValid", { enumerable: true, get: function () { return trace_1.isSpanContextValid; } });
+Object.defineProperty(exports, "registerAddEventHandler", { enumerable: true, get: function () { return trace_1.registerAddEventHandler; } });
+Object.defineProperty(exports, "unregisterAddEventHandler", { enumerable: true, get: function () { return trace_1.unregisterAddEventHandler; } });
+Object.defineProperty(exports, "clearAddEventHandlers", { enumerable: true, get: function () { return trace_1.clearAddEventHandlers; } });
+Object.defineProperty(exports, "registerSpanEndHandler", { enumerable: true, get: function () { return trace_1.registerSpanEndHandler; } });
+Object.defineProperty(exports, "unregisterSpanEndHandler", { enumerable: true, get: function () { return trace_1.unregisterSpanEndHandler; } });
+Object.defineProperty(exports, "clearSpanEndHandlers", { enumerable: true, get: function () { return trace_1.clearSpanEndHandlers; } });
+var context_1 = require("./context");
+Object.defineProperty(exports, "context", { enumerable: true, get: function () { return context_1.context; } });
+var SpanStatusCode_1 = require("./SpanStatusCode");
+Object.defineProperty(exports, "SpanStatusCode", { enumerable: true, get: function () { return SpanStatusCode_1.SpanStatusCode; } });
+var NoOpAddEventHandler_1 = require("./NoOpAddEventHandler");
+Object.defineProperty(exports, "NoOpAddEventHandler", { enumerable: true, get: function () { return NoOpAddEventHandler_1.NoOpAddEventHandler; } });
+var NoOpSpanEndHandler_1 = require("./NoOpSpanEndHandler");
+Object.defineProperty(exports, "NoOpSpanEndHandler", { enumerable: true, get: function () { return NoOpSpanEndHandler_1.NoOpSpanEndHandler; } });
+//# sourceMappingURL=index.js.map

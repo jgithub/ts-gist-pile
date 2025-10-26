@@ -1,0 +1,22 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NotImplementedException = exports.ServiceUnavailable503Exception = exports.InternalServerError500Exception = exports.ArgumentException = exports.NotFound404Exception = exports.Forbidden403Exception = exports.ActuallyUnauthenticated401Exception = exports.BadRequest400Exception = exports.ProgrammerErrorException = void 0;
+var ProgrammerErrorException_1 = require("./ProgrammerErrorException");
+Object.defineProperty(exports, "ProgrammerErrorException", { enumerable: true, get: function () { return ProgrammerErrorException_1.ProgrammerErrorException; } });
+var BadRequest400Exception_1 = require("./BadRequest400Exception");
+Object.defineProperty(exports, "BadRequest400Exception", { enumerable: true, get: function () { return BadRequest400Exception_1.BadRequest400Exception; } });
+var ActuallyUnauthenticated401Exception_1 = require("./ActuallyUnauthenticated401Exception");
+Object.defineProperty(exports, "ActuallyUnauthenticated401Exception", { enumerable: true, get: function () { return ActuallyUnauthenticated401Exception_1.ActuallyUnauthenticated401Exception; } });
+var Forbidden403Exception_1 = require("./Forbidden403Exception");
+Object.defineProperty(exports, "Forbidden403Exception", { enumerable: true, get: function () { return Forbidden403Exception_1.Forbidden403Exception; } });
+var NotFound404Exception_1 = require("./NotFound404Exception");
+Object.defineProperty(exports, "NotFound404Exception", { enumerable: true, get: function () { return NotFound404Exception_1.NotFound404Exception; } });
+var ArgumentException_1 = require("./ArgumentException");
+Object.defineProperty(exports, "ArgumentException", { enumerable: true, get: function () { return ArgumentException_1.ArgumentException; } });
+var InternalServerError500Exception_1 = require("./InternalServerError500Exception");
+Object.defineProperty(exports, "InternalServerError500Exception", { enumerable: true, get: function () { return InternalServerError500Exception_1.InternalServerError500Exception; } });
+var ServiceUnavailable503Exception_1 = require("./ServiceUnavailable503Exception");
+Object.defineProperty(exports, "ServiceUnavailable503Exception", { enumerable: true, get: function () { return ServiceUnavailable503Exception_1.ServiceUnavailable503Exception; } });
+var NotImplementedException_1 = require("./NotImplementedException");
+Object.defineProperty(exports, "NotImplementedException", { enumerable: true, get: function () { return NotImplementedException_1.NotImplementedException; } });
+//# sourceMappingURL=extendedExceptionList.js.map

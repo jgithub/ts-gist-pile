@@ -1,6 +1,6 @@
 {
   "name": "@jgithub/ts-gist-pile",
-  "version": "0.0.312",
+  "version": "0.0.313",
   "description": "tired of finding this on stackoverflow",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,7 +27,7 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "prepare": "npm run build",
+    "prepack": "npm run build",
     "prepublishOnly": "npm test",
     "build": "tsc",
     "test": "env TZ='America/Chicago' env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.test.ts'"

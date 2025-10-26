@@ -1,0 +1,1 @@
+{"version":3,"file":"cloneUtil.js","sourceRoot":"","sources":["../../src/clone/cloneUtil.ts"],"names":[],"mappings":";;;;;;;;;;;;;AAIA,8BAEC;AAKD,gDAGC;AAVD,SAAgB,SAAS,CAAI,GAAM;IACjC,OAAO,eAAe,CAAC,GAAG,CAAC,CAAC;AAC9B,CAAC;AAKD,SAAgB,kBAAkB,CAAI,QAAW,EAAE,SAAqB;IACtE,IAAM,MAAM,yBAAQ,eAAe,CAAC,QAAQ,CAAC,GAAK,SAAS,CAAE,CAAC;IAC9D,OAAO,MAAW,CAAC;AACrB,CAAC"}
