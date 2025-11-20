@@ -1,5 +1,3 @@
-// I borrowed these from ts-gist-pile
-
 
 export function isPresent(input: string | undefined | null): boolean {
   if (input == null) {
