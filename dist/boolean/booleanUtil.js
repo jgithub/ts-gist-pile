@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.isTrueIsh = exports.isTrueLike = exports.doesImplyTrue = void 0;
 exports.isTruelike = isTruelike;
 function isTruelike(input) {
     if (input == null) {
@@ -12,4 +13,7 @@ function isTruelike(input) {
     }
     return false;
 }
+exports.doesImplyTrue = isTruelike;
+exports.isTrueLike = isTruelike;
+exports.isTrueIsh = isTruelike;
 //# sourceMappingURL=booleanUtil.js.map

@@ -13,7 +13,7 @@ exports.isPIISecureModeEnabled = isPIISecureModeEnabled;
 exports.hashPIIValue = hashPIIValue;
 exports.sanitizePII = sanitizePII;
 exports.getPIIFieldNames = getPIIFieldNames;
-var envUtil_1 = require("../env/envUtil");
+var environmentUtil_1 = require("../env/environmentUtil");
 var nodeCrypto;
 if (typeof window === "undefined" && typeof global !== "undefined") {
     try {
@@ -36,7 +36,7 @@ function isPIISecureModeEnabled() {
     if (typeof window !== "undefined") {
         return false;
     }
-    var secret = (0, envUtil_1.tryGetEnvVar)('LOG_HASH_SECRET');
+    var secret = (0, environmentUtil_1.tryGetEnvVar)('LOG_HASH_SECRET');
     return secret != null && secret.trim().length > 0 && nodeCrypto != null;
 }
 function hashPII(value) {
@@ -45,7 +45,7 @@ function hashPII(value) {
     if (!nodeCrypto) {
         return '****';
     }
-    var secret = (0, envUtil_1.tryGetEnvVar)('LOG_HASH_SECRET') || '';
+    var secret = (0, environmentUtil_1.tryGetEnvVar)('LOG_HASH_SECRET') || '';
     try {
         return nodeCrypto
             .createHash('sha256')

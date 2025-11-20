@@ -7,13 +7,13 @@ declare class Logger {
     private buildCompleteJsonContext;
     private buildLogMsgPlainText;
     private writeLogMsgToTerminal;
-    trace(msg: stringorstringfn, jsonContext?: JSONContext, ...extra: any[]): void;
-    debug(msg: stringorstringfn, jsonContext?: JSONContext, ...extra: any[]): void;
-    info(msg: stringorstringfn, jsonContext?: JSONContext, ...extra: any[]): void;
-    notice(msg: stringorstringfn, jsonContext?: JSONContext, ...extra: any[]): void;
-    fatal(msg: stringorstringfn, jsonContext?: JSONContext, ...extra: any[]): void;
-    warn(msg: string, jsonContext?: JSONContext, ...extra: any[]): void;
-    error(msg: string, jsonContext?: JSONContext, ...extra: any[]): void;
+    trace(msg: stringorstringfn, context?: JSONContext | Error | undefined, ...extra: any[]): void;
+    debug(msg: stringorstringfn, context?: JSONContext | Error | undefined, ...extra: any[]): void;
+    info(msg: stringorstringfn, context?: JSONContext | Error | undefined, ...extra: any[]): void;
+    notice(msg: stringorstringfn, context?: JSONContext | Error | undefined, ...extra: any[]): void;
+    fatal(msg: stringorstringfn, context?: JSONContext | Error | undefined, ...extra: any[]): void;
+    warn(msg: string, context?: JSONContext | Error | undefined, ...extra: any[]): void;
+    error(msg: string, context?: JSONContext | Error | undefined, ...extra: any[]): void;
 }
 export declare function getLogger(loggerName: string): Logger;
 export declare function withStoreId(storeId: string, fn: () => any): any;

@@ -1,7 +1,7 @@
 
-import { tryGetEnvVar, resetEnvVarCache } from "../env/envUtil";
+import { tryGetEnvVar, resetEnvVarCache } from "../env/environmentUtil";
 import { sendStatToKpitracks } from "../stat/statUtil";
-import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
+import { context as otelContext, trace, isSpanContextValid, Span } from '@opentelemetry/api';
 import { sanitizePII } from './piiSanitizer';
 
 let AsyncLocalStorage: any | undefined;
@@ -42,15 +42,15 @@ type stringorstringfn = string | (() => string)
 class Logger {
   constructor(private readonly loggerName: string) {}
 
-  private buildLogMsg(severity: string, msg: stringorstringfn, jsonContext: JSONContext): string {
+  private buildLogMsg(severity: string, msg: stringorstringfn, context: JSONContext | undefined | Error): string {
     if (isTruelike(tryGetEnvVar('LOG_USE_JSON_FORMAT'))) {
-      return this.buildLogMsgJsonFormat(severity, msg, jsonContext);
+      return this.buildLogMsgJsonFormat(severity, msg, context);
     } else {
-      return this.buildLogMsgPlainText(severity, msg, jsonContext);
+      return this.buildLogMsgPlainText(severity, msg, context);
     }
   }
 
-  private buildLogMsgJsonFormat(severity: string, msg: stringorstringfn, jsonContext: JSONContext): string {
+  private buildLogMsgJsonFormat(severity: string, msg: stringorstringfn, context: JSONContext | undefined | Error): string {
     const json: any = {}
     if (typeof process !== 'undefined' && isTruelike(tryGetEnvVar('LOG_PREPEND_TIMESTAMP'))) {
       json["at"] = new Date().toISOString()
@@ -67,20 +67,32 @@ class Logger {
       json["msg"] = msg
     }
 
-    jsonContext = this.buildCompleteJsonContext(jsonContext)
+    context = this.buildCompleteJsonContext(context)
     
     // testing
-    // jsonContext["spanId"] = "from context"
+    // context["spanId"] = "from context"
     // json["spanId"] = "from orig"
 
-    // In the merged JSON, the root context should take presedence over the jsonContext
-    const mergedJson = { ...jsonContext, ...json }
+    // In the merged JSON, the root context should take presedence over the context
+    const mergedJson = { ...context, ...json }
 
 
     return JSON.stringify(mergedJson)
   }
 
-  private buildCompleteJsonContext(jsonContext: JSONContext): JSONContext {
+  private buildCompleteJsonContext(context: JSONContext | undefined | Error): JSONContext {
+    // Convert Error to JSONContext
+    let jsonContext: JSONContext = {};
+    if (context instanceof Error) {
+      jsonContext = {
+        error: context.message,
+        errorName: context.name,
+        errorStack: context.stack
+      };
+    } else if (context != null) {
+      jsonContext = { ...context };
+    }
+
     if (asyncLocalStorage != null) {
       try {
         const storeInLocalStorage = asyncLocalStorage.getStore();
@@ -95,7 +107,7 @@ class Logger {
     }
 
 
-    const span = trace.getSpan(context.active());
+    const span = trace.getSpan(otelContext.active());
     if (span) {
       const { traceId, spanId } = span.spanContext();
       // console.log(`traceId = '${traceId}', spanId = '${spanId}'`)
@@ -112,13 +124,13 @@ class Logger {
   }
 
 
-  private buildLogMsgPlainText(severity: string, msg: stringorstringfn, jsonContext: JSONContext): string {
+  private buildLogMsgPlainText(severity: string, msg: stringorstringfn, context: JSONContext | undefined | Error): string {
     const messageParts = [];
     if (typeof process !== 'undefined' && isTruelike(tryGetEnvVar('LOG_PREPEND_TIMESTAMP'))) {
       messageParts.push(new Date().toUTCString())
     }
     messageParts.push(severity)
-    // messageParts.push(JSON.stringify(jsonContext))
+    // messageParts.push(JSON.stringify(context))
     messageParts.push(this.loggerName)
 
     if (typeof msg === 'function') {
@@ -127,10 +139,10 @@ class Logger {
       messageParts.push(msg)
     }
     
-    jsonContext = this.buildCompleteJsonContext(jsonContext)
+    context = this.buildCompleteJsonContext(context)
 
 
-    const wouldBeJsonContextString = JSON.stringify(jsonContext)
+    const wouldBeJsonContextString = JSON.stringify(context)
     if (wouldBeJsonContextString != null && wouldBeJsonContextString.length > 0 && wouldBeJsonContextString != "{}" && wouldBeJsonContextString != "{ }") {
       messageParts.push(wouldBeJsonContextString)
     }
@@ -153,34 +165,40 @@ class Logger {
     }
   }
 
-  public trace(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
+  public trace(msg: stringorstringfn, context: JSONContext | Error | undefined = undefined, ...extra: any[]): void {
     if (isLogLevelEnabled(this.loggerName, 'TRACE')) {
-      const completeMsg = this.buildLogMsg("[ TRACE]", msg, jsonContext)
+      const completeMsg = this.buildLogMsg("[ TRACE]", msg, context)
       this.writeLogMsgToTerminal(completeMsg)
     }
   }
 
-  public debug(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
+  public debug(msg: stringorstringfn, context: JSONContext | Error | undefined = undefined, ...extra: any[]): void {
     if (isLogLevelEnabled(this.loggerName, 'DEBUG')) {
-      const completeMsg = this.buildLogMsg("[ DEBUG]", msg, jsonContext)
+      const completeMsg = this.buildLogMsg("[ DEBUG]", msg, context)
       this.writeLogMsgToTerminal(completeMsg)
     }
   }
 
-  public info(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
+  public info(msg: stringorstringfn, context: JSONContext | Error | undefined = undefined, ...extra: any[]): void {
     if (isLogLevelEnabled(this.loggerName, 'INFO')) {
-      const completeMsg = this.buildLogMsg("[  INFO]", msg, jsonContext)
+      const completeMsg = this.buildLogMsg("[  INFO]", msg, context)
       this.writeLogMsgToTerminal(completeMsg)
     }
   }
 
-  public notice(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
-    const completeMsg = this.buildLogMsg("[NOTICE]", msg, jsonContext)
-    this.writeLogMsgToTerminal(completeMsg)
+  public notice(msg: stringorstringfn, context: JSONContext | Error | undefined = undefined, ...extra: any[]): void {
+    if (isLogLevelEnabled(this.loggerName, 'NOTICE')) {
+      const completeMsg = this.buildLogMsg("[NOTICE]", msg, context)
+      this.writeLogMsgToTerminal(completeMsg)
+    }
   }
 
 
-  public fatal(msg: stringorstringfn, jsonContext: JSONContext = {}, ...extra: any[]): void {
+  public fatal(msg: stringorstringfn, context: JSONContext | Error | undefined = undefined, ...extra: any[]): void {
+    if (!isLogLevelEnabled(this.loggerName, 'FATAL')) {
+      return;
+    }
+
     if (typeof process !== 'undefined' && process.env?.STATHAT_EZ_KEY != null && process.env?.STATHAT_EZ_KEY.trim()?.length > 0 && process.env?.STATHAT_FATAL_KEY != null && process.env?.STATHAT_FATAL_KEY.trim()?.length > 0) {
 
       const controller = new AbortController()
@@ -200,8 +218,8 @@ class Logger {
 
       const beforeAt = new Date()
       // While still experimental, the global fetch API is available by default in Node.js 18
-      fetch(url, { 
-        method: 'POST', 
+      fetch(url, {
+        method: 'POST',
         headers:{
           'Content-Type': 'application/x-www-form-urlencoded'
         },
@@ -217,16 +235,20 @@ class Logger {
       }).catch(err => {
         // console.log(`[STATHAT][ ERROR] Reason: ${d4l(err)}`)
       })
-    }    
-    
+    }
+
     if (typeof process !== 'undefined' && process.env?.KPITRACKS_FATAL_KEY != null && process.env?.KPITRACKS_FATAL_KEY?.trim()?.length > 0) {
       sendStatToKpitracks(`stat=${process.env.KPITRACKS_FATAL_KEY?.trim()}&count=1`)
     }
-    const completeMsg = this.buildLogMsg("[ FATAL][ ERROR]", msg, jsonContext)
+    const completeMsg = this.buildLogMsg("[ FATAL][ ERROR]", msg, context)
     this.writeLogMsgToTerminal(completeMsg)
   }
 
-  public warn(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
+  public warn(msg: string, context: JSONContext | Error | undefined = undefined, ...extra: any[]): void {
+    if (!isLogLevelEnabled(this.loggerName, 'WARN')) {
+      return;
+    }
+
     if (typeof process !== 'undefined' && process.env?.STATHAT_EZ_KEY != null && process.env?.STATHAT_EZ_KEY?.trim()?.length > 0 && process.env?.STATHAT_WARN_KEY != null && process.env?.STATHAT_WARN_KEY?.trim()?.length > 0) {
 
       const controller = new AbortController()
@@ -246,8 +268,8 @@ class Logger {
 
       const beforeAt = new Date()
       // While still experimental, the global fetch API is available by default in Node.js 18
-      fetch(url, { 
-        method: 'POST', 
+      fetch(url, {
+        method: 'POST',
         headers:{
           'Content-Type': 'application/x-www-form-urlencoded'
         },
@@ -263,17 +285,21 @@ class Logger {
       }).catch(err => {
         // console.log(`[STATHAT][ ERROR] Reason: ${d4l(err)}`)
       })
-    }    
-    
+    }
+
     if (typeof process !== 'undefined' && process.env?.KPITRACKS_WARN_KEY != null && process.env?.KPITRACKS_WARN_KEY?.trim()?.length > 0) {
       sendStatToKpitracks(`stat=${process.env.KPITRACKS_WARN_KEY?.trim()}&count=1`)
     }
-    const completeMsg = this.buildLogMsg("[  WARN]", msg, jsonContext)
+    const completeMsg = this.buildLogMsg("[  WARN]", msg, context)
     this.writeLogMsgToTerminal(completeMsg)
   }
 
 
-  public error(msg: string, jsonContext: JSONContext = {}, ...extra: any[]): void {
+  public error(msg: string, context: JSONContext | Error | undefined = undefined, ...extra: any[]): void {
+    if (!isLogLevelEnabled(this.loggerName, 'ERROR')) {
+      return;
+    }
+
     // console.log(`error(): STATHAT_EZ_KEY = '${process.env.STATHAT_EZ_KEY}',  STATHAT_ERROR_KEY = '${process.env.STATHAT_ERROR_KEY}'`)
 
     if (typeof process !== 'undefined' && process.env?.STATHAT_EZ_KEY != null && process.env?.STATHAT_EZ_KEY?.trim()?.length > 0 && process.env?.STATHAT_ERROR_KEY != null && process.env?.STATHAT_ERROR_KEY?.trim()?.length > 0) {
@@ -299,8 +325,8 @@ class Logger {
 
       const beforeAt = new Date()
       // While still experimental, the global fetch API is available by default in Node.js 18
-      fetch(url, { 
-        method: 'POST', 
+      fetch(url, {
+        method: 'POST',
         headers:{
           'Content-Type': 'application/x-www-form-urlencoded'
         },
@@ -318,16 +344,16 @@ class Logger {
       })
 
       // } catch(err) {
-      //   const stathatError = this.buildLogMsg("[STATHAT][ ERROR]", msg, jsonContext)
+      //   const stathatError = this.buildLogMsg("[STATHAT][ ERROR]", msg, context)
       //   console.log(stathatError)
-      // } 
-    }    
-    
+      // }
+    }
+
     if (typeof process !== 'undefined' && process.env?.KPITRACKS_ERROR_KEY != null && process.env?.KPITRACKS_ERROR_KEY?.trim()?.length > 0) {
       sendStatToKpitracks(`stat=${process.env.KPITRACKS_ERROR_KEY?.trim()}&count=1`)
     }
 
-    const completeMsg = this.buildLogMsg("[ ERROR]", msg, jsonContext)
+    const completeMsg = this.buildLogMsg("[ ERROR]", msg, context)
     this.writeLogMsgToTerminal(completeMsg)
   }
 }
@@ -535,7 +561,41 @@ function getLogLevelRules(): LogLevelRule[] {
  */
 export function resetLogLevelRulesCache(): void {
   cachedLogLevelRules = null;
+  cachedParsedLogLevel = undefined;
   LoggerFactory.resetLoggerCache();
+}
+
+// Cache for parsed LOG_LEVEL to avoid repeated parsing and warnings
+let cachedParsedLogLevel: LogLevel | null | undefined = undefined;
+
+/**
+ * Parses the LOG_LEVEL environment variable and returns the corresponding LogLevel.
+ *
+ * @returns The parsed log level, or null if LOG_LEVEL is not set or invalid
+ */
+function parseLogLevelFromEnv(): LogLevel | null {
+  if (cachedParsedLogLevel !== undefined) {
+    return cachedParsedLogLevel;
+  }
+
+  const logLevelValue = tryGetEnvVar('LOG_LEVEL');
+  if (!logLevelValue) {
+    cachedParsedLogLevel = null;
+    return null;
+  }
+
+  const normalizedValue = logLevelValue.trim().toUpperCase();
+  const validLevels: LogLevel[] = ['TRACE', 'DEBUG', 'INFO', 'NOTICE', 'WARN', 'ERROR', 'FATAL'];
+
+  if (validLevels.includes(normalizedValue as LogLevel)) {
+    cachedParsedLogLevel = normalizedValue as LogLevel;
+    return cachedParsedLogLevel;
+  }
+
+  // Invalid LOG_LEVEL value - log a warning (only once due to caching)
+  console.log(`ts-gist-pile: Invalid LOG_LEVEL value: '${logLevelValue}'. Valid values are: ${validLevels.join(', ')}`);
+  cachedParsedLogLevel = null;
+  return null;
 }
 
 /**
@@ -543,11 +603,16 @@ export function resetLogLevelRulesCache(): void {
  *
  * Priority order:
  * 1. Pattern-based rules (LOG_RULES.levels) - If ANY pattern matches, uses that rule exclusively
- * 2. Legacy environment variables (LOG_TRACE, LOG_DEBUG, LOG_INFO) - Only if no pattern matched
- * 3. Default behavior (NOTICE and above always enabled)
+ * 2. Individual level environment variables (LOG_TRACE, LOG_DEBUG, LOG_INFO)
+ * 3. LOG_LEVEL environment variable (sets multiple levels at once)
+ * 4. Default behavior (NOTICE and above always enabled)
+ *
+ * Individual level env vars override LOG_LEVEL. For example:
+ * - LOG_LEVEL=trace LOG_TRACE=0 → trace is disabled, but debug/info/etc. are enabled
+ * - LOG_LEVEL=trace LOG_DEBUG=0 → trace is enabled, debug is disabled, info/etc. are enabled
  *
  * IMPORTANT: If a pattern matches in LOG_RULES.levels, the rule takes complete precedence
- * over legacy env vars, regardless of whether it's more or less restrictive.
+ * over all env vars, regardless of whether it's more or less restrictive.
  *
  * Example:
  * ```
@@ -574,26 +639,82 @@ function isLogLevelEnabled(loggerName: string, level: LogLevel): boolean {
     return requestedIndex >= configuredIndex;
   }
 
-  // Fall back to legacy environment variable checks
+  // Fall back to environment variable checks
   if (typeof process === 'undefined') {
     // In browser, only NOTICE and above are enabled by default
     return ['NOTICE', 'WARN', 'ERROR', 'FATAL'].includes(level);
   }
 
-  // Legacy environment variable behavior
+  // Check individual level env vars first (they override LOG_LEVEL)
+  let individualLevelSet = false;
+  let individualLevelEnabled = false;
+
   switch (level) {
     case 'TRACE':
-      return isTruelike(tryGetEnvVar('LOG_TRACE'));
+      const traceEnv = tryGetEnvVar('LOG_TRACE');
+      if (traceEnv !== undefined) {
+        individualLevelSet = true;
+        individualLevelEnabled = isTruelike(traceEnv);
+      }
+      break;
     case 'DEBUG':
-      return isTruelike(tryGetEnvVar('LOG_DEBUG'));
+      const debugEnv = tryGetEnvVar('LOG_DEBUG');
+      if (debugEnv !== undefined) {
+        individualLevelSet = true;
+        individualLevelEnabled = isTruelike(debugEnv);
+      }
+      break;
     case 'INFO':
-      return isTruelike(tryGetEnvVar('LOG_INFO'));
+      const infoEnv = tryGetEnvVar('LOG_INFO');
+      if (infoEnv !== undefined) {
+        individualLevelSet = true;
+        individualLevelEnabled = isTruelike(infoEnv);
+      }
+      break;
     case 'NOTICE':
+      const noticeEnv = tryGetEnvVar('LOG_NOTICE');
+      if (noticeEnv !== undefined) {
+        individualLevelSet = true;
+        individualLevelEnabled = isTruelike(noticeEnv);
+      }
+      break;
     case 'WARN':
+      const warnEnv = tryGetEnvVar('LOG_WARN');
+      if (warnEnv !== undefined) {
+        individualLevelSet = true;
+        individualLevelEnabled = isTruelike(warnEnv);
+      }
+      break;
     case 'ERROR':
+      const errorEnv = tryGetEnvVar('LOG_ERROR');
+      if (errorEnv !== undefined) {
+        individualLevelSet = true;
+        individualLevelEnabled = isTruelike(errorEnv);
+      }
+      break;
     case 'FATAL':
-      return true;
-    default:
-      return false;
+      const fatalEnv = tryGetEnvVar('LOG_FATAL');
+      if (fatalEnv !== undefined) {
+        individualLevelSet = true;
+        individualLevelEnabled = isTruelike(fatalEnv);
+      }
+      break;
   }
+
+  // If an individual level env var was set, use that (it overrides LOG_LEVEL)
+  if (individualLevelSet) {
+    return individualLevelEnabled;
+  }
+
+  // Check LOG_LEVEL env var
+  const logLevel = parseLogLevelFromEnv();
+  if (logLevel !== null) {
+    const levelHierarchy: LogLevel[] = ['TRACE', 'DEBUG', 'INFO', 'NOTICE', 'WARN', 'ERROR', 'FATAL'];
+    const configuredIndex = levelHierarchy.indexOf(logLevel);
+    const requestedIndex = levelHierarchy.indexOf(level);
+    return requestedIndex >= configuredIndex;
+  }
+
+  // Default behavior: NOTICE and above are always enabled
+  return ['NOTICE', 'WARN', 'ERROR', 'FATAL'].includes(level);
 }
