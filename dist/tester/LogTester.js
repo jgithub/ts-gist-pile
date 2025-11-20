@@ -24,7 +24,7 @@ var LogTester = (function () {
             var usernameToTrack = 'bob';
             span.setAttributes({ usernameToTrack: usernameToTrack });
             _this.doSomething();
-            LOG.debug("buildCar(): Entering.  ", { make: make, model: model });
+            LOG.debug("buildCar(): Entering.", { make: make, model: model });
             LOG.debug(function () { return "buildCar(): Entering with make = ".concat((0, logUtil_1.d4l)(make)); });
             LOG.fatal("buildCar(): password = ".concat((0, logUtil_1.d4lObfuscate)("password")));
             LOG.fatal("buildCar(): password = ".concat((0, logUtil_1.d4lObfuscate)("123456789012345")));

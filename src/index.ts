@@ -18,7 +18,7 @@ export * as emailUtil from "./email/emailUtil"
 export * as phoneUtil from "./phone/phoneUtil"
 export * as diceUtil from "./dice/diceUtil"
 export * as retryUtil from "./retry/retryUtil"
-export * as envUtil from "./env/envUtil"
+export * as environmentUtil from "./env/environmentUtil"
 
 export { Container } from "./di/Container"
 

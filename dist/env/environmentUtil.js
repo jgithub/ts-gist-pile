@@ -54,4 +54,4 @@ function isTestLikeEnv() {
     var nodeEnv = tryGetEnvVar('NODE_ENV');
     return nodeEnv === 'test';
 }
-//# sourceMappingURL=envUtil.js.map
+//# sourceMappingURL=environmentUtil.js.map

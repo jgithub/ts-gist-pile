@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { getLogger } from '../../src/log/getLogger';
+import { getLogger, resetLogLevelRulesCache } from '../../src/log/getLogger';
+import { resetEnvVarCache } from '../../src/env/environmentUtil';
 
 describe('getLogger with PII Sanitization', () => {
   const originalEnv = {
@@ -7,7 +8,8 @@ describe('getLogger with PII Sanitization', () => {
     LOG_USE_JSON_FORMAT: process.env.LOG_USE_JSON_FORMAT,
     LOG_INFO: process.env.LOG_INFO,
     LOG_DEBUG: process.env.LOG_DEBUG,
-    LOG_TRACE: process.env.LOG_TRACE
+    LOG_TRACE: process.env.LOG_TRACE,
+    LOG_LEVEL: process.env.LOG_LEVEL
   };
 
   let consoleOutput: string[] = [];
@@ -325,6 +327,157 @@ describe('getLogger with PII Sanitization', () => {
       expect(output).to.not.have.property('phone');
       expect(output).to.not.have.property('address');
       expect(output).to.not.have.property('ipAddress');
+    });
+  });
+
+  describe('LOG_LEVEL environment variable', () => {
+    beforeEach(() => {
+      // Clean up all log-related env vars
+      delete process.env.LOG_TRACE;
+      delete process.env.LOG_DEBUG;
+      delete process.env.LOG_INFO;
+      delete process.env.LOG_LEVEL;
+      delete process.env.LOG_USE_JSON_FORMAT;
+
+      // Reset caches to ensure fresh reads
+      resetEnvVarCache();
+      resetLogLevelRulesCache();
+    });
+
+    it('should enable all levels when LOG_LEVEL=trace', () => {
+      process.env.LOG_LEVEL = 'trace';
+      resetEnvVarCache();
+      resetLogLevelRulesCache();
+
+      const logger = getLogger('test-logger');
+      logger.trace('trace message');
+      logger.debug('debug message');
+      logger.info('info message');
+
+      // All three should be logged
+      expect(consoleOutput.length).to.be.at.least(3);
+      expect(consoleOutput.some(line => line.includes('trace message'))).to.be.true;
+      expect(consoleOutput.some(line => line.includes('debug message'))).to.be.true;
+      expect(consoleOutput.some(line => line.includes('info message'))).to.be.true;
+    });
+
+    it('should enable debug and above when LOG_LEVEL=debug', () => {
+      process.env.LOG_LEVEL = 'debug';
+      resetEnvVarCache();
+      resetLogLevelRulesCache();
+
+      const logger = getLogger('test-logger');
+      logger.trace('trace message');
+      logger.debug('debug message');
+      logger.info('info message');
+
+      // Only debug and info should be logged
+      expect(consoleOutput.some(line => line.includes('trace message'))).to.be.false;
+      expect(consoleOutput.some(line => line.includes('debug message'))).to.be.true;
+      expect(consoleOutput.some(line => line.includes('info message'))).to.be.true;
+    });
+
+    it('should enable info and above when LOG_LEVEL=info', () => {
+      process.env.LOG_LEVEL = 'info';
+      resetEnvVarCache();
+      resetLogLevelRulesCache();
+
+      const logger = getLogger('test-logger');
+      logger.trace('trace message');
+      logger.debug('debug message');
+      logger.info('info message');
+
+      // Only info should be logged
+      expect(consoleOutput.some(line => line.includes('trace message'))).to.be.false;
+      expect(consoleOutput.some(line => line.includes('debug message'))).to.be.false;
+      expect(consoleOutput.some(line => line.includes('info message'))).to.be.true;
+    });
+
+    it('should be case-insensitive', () => {
+      process.env.LOG_LEVEL = 'TrAcE';
+      resetEnvVarCache();
+      resetLogLevelRulesCache();
+
+      const logger = getLogger('test-logger');
+      logger.trace('trace message');
+
+      expect(consoleOutput.some(line => line.includes('trace message'))).to.be.true;
+    });
+
+    it('should log a warning for invalid LOG_LEVEL values', () => {
+      process.env.LOG_LEVEL = 'invalid_level';
+      resetEnvVarCache();
+      resetLogLevelRulesCache();
+
+      const logger = getLogger('test-logger');
+      logger.info('info message');
+
+      // Should have logged the warning about invalid LOG_LEVEL
+      expect(consoleOutput.some(line =>
+        line.includes('Invalid LOG_LEVEL value') && line.includes('invalid_level')
+      )).to.be.true;
+    });
+
+    it('should allow individual level env vars to override LOG_LEVEL', () => {
+      process.env.LOG_LEVEL = 'trace';
+      process.env.LOG_TRACE = '0'; // Disable trace
+      resetEnvVarCache();
+      resetLogLevelRulesCache();
+
+      const logger = getLogger('test-logger');
+      logger.trace('trace message');
+      logger.debug('debug message');
+      logger.info('info message');
+
+      // Trace should be disabled, but debug and info should work
+      expect(consoleOutput.some(line => line.includes('trace message'))).to.be.false;
+      expect(consoleOutput.some(line => line.includes('debug message'))).to.be.true;
+      expect(consoleOutput.some(line => line.includes('info message'))).to.be.true;
+    });
+
+    it('should allow LOG_DEBUG=0 to override LOG_LEVEL=trace', () => {
+      process.env.LOG_LEVEL = 'trace';
+      process.env.LOG_DEBUG = '0'; // Disable debug
+      resetEnvVarCache();
+      resetLogLevelRulesCache();
+
+      const logger = getLogger('test-logger');
+      logger.trace('trace message');
+      logger.debug('debug message');
+      logger.info('info message');
+
+      // Debug should be disabled, but trace and info should work
+      expect(consoleOutput.some(line => line.includes('trace message'))).to.be.true;
+      expect(consoleOutput.some(line => line.includes('debug message'))).to.be.false;
+      expect(consoleOutput.some(line => line.includes('info message'))).to.be.true;
+    });
+
+    it('should support LOG_LEVEL=warn', () => {
+      process.env.LOG_LEVEL = 'warn';
+      resetEnvVarCache();
+      resetLogLevelRulesCache();
+
+      const logger = getLogger('test-logger');
+      logger.info('info message');
+      logger.warn('warn message');
+
+      // Only warn should be logged
+      expect(consoleOutput.some(line => line.includes('info message'))).to.be.false;
+      expect(consoleOutput.some(line => line.includes('warn message'))).to.be.true;
+    });
+
+    it('should support LOG_LEVEL=error', () => {
+      process.env.LOG_LEVEL = 'error';
+      resetEnvVarCache();
+      resetLogLevelRulesCache();
+
+      const logger = getLogger('test-logger');
+      logger.warn('warn message');
+      logger.error('error message');
+
+      // Only error should be logged
+      expect(consoleOutput.some(line => line.includes('warn message'))).to.be.false;
+      expect(consoleOutput.some(line => line.includes('error message'))).to.be.true;
     });
   });
 });

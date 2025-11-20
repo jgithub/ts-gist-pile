@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { isTruelike } from '../../src/boolean/booleanUtil';
+import { isTruelike, isTrueIsh, isTrueLike, doesImplyTrue } from '../../src/boolean/booleanUtil';
 
 describe('booleanUtil', () => {
   describe('.isTruelike()', () => {

@@ -15,7 +15,7 @@ exports.LOG_RULES = void 0;
 exports.getLogger = getLogger;
 exports.withStoreId = withStoreId;
 exports.resetLogLevelRulesCache = resetLogLevelRulesCache;
-var envUtil_1 = require("../env/envUtil");
+var environmentUtil_1 = require("../env/environmentUtil");
 var statUtil_1 = require("../stat/statUtil");
 var api_1 = require("@opentelemetry/api");
 var piiSanitizer_1 = require("./piiSanitizer");
@@ -51,17 +51,17 @@ var Logger = (function () {
     function Logger(loggerName) {
         this.loggerName = loggerName;
     }
-    Logger.prototype.buildLogMsg = function (severity, msg, jsonContext) {
-        if (isTruelike((0, envUtil_1.tryGetEnvVar)('LOG_USE_JSON_FORMAT'))) {
-            return this.buildLogMsgJsonFormat(severity, msg, jsonContext);
+    Logger.prototype.buildLogMsg = function (severity, msg, context) {
+        if (isTruelike((0, environmentUtil_1.tryGetEnvVar)('LOG_USE_JSON_FORMAT'))) {
+            return this.buildLogMsgJsonFormat(severity, msg, context);
         }
         else {
-            return this.buildLogMsgPlainText(severity, msg, jsonContext);
+            return this.buildLogMsgPlainText(severity, msg, context);
         }
     };
-    Logger.prototype.buildLogMsgJsonFormat = function (severity, msg, jsonContext) {
+    Logger.prototype.buildLogMsgJsonFormat = function (severity, msg, context) {
         var json = {};
-        if (typeof process !== 'undefined' && isTruelike((0, envUtil_1.tryGetEnvVar)('LOG_PREPEND_TIMESTAMP'))) {
+        if (typeof process !== 'undefined' && isTruelike((0, environmentUtil_1.tryGetEnvVar)('LOG_PREPEND_TIMESTAMP'))) {
             json["at"] = new Date().toISOString();
         }
         severity = severity.replace(/[\[\]]/g, "").trim();
@@ -73,11 +73,22 @@ var Logger = (function () {
         else {
             json["msg"] = msg;
         }
-        jsonContext = this.buildCompleteJsonContext(jsonContext);
-        var mergedJson = __assign(__assign({}, jsonContext), json);
+        context = this.buildCompleteJsonContext(context);
+        var mergedJson = __assign(__assign({}, context), json);
         return JSON.stringify(mergedJson);
     };
-    Logger.prototype.buildCompleteJsonContext = function (jsonContext) {
+    Logger.prototype.buildCompleteJsonContext = function (context) {
+        var jsonContext = {};
+        if (context instanceof Error) {
+            jsonContext = {
+                error: context.message,
+                errorName: context.name,
+                errorStack: context.stack
+            };
+        }
+        else if (context != null) {
+            jsonContext = __assign({}, context);
+        }
         if (asyncLocalStorage != null) {
             try {
                 var storeInLocalStorage = asyncLocalStorage.getStore();
@@ -101,9 +112,9 @@ var Logger = (function () {
         jsonContext = (0, piiSanitizer_1.sanitizePII)(jsonContext);
         return jsonContext;
     };
-    Logger.prototype.buildLogMsgPlainText = function (severity, msg, jsonContext) {
+    Logger.prototype.buildLogMsgPlainText = function (severity, msg, context) {
         var messageParts = [];
-        if (typeof process !== 'undefined' && isTruelike((0, envUtil_1.tryGetEnvVar)('LOG_PREPEND_TIMESTAMP'))) {
+        if (typeof process !== 'undefined' && isTruelike((0, environmentUtil_1.tryGetEnvVar)('LOG_PREPEND_TIMESTAMP'))) {
             messageParts.push(new Date().toUTCString());
         }
         messageParts.push(severity);
@@ -114,8 +125,8 @@ var Logger = (function () {
         else {
             messageParts.push(msg);
         }
-        jsonContext = this.buildCompleteJsonContext(jsonContext);
-        var wouldBeJsonContextString = JSON.stringify(jsonContext);
+        context = this.buildCompleteJsonContext(context);
+        var wouldBeJsonContextString = JSON.stringify(context);
         if (wouldBeJsonContextString != null && wouldBeJsonContextString.length > 0 && wouldBeJsonContextString != "{}" && wouldBeJsonContextString != "{ }") {
             messageParts.push(wouldBeJsonContextString);
         }
@@ -126,7 +137,7 @@ var Logger = (function () {
         for (var _i = 1; _i < arguments.length; _i++) {
             extra[_i - 1] = arguments[_i];
         }
-        if (typeof process !== 'undefined' && isTruelike((0, envUtil_1.tryGetEnvVar)('LOG_TO_STDERR'))) {
+        if (typeof process !== 'undefined' && isTruelike((0, environmentUtil_1.tryGetEnvVar)('LOG_TO_STDERR'))) {
             if (extra.length === 0) {
                 console.error(msg);
             }
@@ -143,54 +154,59 @@ var Logger = (function () {
             }
         }
     };
-    Logger.prototype.trace = function (msg, jsonContext) {
-        if (jsonContext === void 0) { jsonContext = {}; }
+    Logger.prototype.trace = function (msg, context) {
+        if (context === void 0) { context = undefined; }
         var extra = [];
         for (var _i = 2; _i < arguments.length; _i++) {
             extra[_i - 2] = arguments[_i];
         }
         if (isLogLevelEnabled(this.loggerName, 'TRACE')) {
-            var completeMsg = this.buildLogMsg("[ TRACE]", msg, jsonContext);
+            var completeMsg = this.buildLogMsg("[ TRACE]", msg, context);
             this.writeLogMsgToTerminal(completeMsg);
         }
     };
-    Logger.prototype.debug = function (msg, jsonContext) {
-        if (jsonContext === void 0) { jsonContext = {}; }
+    Logger.prototype.debug = function (msg, context) {
+        if (context === void 0) { context = undefined; }
         var extra = [];
         for (var _i = 2; _i < arguments.length; _i++) {
             extra[_i - 2] = arguments[_i];
         }
         if (isLogLevelEnabled(this.loggerName, 'DEBUG')) {
-            var completeMsg = this.buildLogMsg("[ DEBUG]", msg, jsonContext);
+            var completeMsg = this.buildLogMsg("[ DEBUG]", msg, context);
             this.writeLogMsgToTerminal(completeMsg);
         }
     };
-    Logger.prototype.info = function (msg, jsonContext) {
-        if (jsonContext === void 0) { jsonContext = {}; }
+    Logger.prototype.info = function (msg, context) {
+        if (context === void 0) { context = undefined; }
         var extra = [];
         for (var _i = 2; _i < arguments.length; _i++) {
             extra[_i - 2] = arguments[_i];
         }
         if (isLogLevelEnabled(this.loggerName, 'INFO')) {
-            var completeMsg = this.buildLogMsg("[  INFO]", msg, jsonContext);
+            var completeMsg = this.buildLogMsg("[  INFO]", msg, context);
             this.writeLogMsgToTerminal(completeMsg);
         }
     };
-    Logger.prototype.notice = function (msg, jsonContext) {
-        if (jsonContext === void 0) { jsonContext = {}; }
+    Logger.prototype.notice = function (msg, context) {
+        if (context === void 0) { context = undefined; }
         var extra = [];
         for (var _i = 2; _i < arguments.length; _i++) {
             extra[_i - 2] = arguments[_i];
         }
-        var completeMsg = this.buildLogMsg("[NOTICE]", msg, jsonContext);
-        this.writeLogMsgToTerminal(completeMsg);
+        if (isLogLevelEnabled(this.loggerName, 'NOTICE')) {
+            var completeMsg = this.buildLogMsg("[NOTICE]", msg, context);
+            this.writeLogMsgToTerminal(completeMsg);
+        }
     };
-    Logger.prototype.fatal = function (msg, jsonContext) {
+    Logger.prototype.fatal = function (msg, context) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
-        if (jsonContext === void 0) { jsonContext = {}; }
+        if (context === void 0) { context = undefined; }
         var extra = [];
         for (var _i = 2; _i < arguments.length; _i++) {
             extra[_i - 2] = arguments[_i];
+        }
+        if (!isLogLevelEnabled(this.loggerName, 'FATAL')) {
+            return;
         }
         if (typeof process !== 'undefined' && ((_a = process.env) === null || _a === void 0 ? void 0 : _a.STATHAT_EZ_KEY) != null && ((_c = (_b = process.env) === null || _b === void 0 ? void 0 : _b.STATHAT_EZ_KEY.trim()) === null || _c === void 0 ? void 0 : _c.length) > 0 && ((_d = process.env) === null || _d === void 0 ? void 0 : _d.STATHAT_FATAL_KEY) != null && ((_f = (_e = process.env) === null || _e === void 0 ? void 0 : _e.STATHAT_FATAL_KEY.trim()) === null || _f === void 0 ? void 0 : _f.length) > 0) {
             var controller_1 = new AbortController();
@@ -215,15 +231,18 @@ var Logger = (function () {
         if (typeof process !== 'undefined' && ((_j = process.env) === null || _j === void 0 ? void 0 : _j.KPITRACKS_FATAL_KEY) != null && ((_m = (_l = (_k = process.env) === null || _k === void 0 ? void 0 : _k.KPITRACKS_FATAL_KEY) === null || _l === void 0 ? void 0 : _l.trim()) === null || _m === void 0 ? void 0 : _m.length) > 0) {
             (0, statUtil_1.sendStatToKpitracks)("stat=".concat((_o = process.env.KPITRACKS_FATAL_KEY) === null || _o === void 0 ? void 0 : _o.trim(), "&count=1"));
         }
-        var completeMsg = this.buildLogMsg("[ FATAL][ ERROR]", msg, jsonContext);
+        var completeMsg = this.buildLogMsg("[ FATAL][ ERROR]", msg, context);
         this.writeLogMsgToTerminal(completeMsg);
     };
-    Logger.prototype.warn = function (msg, jsonContext) {
+    Logger.prototype.warn = function (msg, context) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
-        if (jsonContext === void 0) { jsonContext = {}; }
+        if (context === void 0) { context = undefined; }
         var extra = [];
         for (var _i = 2; _i < arguments.length; _i++) {
             extra[_i - 2] = arguments[_i];
+        }
+        if (!isLogLevelEnabled(this.loggerName, 'WARN')) {
+            return;
         }
         if (typeof process !== 'undefined' && ((_a = process.env) === null || _a === void 0 ? void 0 : _a.STATHAT_EZ_KEY) != null && ((_d = (_c = (_b = process.env) === null || _b === void 0 ? void 0 : _b.STATHAT_EZ_KEY) === null || _c === void 0 ? void 0 : _c.trim()) === null || _d === void 0 ? void 0 : _d.length) > 0 && ((_e = process.env) === null || _e === void 0 ? void 0 : _e.STATHAT_WARN_KEY) != null && ((_h = (_g = (_f = process.env) === null || _f === void 0 ? void 0 : _f.STATHAT_WARN_KEY) === null || _g === void 0 ? void 0 : _g.trim()) === null || _h === void 0 ? void 0 : _h.length) > 0) {
             var controller_2 = new AbortController();
@@ -248,15 +267,18 @@ var Logger = (function () {
         if (typeof process !== 'undefined' && ((_l = process.env) === null || _l === void 0 ? void 0 : _l.KPITRACKS_WARN_KEY) != null && ((_p = (_o = (_m = process.env) === null || _m === void 0 ? void 0 : _m.KPITRACKS_WARN_KEY) === null || _o === void 0 ? void 0 : _o.trim()) === null || _p === void 0 ? void 0 : _p.length) > 0) {
             (0, statUtil_1.sendStatToKpitracks)("stat=".concat((_q = process.env.KPITRACKS_WARN_KEY) === null || _q === void 0 ? void 0 : _q.trim(), "&count=1"));
         }
-        var completeMsg = this.buildLogMsg("[  WARN]", msg, jsonContext);
+        var completeMsg = this.buildLogMsg("[  WARN]", msg, context);
         this.writeLogMsgToTerminal(completeMsg);
     };
-    Logger.prototype.error = function (msg, jsonContext) {
+    Logger.prototype.error = function (msg, context) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
-        if (jsonContext === void 0) { jsonContext = {}; }
+        if (context === void 0) { context = undefined; }
         var extra = [];
         for (var _i = 2; _i < arguments.length; _i++) {
             extra[_i - 2] = arguments[_i];
+        }
+        if (!isLogLevelEnabled(this.loggerName, 'ERROR')) {
+            return;
         }
         if (typeof process !== 'undefined' && ((_a = process.env) === null || _a === void 0 ? void 0 : _a.STATHAT_EZ_KEY) != null && ((_d = (_c = (_b = process.env) === null || _b === void 0 ? void 0 : _b.STATHAT_EZ_KEY) === null || _c === void 0 ? void 0 : _c.trim()) === null || _d === void 0 ? void 0 : _d.length) > 0 && ((_e = process.env) === null || _e === void 0 ? void 0 : _e.STATHAT_ERROR_KEY) != null && ((_h = (_g = (_f = process.env) === null || _f === void 0 ? void 0 : _f.STATHAT_ERROR_KEY) === null || _g === void 0 ? void 0 : _g.trim()) === null || _h === void 0 ? void 0 : _h.length) > 0) {
             var controller_3 = new AbortController();
@@ -281,7 +303,7 @@ var Logger = (function () {
         if (typeof process !== 'undefined' && ((_l = process.env) === null || _l === void 0 ? void 0 : _l.KPITRACKS_ERROR_KEY) != null && ((_p = (_o = (_m = process.env) === null || _m === void 0 ? void 0 : _m.KPITRACKS_ERROR_KEY) === null || _o === void 0 ? void 0 : _o.trim()) === null || _p === void 0 ? void 0 : _p.length) > 0) {
             (0, statUtil_1.sendStatToKpitracks)("stat=".concat((_q = process.env.KPITRACKS_ERROR_KEY) === null || _q === void 0 ? void 0 : _q.trim(), "&count=1"));
         }
-        var completeMsg = this.buildLogMsg("[ ERROR]", msg, jsonContext);
+        var completeMsg = this.buildLogMsg("[ ERROR]", msg, context);
         this.writeLogMsgToTerminal(completeMsg);
     };
     return Logger;
@@ -354,7 +376,28 @@ function getLogLevelRules() {
 }
 function resetLogLevelRulesCache() {
     cachedLogLevelRules = null;
+    cachedParsedLogLevel = undefined;
     LoggerFactory.resetLoggerCache();
+}
+var cachedParsedLogLevel = undefined;
+function parseLogLevelFromEnv() {
+    if (cachedParsedLogLevel !== undefined) {
+        return cachedParsedLogLevel;
+    }
+    var logLevelValue = (0, environmentUtil_1.tryGetEnvVar)('LOG_LEVEL');
+    if (!logLevelValue) {
+        cachedParsedLogLevel = null;
+        return null;
+    }
+    var normalizedValue = logLevelValue.trim().toUpperCase();
+    var validLevels = ['TRACE', 'DEBUG', 'INFO', 'NOTICE', 'WARN', 'ERROR', 'FATAL'];
+    if (validLevels.includes(normalizedValue)) {
+        cachedParsedLogLevel = normalizedValue;
+        return cachedParsedLogLevel;
+    }
+    console.log("ts-gist-pile: Invalid LOG_LEVEL value: '".concat(logLevelValue, "'. Valid values are: ").concat(validLevels.join(', ')));
+    cachedParsedLogLevel = null;
+    return null;
 }
 function isLogLevelEnabled(loggerName, level) {
     var rules = getLogLevelRules();
@@ -368,20 +411,69 @@ function isLogLevelEnabled(loggerName, level) {
     if (typeof process === 'undefined') {
         return ['NOTICE', 'WARN', 'ERROR', 'FATAL'].includes(level);
     }
+    var individualLevelSet = false;
+    var individualLevelEnabled = false;
     switch (level) {
         case 'TRACE':
-            return isTruelike((0, envUtil_1.tryGetEnvVar)('LOG_TRACE'));
+            var traceEnv = (0, environmentUtil_1.tryGetEnvVar)('LOG_TRACE');
+            if (traceEnv !== undefined) {
+                individualLevelSet = true;
+                individualLevelEnabled = isTruelike(traceEnv);
+            }
+            break;
         case 'DEBUG':
-            return isTruelike((0, envUtil_1.tryGetEnvVar)('LOG_DEBUG'));
+            var debugEnv = (0, environmentUtil_1.tryGetEnvVar)('LOG_DEBUG');
+            if (debugEnv !== undefined) {
+                individualLevelSet = true;
+                individualLevelEnabled = isTruelike(debugEnv);
+            }
+            break;
         case 'INFO':
-            return isTruelike((0, envUtil_1.tryGetEnvVar)('LOG_INFO'));
+            var infoEnv = (0, environmentUtil_1.tryGetEnvVar)('LOG_INFO');
+            if (infoEnv !== undefined) {
+                individualLevelSet = true;
+                individualLevelEnabled = isTruelike(infoEnv);
+            }
+            break;
         case 'NOTICE':
+            var noticeEnv = (0, environmentUtil_1.tryGetEnvVar)('LOG_NOTICE');
+            if (noticeEnv !== undefined) {
+                individualLevelSet = true;
+                individualLevelEnabled = isTruelike(noticeEnv);
+            }
+            break;
         case 'WARN':
+            var warnEnv = (0, environmentUtil_1.tryGetEnvVar)('LOG_WARN');
+            if (warnEnv !== undefined) {
+                individualLevelSet = true;
+                individualLevelEnabled = isTruelike(warnEnv);
+            }
+            break;
         case 'ERROR':
+            var errorEnv = (0, environmentUtil_1.tryGetEnvVar)('LOG_ERROR');
+            if (errorEnv !== undefined) {
+                individualLevelSet = true;
+                individualLevelEnabled = isTruelike(errorEnv);
+            }
+            break;
         case 'FATAL':
-            return true;
-        default:
-            return false;
+            var fatalEnv = (0, environmentUtil_1.tryGetEnvVar)('LOG_FATAL');
+            if (fatalEnv !== undefined) {
+                individualLevelSet = true;
+                individualLevelEnabled = isTruelike(fatalEnv);
+            }
+            break;
     }
+    if (individualLevelSet) {
+        return individualLevelEnabled;
+    }
+    var logLevel = parseLogLevelFromEnv();
+    if (logLevel !== null) {
+        var levelHierarchy = ['TRACE', 'DEBUG', 'INFO', 'NOTICE', 'WARN', 'ERROR', 'FATAL'];
+        var configuredIndex = levelHierarchy.indexOf(logLevel);
+        var requestedIndex = levelHierarchy.indexOf(level);
+        return requestedIndex >= configuredIndex;
+    }
+    return ['NOTICE', 'WARN', 'ERROR', 'FATAL'].includes(level);
 }
 //# sourceMappingURL=getLogger.js.map

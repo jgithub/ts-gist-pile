@@ -1,3 +1,4 @@
+
 export function isPresent(input: string | undefined | null): boolean {
   if (input == null) {
     return false
