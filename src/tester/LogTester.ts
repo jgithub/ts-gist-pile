@@ -35,7 +35,7 @@ class LogTester {
       const usernameToTrack = 'bob'
       span.setAttributes({ usernameToTrack });
       this.doSomething();
-      LOG.debug(`buildCar(): Entering.  `, { make, model })
+      LOG.debug(`buildCar(): Entering.`, { make, model })
       LOG.debug(() => `buildCar(): Entering with make = ${d4l(make)}`)
       LOG.fatal(`buildCar(): password = ${d4lObfuscate("password")}`)
       LOG.fatal(`buildCar(): password = ${d4lObfuscate("123456789012345")}`)

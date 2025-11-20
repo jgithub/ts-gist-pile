@@ -1,6 +1,6 @@
 {
   "name": "@jgithub/ts-gist-pile",
-  "version": "0.0.313",
+  "version": "0.0.314",
   "description": "tired of finding this on stackoverflow",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -30,7 +30,10 @@
     "prepack": "npm run build",
     "prepublishOnly": "npm test",
     "build": "tsc",
-    "test": "env TZ='America/Chicago' env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.test.ts'"
+    "test": "env TZ='America/Chicago' env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.test.ts'",
+    "publish:github": "npm publish --registry https://npm.pkg.github.com",
+    "publish:npm": "npm publish --registry https://registry.npmjs.org --access public",
+    "publish:both": "npm run publish:github && npm run publish:npm"
   },
   "files": [
     "dist/**/*",
@@ -44,7 +47,8 @@
     "url": "git+https://github.com/jgithub/ts-gist-pile.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",

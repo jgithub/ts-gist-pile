@@ -11,3 +11,22 @@ custom-log-rules.js
 debug_test*.ts
 test_js_config*.ts
 test_env_override.ts
+test_static_export.ts
+test_static_modify.ts
+
+# macOS system files
+.DS_Store
+
+# Local environment and config files
+.envrc
+.npmrc
+saved.npmrc
+
+
+# Build artifacts and packages
+*.tgz
+*.tar.gz
+TsGistPile.js
+
+trash_/
+draft_/

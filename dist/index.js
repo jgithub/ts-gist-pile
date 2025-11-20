@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.retryWithBackoff = exports.PATIENT_READ_AFTER_WRITE_OPTIONS = exports.FAST_READ_AFTER_WRITE_OPTIONS = exports.DEFAULT_READ_AFTER_WRITE_OPTIONS = exports.AGGRESSIVE_RETRY_POLICY = exports.DEFAULT_RETRY_POLICY = exports.NoOpSpanEndHandler = exports.NoOpAddEventHandler = exports.CsvDataExtractor = exports.EvictionMode = exports.SimplestKeyValueStoreInMemImpl = exports.CanonicalUuid = exports.ImmutableUtc = exports.UtcGetterServiceImpl = exports.DateProviderServiceImpl = exports.LlmQueryImpl = exports.ObjectIdFinder = exports.OptionallyCachedValue = exports.BooleanStringPair = exports.safeStringify = exports.jsonUtil = exports.statUtil = exports.withStoreId = exports.d4lPii = exports.d4lObfuscate = exports.d4l = exports.LOG_RULES = exports.getLogger = exports.Container = exports.envUtil = exports.retryUtil = exports.diceUtil = exports.phoneUtil = exports.emailUtil = exports.idUtil = exports.uuidUtil = exports.radixUtil = exports.tryUtil = exports.arrayUtil = exports.extendedExceptionList = exports.functionUtil = exports.mapUtil = exports.dateUtil = exports.numberUtil = exports.logUtil = exports.booleanUtil = exports.stringUtil = exports.cloneUtil = exports.objectUtil = exports.anyUtil = void 0;
+exports.retryWithBackoff = exports.PATIENT_READ_AFTER_WRITE_OPTIONS = exports.FAST_READ_AFTER_WRITE_OPTIONS = exports.DEFAULT_READ_AFTER_WRITE_OPTIONS = exports.AGGRESSIVE_RETRY_POLICY = exports.DEFAULT_RETRY_POLICY = exports.NoOpSpanEndHandler = exports.NoOpAddEventHandler = exports.CsvDataExtractor = exports.EvictionMode = exports.SimplestKeyValueStoreInMemImpl = exports.CanonicalUuid = exports.ImmutableUtc = exports.UtcGetterServiceImpl = exports.DateProviderServiceImpl = exports.LlmQueryImpl = exports.ObjectIdFinder = exports.OptionallyCachedValue = exports.BooleanStringPair = exports.safeStringify = exports.jsonUtil = exports.statUtil = exports.withStoreId = exports.d4lPii = exports.d4lObfuscate = exports.d4l = exports.LOG_RULES = exports.getLogger = exports.Container = exports.environmentUtil = exports.retryUtil = exports.diceUtil = exports.phoneUtil = exports.emailUtil = exports.idUtil = exports.uuidUtil = exports.radixUtil = exports.tryUtil = exports.arrayUtil = exports.extendedExceptionList = exports.functionUtil = exports.mapUtil = exports.dateUtil = exports.numberUtil = exports.logUtil = exports.booleanUtil = exports.stringUtil = exports.cloneUtil = exports.objectUtil = exports.anyUtil = void 0;
 exports.DEFAULT_RETRY_OPTIONS = void 0;
 exports.anyUtil = __importStar(require("./any/anyUtil"));
 exports.objectUtil = __importStar(require("./object/objectUtil"));
@@ -55,7 +55,7 @@ exports.emailUtil = __importStar(require("./email/emailUtil"));
 exports.phoneUtil = __importStar(require("./phone/phoneUtil"));
 exports.diceUtil = __importStar(require("./dice/diceUtil"));
 exports.retryUtil = __importStar(require("./retry/retryUtil"));
-exports.envUtil = __importStar(require("./env/envUtil"));
+exports.environmentUtil = __importStar(require("./env/environmentUtil"));
 var Container_1 = require("./di/Container");
 Object.defineProperty(exports, "Container", { enumerable: true, get: function () { return Container_1.Container; } });
 var getLogger_1 = require("./log/getLogger");

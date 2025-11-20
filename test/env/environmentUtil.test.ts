@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { tryGetEnvVar, isProductionLikeEnv, isDevelopmentLikeEnv, isStagingLikeEnv } from '../../src/env/envUtil';
+import { tryGetEnvVar, isProductionLikeEnv, isDevelopmentLikeEnv, isStagingLikeEnv } from '../../src/env/environmentUtil';
 
-describe('envUtil', () => {
+describe('environmentUtil', () => {
   let originalEnv: NodeJS.ProcessEnv;
   let consoleOutput: string[] = [];
   let originalLog: any;

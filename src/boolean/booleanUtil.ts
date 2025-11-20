@@ -9,3 +9,7 @@ export function isTruelike(input: boolean | string | number | undefined | null):
   }
   return false
 }
+
+export const doesImplyTrue = isTruelike
+export const isTrueLike = isTruelike
+export const isTrueIsh = isTruelike
