@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { sanitizePII, isPIISecureModeEnabled, getPIIFieldNames } from '../../src/log/piiSanitizer';
+import { sanitizePII, isPIISecureModeEnabled, getPIIFieldNames, eagerSanitizePII } from '../../src/log/piiSanitizer';
 
 describe('PII Sanitizer', () => {
   const originalEnv = process.env.LOG_HASH_SECRET;
@@ -585,6 +585,183 @@ describe('PII Sanitizer', () => {
       expect(result).to.be.a('string');
       expect(result).to.have.lengthOf(12);
       expect(result).to.match(/^[a-f0-9]{12}$/);
+    });
+  });
+
+  describe('eagerSanitizePII', () => {
+    it('should always sanitize regardless of LOG_HASH_SECRET', () => {
+      delete process.env.LOG_HASH_SECRET;
+
+      const input = {
+        password: 'neverguessme',
+        username: 'testuser'
+      };
+
+      const result = eagerSanitizePII(input);
+
+      // eagerSanitizePII keeps field names but obfuscates values
+      expect(result).to.have.property('password');
+      expect(result.password).to.not.equal('neverguessme');
+      expect(result.password).to.include('****');
+      expect(result).to.have.property('username');
+      expect(result.username).to.not.equal('testuser');
+      expect(result.username).to.include('****');
+    });
+
+    it('should redact password field', () => {
+      const input = { password: 'neverguessme', other: 'value' };
+      const result = eagerSanitizePII(input);
+
+      // Keeps field name, obfuscates value
+      expect(result).to.have.property('password');
+      expect(result.password).to.not.equal('neverguessme');
+      expect(result.password).to.include('****');
+      expect(result.other).to.equal('value');
+    });
+
+    it('should redact nested SSN', () => {
+      const input = {
+        nested: {
+          ssn: '111-22-5555',
+          safe: 'data'
+        }
+      };
+      const result = eagerSanitizePII(input);
+
+      // Keeps field name, obfuscates value
+      expect(result.nested).to.have.property('ssn');
+      expect(result.nested.ssn).to.not.equal('111-22-5555');
+      expect(result.nested.ssn).to.include('****');
+      expect(result.nested.safe).to.equal('data');
+    });
+
+    it('should redact double nested email', () => {
+      const input = {
+        double: {
+          nested: {
+            email: 'john@smith.com',
+            metadata: 'preserved'
+          }
+        }
+      };
+      const result = eagerSanitizePII(input);
+
+      // Keeps field name, obfuscates value
+      expect(result.double.nested).to.have.property('email');
+      expect(result.double.nested.email).to.not.equal('john@smith.com');
+      expect(result.double.nested.email).to.include('****');
+      expect(result.double.nested.metadata).to.equal('preserved');
+    });
+
+    it('should redact e_mail with underscore', () => {
+      const input = {
+        double: {
+          nested: {
+            e_mail: 'john@smith.com'
+          }
+        }
+      };
+      const result = eagerSanitizePII(input);
+
+      // Keeps field name, obfuscates value
+      expect(result.double.nested).to.have.property('e_mail');
+      expect(result.double.nested.e_mail).to.not.equal('john@smith.com');
+      expect(result.double.nested.e_mail).to.include('****');
+    });
+
+    it('should redact eMail with camelCase', () => {
+      const input = {
+        double: {
+          nested: {
+            eMail: 'john@smith.com'
+          }
+        }
+      };
+      const result = eagerSanitizePII(input);
+
+      // Keeps field name, obfuscates value
+      expect(result.double.nested).to.have.property('eMail');
+      expect(result.double.nested.eMail).to.not.equal('john@smith.com');
+      expect(result.double.nested.eMail).to.include('****');
+    });
+
+    it('should redact multiple PII fields', () => {
+      const input = {
+        userId: '12345',
+        email: 'user@example.com',
+        phone: '555-1234',
+        normalField: 'keep-me'
+      };
+
+      const result = eagerSanitizePII(input);
+
+      // Keeps field names, obfuscates values
+      expect(result).to.have.property('userId');
+      expect(result.userId).to.not.equal('12345');
+      expect(result.userId).to.include('****');
+      expect(result).to.have.property('email');
+      expect(result.email).to.not.equal('user@example.com');
+      expect(result.email).to.include('****');
+      expect(result).to.have.property('phone');
+      expect(result.phone).to.not.equal('555-1234');
+      expect(result.phone).to.include('****');
+      expect(result.normalField).to.equal('keep-me');
+    });
+
+    it('should handle arrays', () => {
+      const input = {
+        users: [
+          { userId: '1', email: 'user1@example.com' },
+          { userId: '2', email: 'user2@example.com' }
+        ]
+      };
+
+      const result = eagerSanitizePII(input);
+
+      // Keeps field names, obfuscates values
+      expect(result.users[0]).to.have.property('userId');
+      expect(result.users[0].userId).to.not.equal('1');
+      expect(result.users[0].userId).to.include('****');
+      expect(result.users[1]).to.have.property('email');
+      expect(result.users[1].email).to.not.equal('user2@example.com');
+      expect(result.users[1].email).to.include('****');
+    });
+
+    it('should return null for null input', () => {
+      expect(eagerSanitizePII(null)).to.be.null;
+    });
+
+    it('should return primitives as-is', () => {
+      expect(eagerSanitizePII('string')).to.equal('string');
+      expect(eagerSanitizePII(123)).to.equal(123);
+      expect(eagerSanitizePII(true)).to.equal(true);
+    });
+
+    it('should preserve non-PII fields at all levels', () => {
+      const input = {
+        safe1: 'value1',
+        nested: {
+          safe2: 'value2',
+          ssn: '123-45-6789',
+          deep: {
+            safe3: 'value3',
+            email: 'test@example.com'
+          }
+        }
+      };
+
+      const result = eagerSanitizePII(input);
+
+      expect(result.safe1).to.equal('value1');
+      expect(result.nested.safe2).to.equal('value2');
+      expect(result.nested.deep.safe3).to.equal('value3');
+      // Keeps field names, obfuscates values
+      expect(result.nested).to.have.property('ssn');
+      expect(result.nested.ssn).to.not.equal('123-45-6789');
+      expect(result.nested.ssn).to.include('****');
+      expect(result.nested.deep).to.have.property('email');
+      expect(result.nested.deep.email).to.not.equal('test@example.com');
+      expect(result.nested.deep.email).to.include('****');
     });
   });
 });

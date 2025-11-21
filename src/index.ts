@@ -23,7 +23,7 @@ export * as environmentUtil from "./env/environmentUtil"
 export { Container } from "./di/Container"
 
 export { getLogger, LOG_RULES } from "./log/getLogger"
-export { d4l, d4lObfuscate, d4lPii } from "./log/logUtil"
+export { d4l, d4lObfuscate, d4lPii, plain, blur, blurIfEnabled, blurWhereNeeded, p4l, b4l, c4l, s4l } from "./log/logUtil"
 // export { TraceInitializer } from "./trace/TraceInitializer"
 export { withStoreId } from "./log/getLogger"
 export * as statUtil from "./stat/statUtil"

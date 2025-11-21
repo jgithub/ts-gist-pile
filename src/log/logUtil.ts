@@ -1,5 +1,7 @@
 import { safeStringify } from "../string/safeStringify"
-import { isPIISecureModeEnabled, hashPIIValue } from "./piiSanitizer"
+import { isPIISecureModeEnabled, hashPIIValue, eagerSanitizePII, sanitizePII } from "./piiSanitizer"
+import { isEagerAutoSanitizeEnabled } from "../env/environmentUtil"
+import { smartObfuscate } from "./smartObfuscate"
 
 export function d4l(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}): string {
   if (typeof input === 'undefined') {
@@ -10,19 +12,7 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
   }
   else if (typeof input === 'string') {
     if (logOptions.obfuscate) {
-      if (input.length > 36) {
-        return `****${input.substring(input.length-4)}`
-      }
-      else if (input.length > 26) {
-        return `****${input.substring(input.length-3)}`
-      }
-      else if (input.length > 16) {
-        return `****${input.substring(input.length-2)}`
-      }
-      else if (input.length > 10) {
-        return `****${input.substring(input.length-1)}`
-      }
-      return "****"
+      return smartObfuscate(input);
     }
 
     if (logOptions.joinLines) {
@@ -70,36 +60,66 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
     return input.toString() + " (RegExp)";
   }
   else if (typeof input === 'object') {
-    if (typeof ((input as any).toDebugString) === 'function' ) {
-      return (input as any).toDebugString() + " (object; via toDebugString())"
+    // Apply eager sanitization if enabled
+    let objectToLog = input;
+    if (isEagerAutoSanitizeEnabled()) {
+      objectToLog = eagerSanitizePII(input);
     }
-    if (typeof ((input as any).toLogString) === 'function' ) {
-      return (input as any).toLogString() + " (object; via toLogString())"
+
+    if (typeof ((objectToLog as any).toDebugString) === 'function' ) {
+      return (objectToLog as any).toDebugString() + " (object; via toDebugString())"
+    }
+    if (typeof ((objectToLog as any).toLogString) === 'function' ) {
+      return (objectToLog as any).toLogString() + " (object; via toLogString())"
     }
     // Do yourself a huge favor and don't mess with toJSON
-    // if (typeof ((input as any).toJSON) === 'function' ) {
-    //   const whateverToJSONReturns = (input as any).toJSON()
+    // if (typeof ((objectToLog as any).toJSON) === 'function' ) {
+    //   const whateverToJSONReturns = (objectToLog as any).toJSON()
     //   if (typeof whateverToJSONReturns === 'string') {
     //     return whateverToJSONReturns
     //   }
     // }
 
-    if (typeof ((input as any).asJson) === 'function' ) {
-      const whateverAsJsonReturns = (input as any).asJson()
+    if (typeof ((objectToLog as any).asJson) === 'function' ) {
+      const whateverAsJsonReturns = (objectToLog as any).asJson()
       // return whateverAsJsonReturns
       try {
-        return localSafeStringify(whateverAsJsonReturns) || `${input}`
+        return localSafeStringify(whateverAsJsonReturns) || `${objectToLog}`
       } catch (err){}
     }
     try {
-      return localSafeStringify(input) + " (object)"
+      return localSafeStringify(objectToLog) + " (object)"
     } catch (err){}
   }
   return `${input}`
 }
 
 export function d4lObfuscate(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}) {
-  return d4l(input, { ...logOptions, obfuscate: true })
+  // For special object types (Error, Date, RegExp), pass through to d4l
+  if (input instanceof Error || input instanceof Date || input instanceof RegExp) {
+    return d4l(input, logOptions);
+  }
+
+  // For plain objects and arrays, apply eager sanitization
+  if (typeof input === 'object' && input !== null) {
+    const sanitized = eagerSanitizePII(input);
+    return d4l(sanitized, logOptions);
+  }
+
+  // For strings, apply smart obfuscation
+  if (typeof input === 'string') {
+    const obfuscated = smartObfuscate(input);
+
+    // If PII secure mode is enabled, also append the hash for correlation
+    if (isPIISecureModeEnabled() && input.length > 10) {
+      const hash = hashPIIValue(input);
+      return `${obfuscated} (hashed=${hash})`;
+    }
+
+    return obfuscated;
+  }
+
+  return d4l(input, logOptions);
 }
 
 /**
@@ -109,7 +129,8 @@ export function d4lObfuscate(input: string | number | boolean | Error | Array<an
  *   - Behaves exactly like d4l() - logs the value normally
  *
  * When LOG_HASH_SECRET is SET:
- *   - Returns a hashed version of the value for PII-secure logging
+ *   - Behaves like d4lObfuscate() - shows smart obfuscation with hash
+ *   - Uses context-aware obfuscation (emails show domain, cards show last 4, etc.)
  *   - Hash is consistent (same input = same hash)
  *   - Hash is irreversible (cannot recover original value)
  *
@@ -118,39 +139,174 @@ export function d4lObfuscate(input: string | number | boolean | Error | Array<an
  * @example
  * logger.info(`User logged in: ${d4lPii(userId)}`)
  * // Without LOG_HASH_SECRET: "User logged in: 'user-12345' (string, 10)"
- * // With LOG_HASH_SECRET: "User logged in: 1c62cfe7d8b3 (hashed)"
+ * // With LOG_HASH_SECRET: "User logged in: ****2345 (hashed=abc123def456)"
  */
 export function d4lPii(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}): string {
   if (!isPIISecureModeEnabled()) {
-    // PII mode not enabled - use regular d4l
+    // PII mode not enabled - use regular d4l (pass through)
     return d4l(input, logOptions);
   }
 
-  // PII mode enabled - hash the value
-  if (input == null) {
-    return hashPIIValue(input) + " (hashed)";
-  }
-
-  // Convert input to string for hashing
-  let valueToHash: string;
+  // PII mode enabled - only obfuscate strings, pass through everything else
+  // d4lPii is designed for use in template strings with individual values,
+  // not for entire objects (use logger context for objects)
   if (typeof input === 'string') {
-    valueToHash = input;
-  } else if (typeof input === 'number' || typeof input === 'boolean') {
-    valueToHash = String(input);
-  } else if (input instanceof Error) {
-    valueToHash = input.message;
-  } else if (typeof input === 'object') {
-    try {
-      valueToHash = JSON.stringify(input);
-    } catch (err) {
-      valueToHash = String(input);
-    }
-  } else {
-    valueToHash = String(input);
+    return d4lObfuscate(input, logOptions);
   }
 
-  return hashPIIValue(valueToHash) + " (hashed)";
+  // Pass through non-strings unchanged
+  return d4l(input, logOptions);
 }
+
+/**
+ * Helper function to recursively scan object values for PII and redact them.
+ * Used by blurWhereNeeded() to handle objects.
+ */
+function scanObjectForPII(obj: any): any {
+  if (obj == null) return obj;
+  if (typeof obj !== 'object') return obj;
+
+  // Handle arrays
+  if (Array.isArray(obj)) {
+    return obj.map(item => {
+      if (typeof item === 'string') {
+        return scanStringForPII(item);
+      } else if (typeof item === 'object') {
+        return scanObjectForPII(item);
+      }
+      return item;
+    });
+  }
+
+  // Handle objects
+  const scanned: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'string') {
+      scanned[key] = scanStringForPII(value);
+    } else if (typeof value === 'object' && value !== null) {
+      scanned[key] = scanObjectForPII(value);
+    } else {
+      scanned[key] = value;
+    }
+  }
+
+  return scanned;
+}
+
+/**
+ * Helper function to scan a string for PII patterns and redact them.
+ * Used by blurWhereNeeded() and scanObjectForPII().
+ */
+function scanStringForPII(input: string): string {
+  let result = input;
+
+  // Credit card numbers (15-16 digits, with or without separators)
+  result = result.replace(/\b\d{4}[\s\-]?\d{4}[\s\-]?\d{4}[\s\-]?\d{3,4}\b/g, (match) => {
+    const digits = match.replace(/\D/g, '');
+    if (digits.length >= 15 && digits.length <= 16) {
+      return '****' + match.slice(-4);
+    }
+    return match;
+  });
+
+  // SSN (###-##-####)
+  result = result.replace(/\b\d{3}-\d{2}-\d{4}\b/g, (match) => {
+    return '****' + match.slice(-4);
+  });
+
+  // Phone numbers (various formats)
+  result = result.replace(/\b[\+]?[\d\s\-\(\)]{10,}\b/g, (match) => {
+    const digits = match.replace(/\D/g, '');
+    if (digits.length >= 10 && digits.length <= 15) {
+      return '****' + match.slice(-4);
+    }
+    return match;
+  });
+
+  // Email addresses
+  result = result.replace(/\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/g, (match) => {
+    const parts = match.split('@');
+    const local = parts[0];
+    const domain = parts[1];
+    if (local.length <= 2) {
+      return `****@${domain}`;
+    }
+    return `${local.substring(0, 2)}****@${domain}`;
+  });
+
+  // IP addresses (IPv4)
+  result = result.replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, (match) => {
+    const parts = match.split('.');
+    if (parts.every(p => parseInt(p) <= 255)) {
+      return `****${match.slice(-4)}`;
+    }
+    return match;
+  });
+
+  // Names (capitalized words, at least 2 words)
+  result = result.replace(/\b([A-Z][a-z]{2,})\s+([A-Z][a-z]{2,})\b/g, (match, first, last) => {
+    return `${first.substring(0, 2)}**** ${last.substring(0, 2)}****`;
+  });
+
+  return result;
+}
+
+/**
+ * Smart content-aware PII detection and redaction.
+ *
+ * Scans text for PII patterns (emails, SSNs, phone numbers, credit cards, IPs, etc.)
+ * and redacts ONLY those parts while keeping the rest of the text readable.
+ *
+ * ⚠️ PERFORMANCE WARNING: This is the slowest logging option as it performs
+ * multiple regex scans on the content. Use sparingly for user input, error messages,
+ * or other free-form text that might contain PII.
+ *
+ * Always active when called - does not depend on environment variables.
+ *
+ * @example
+ * blurWhereNeeded("My email is john@example.com")
+ * // → "My email is jo****@example.com"
+ *
+ * blurWhereNeeded("Call me at 555-123-4567 or email alice@example.com")
+ * // → "Call me at ****4567 or email al****@example.com"
+ *
+ * blurWhereNeeded("SSN: 123-45-6789, Card: 4532-1234-5678-9012")
+ * // → "SSN: ****6789, Card: ****9012"
+ */
+export function blurWhereNeeded(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}): string {
+  // For objects, recursively apply content scanning to all string values
+  if (typeof input === 'object' && input !== null) {
+    const scanned = scanObjectForPII(input);
+    return d4l(scanned, logOptions);
+  }
+
+  // For non-string primitives, use regular d4l
+  if (typeof input !== 'string') {
+    return d4l(input, logOptions);
+  }
+
+  // For strings, use the helper function
+  return scanStringForPII(input);
+}
+
+// Aliases for cleaner API
+export const plain = d4l;
+export const blur = d4lObfuscate;
+export const blurIfEnabled = d4lPii;
+
+/**
+ * Short aliases for frequent use (all 3 characters for consistency):
+ *
+ * d4l - Direct/decorate for logging (plain output with type info)
+ * p4l - Plain for logging (same as d4l)
+ * b4l - Blur for logging (always obfuscates)
+ * c4l - Conditional for logging (blur only if LOG_HASH_SECRET set)
+ * s4l - Scan for logging (content-aware PII detection, always active)
+ */
+export const p4l = d4l;                // plain for logging (alias for d4l)
+export const b4l = d4lObfuscate;       // blur for logging (always)
+export const c4l = d4lPii;             // conditional for logging (blur if enabled)
+export const s4l = blurWhereNeeded;    // scan for logging (content-aware PII)
 
 export type LogOptions = {
   joinLines?: boolean

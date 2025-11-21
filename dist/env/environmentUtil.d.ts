@@ -4,3 +4,4 @@ export declare function isProductionLikeEnv(): boolean;
 export declare function isDevelopmentLikeEnv(): boolean;
 export declare function isStagingLikeEnv(): boolean;
 export declare function isTestLikeEnv(): boolean;
+export declare function isEagerAutoSanitizeEnabled(): boolean;

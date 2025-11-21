@@ -1,8 +1,8 @@
 
-import { tryGetEnvVar, resetEnvVarCache } from "../env/environmentUtil";
+import { tryGetEnvVar, resetEnvVarCache, isEagerAutoSanitizeEnabled } from "../env/environmentUtil";
 import { sendStatToKpitracks } from "../stat/statUtil";
 import { context as otelContext, trace, isSpanContextValid, Span } from '@opentelemetry/api';
-import { sanitizePII } from './piiSanitizer';
+import { sanitizePII, eagerSanitizePII } from './piiSanitizer';
 
 let AsyncLocalStorage: any | undefined;
 
@@ -117,8 +117,14 @@ class Logger {
       // console.log("No Span")
     }
 
-    // Sanitize PII fields if LOG_HASH_SECRET is set
-    jsonContext = sanitizePII(jsonContext);
+    // Sanitize PII fields based on environment configuration
+    if (isEagerAutoSanitizeEnabled()) {
+      // LOG_EAGER_AUTO_SANITIZE: use eagerSanitizePII (keeps field names, blurs values)
+      jsonContext = eagerSanitizePII(jsonContext);
+    } else if (tryGetEnvVar('LOG_HASH_SECRET')) {
+      // LOG_HASH_SECRET only: use sanitizePII (renames to _hash, removes original)
+      jsonContext = sanitizePII(jsonContext);
+    }
 
     return jsonContext
   }
