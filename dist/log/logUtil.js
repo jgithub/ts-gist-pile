@@ -1,20 +1,13 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.s4l = exports.c4l = exports.b4l = exports.p4l = exports.blurIfEnabled = exports.blur = exports.plain = void 0;
 exports.d4l = d4l;
 exports.d4lObfuscate = d4lObfuscate;
 exports.d4lPii = d4lPii;
+exports.blurWhereNeeded = blurWhereNeeded;
 var piiSanitizer_1 = require("./piiSanitizer");
+var environmentUtil_1 = require("../env/environmentUtil");
+var smartObfuscate_1 = require("./smartObfuscate");
 function d4l(input, logOptions) {
     if (logOptions === void 0) { logOptions = {}; }
     if (typeof input === 'undefined') {
@@ -25,19 +18,7 @@ function d4l(input, logOptions) {
     }
     else if (typeof input === 'string') {
         if (logOptions.obfuscate) {
-            if (input.length > 36) {
-                return "****".concat(input.substring(input.length - 4));
-            }
-            else if (input.length > 26) {
-                return "****".concat(input.substring(input.length - 3));
-            }
-            else if (input.length > 16) {
-                return "****".concat(input.substring(input.length - 2));
-            }
-            else if (input.length > 10) {
-                return "****".concat(input.substring(input.length - 1));
-            }
-            return "****";
+            return (0, smartObfuscate_1.smartObfuscate)(input);
         }
         if (logOptions.joinLines) {
             input = input === null || input === void 0 ? void 0 : input.replace(/\r\n/g, " ");
@@ -82,21 +63,25 @@ function d4l(input, logOptions) {
         return input.toString() + " (RegExp)";
     }
     else if (typeof input === 'object') {
-        if (typeof (input.toDebugString) === 'function') {
-            return input.toDebugString() + " (object; via toDebugString())";
+        var objectToLog = input;
+        if ((0, environmentUtil_1.isEagerAutoSanitizeEnabled)()) {
+            objectToLog = (0, piiSanitizer_1.eagerSanitizePII)(input);
         }
-        if (typeof (input.toLogString) === 'function') {
-            return input.toLogString() + " (object; via toLogString())";
+        if (typeof (objectToLog.toDebugString) === 'function') {
+            return objectToLog.toDebugString() + " (object; via toDebugString())";
         }
-        if (typeof (input.asJson) === 'function') {
-            var whateverAsJsonReturns = input.asJson();
+        if (typeof (objectToLog.toLogString) === 'function') {
+            return objectToLog.toLogString() + " (object; via toLogString())";
+        }
+        if (typeof (objectToLog.asJson) === 'function') {
+            var whateverAsJsonReturns = objectToLog.asJson();
             try {
-                return localSafeStringify(whateverAsJsonReturns) || "".concat(input);
+                return localSafeStringify(whateverAsJsonReturns) || "".concat(objectToLog);
             }
             catch (err) { }
         }
         try {
-            return localSafeStringify(input) + " (object)";
+            return localSafeStringify(objectToLog) + " (object)";
         }
         catch (err) { }
     }
@@ -104,39 +89,122 @@ function d4l(input, logOptions) {
 }
 function d4lObfuscate(input, logOptions) {
     if (logOptions === void 0) { logOptions = {}; }
-    return d4l(input, __assign(__assign({}, logOptions), { obfuscate: true }));
+    if (input instanceof Error || input instanceof Date || input instanceof RegExp) {
+        return d4l(input, logOptions);
+    }
+    if (typeof input === 'object' && input !== null) {
+        var sanitized = (0, piiSanitizer_1.eagerSanitizePII)(input);
+        return d4l(sanitized, logOptions);
+    }
+    if (typeof input === 'string') {
+        var obfuscated = (0, smartObfuscate_1.smartObfuscate)(input);
+        if ((0, piiSanitizer_1.isPIISecureModeEnabled)() && input.length > 10) {
+            var hash = (0, piiSanitizer_1.hashPIIValue)(input);
+            return "".concat(obfuscated, " (hashed=").concat(hash, ")");
+        }
+        return obfuscated;
+    }
+    return d4l(input, logOptions);
 }
 function d4lPii(input, logOptions) {
     if (logOptions === void 0) { logOptions = {}; }
     if (!(0, piiSanitizer_1.isPIISecureModeEnabled)()) {
         return d4l(input, logOptions);
     }
-    if (input == null) {
-        return (0, piiSanitizer_1.hashPIIValue)(input) + " (hashed)";
-    }
-    var valueToHash;
     if (typeof input === 'string') {
-        valueToHash = input;
+        return d4lObfuscate(input, logOptions);
     }
-    else if (typeof input === 'number' || typeof input === 'boolean') {
-        valueToHash = String(input);
-    }
-    else if (input instanceof Error) {
-        valueToHash = input.message;
-    }
-    else if (typeof input === 'object') {
-        try {
-            valueToHash = JSON.stringify(input);
-        }
-        catch (err) {
-            valueToHash = String(input);
-        }
-    }
-    else {
-        valueToHash = String(input);
-    }
-    return (0, piiSanitizer_1.hashPIIValue)(valueToHash) + " (hashed)";
+    return d4l(input, logOptions);
 }
+function scanObjectForPII(obj) {
+    if (obj == null)
+        return obj;
+    if (typeof obj !== 'object')
+        return obj;
+    if (Array.isArray(obj)) {
+        return obj.map(function (item) {
+            if (typeof item === 'string') {
+                return scanStringForPII(item);
+            }
+            else if (typeof item === 'object') {
+                return scanObjectForPII(item);
+            }
+            return item;
+        });
+    }
+    var scanned = {};
+    for (var _i = 0, _a = Object.entries(obj); _i < _a.length; _i++) {
+        var _b = _a[_i], key = _b[0], value = _b[1];
+        if (typeof value === 'string') {
+            scanned[key] = scanStringForPII(value);
+        }
+        else if (typeof value === 'object' && value !== null) {
+            scanned[key] = scanObjectForPII(value);
+        }
+        else {
+            scanned[key] = value;
+        }
+    }
+    return scanned;
+}
+function scanStringForPII(input) {
+    var result = input;
+    result = result.replace(/\b\d{4}[\s\-]?\d{4}[\s\-]?\d{4}[\s\-]?\d{3,4}\b/g, function (match) {
+        var digits = match.replace(/\D/g, '');
+        if (digits.length >= 15 && digits.length <= 16) {
+            return '****' + match.slice(-4);
+        }
+        return match;
+    });
+    result = result.replace(/\b\d{3}-\d{2}-\d{4}\b/g, function (match) {
+        return '****' + match.slice(-4);
+    });
+    result = result.replace(/\b[\+]?[\d\s\-\(\)]{10,}\b/g, function (match) {
+        var digits = match.replace(/\D/g, '');
+        if (digits.length >= 10 && digits.length <= 15) {
+            return '****' + match.slice(-4);
+        }
+        return match;
+    });
+    result = result.replace(/\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/g, function (match) {
+        var parts = match.split('@');
+        var local = parts[0];
+        var domain = parts[1];
+        if (local.length <= 2) {
+            return "****@".concat(domain);
+        }
+        return "".concat(local.substring(0, 2), "****@").concat(domain);
+    });
+    result = result.replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, function (match) {
+        var parts = match.split('.');
+        if (parts.every(function (p) { return parseInt(p) <= 255; })) {
+            return "****".concat(match.slice(-4));
+        }
+        return match;
+    });
+    result = result.replace(/\b([A-Z][a-z]{2,})\s+([A-Z][a-z]{2,})\b/g, function (match, first, last) {
+        return "".concat(first.substring(0, 2), "**** ").concat(last.substring(0, 2), "****");
+    });
+    return result;
+}
+function blurWhereNeeded(input, logOptions) {
+    if (logOptions === void 0) { logOptions = {}; }
+    if (typeof input === 'object' && input !== null) {
+        var scanned = scanObjectForPII(input);
+        return d4l(scanned, logOptions);
+    }
+    if (typeof input !== 'string') {
+        return d4l(input, logOptions);
+    }
+    return scanStringForPII(input);
+}
+exports.plain = d4l;
+exports.blur = d4lObfuscate;
+exports.blurIfEnabled = d4lPii;
+exports.p4l = d4l;
+exports.b4l = d4lObfuscate;
+exports.c4l = d4lPii;
+exports.s4l = blurWhereNeeded;
 var localSafeStringify = function (obj, indent) {
     if (indent === void 0) { indent = 0; }
     var cache = [];

@@ -109,7 +109,12 @@ var Logger = (function () {
         }
         else {
         }
-        jsonContext = (0, piiSanitizer_1.sanitizePII)(jsonContext);
+        if ((0, environmentUtil_1.isEagerAutoSanitizeEnabled)()) {
+            jsonContext = (0, piiSanitizer_1.eagerSanitizePII)(jsonContext);
+        }
+        else if ((0, environmentUtil_1.tryGetEnvVar)('LOG_HASH_SECRET')) {
+            jsonContext = (0, piiSanitizer_1.sanitizePII)(jsonContext);
+        }
         return jsonContext;
     };
     Logger.prototype.buildLogMsgPlainText = function (severity, msg, context) {

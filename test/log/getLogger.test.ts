@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { getLogger, resetLogLevelRulesCache } from '../../src/log/getLogger';
 import { resetEnvVarCache } from '../../src/env/environmentUtil';
+import { d4l, d4lObfuscate } from '../../src/log/logUtil';
 
 describe('getLogger with PII Sanitization', () => {
   const originalEnv = {
@@ -478,6 +479,307 @@ describe('getLogger with PII Sanitization', () => {
       // Only error should be logged
       expect(consoleOutput.some(line => line.includes('warn message'))).to.be.false;
       expect(consoleOutput.some(line => line.includes('error message'))).to.be.true;
+    });
+  });
+
+  describe('when LOG_EAGER_AUTO_SANITIZE is enabled', () => {
+    beforeEach(() => {
+      delete process.env.LOG_HASH_SECRET;
+      process.env.LOG_EAGER_AUTO_SANITIZE = 'true';
+      process.env.LOG_USE_JSON_FORMAT = 'true';
+      process.env.LOG_INFO = 'true';
+      resetEnvVarCache();
+      resetLogLevelRulesCache();
+    });
+
+    it('should eagerly redact PII fields without LOG_HASH_SECRET', () => {
+      const logger = getLogger('test-logger');
+      logger.info('User data', {
+        password: 'neverguessme', // 12 chars -> last 2 (smart obfuscation)
+        username: 'testuser', // 8 chars -> ****
+        action: 'login'
+      });
+
+      expect(consoleOutput).to.have.lengthOf(1);
+      const output = JSON.parse(consoleOutput[0]);
+
+      // Field names should remain the same
+      expect(output).to.have.property('password');
+      expect(output).to.have.property('username');
+      expect(output).to.not.have.property('password_redacted');
+      expect(output).to.not.have.property('username_redacted');
+
+      // Values should be obfuscated with smart context-aware obfuscation
+      expect(output.password).to.equal('****me');
+      expect(output.username).to.equal('****');
+      expect(output.action).to.equal('login');
+    });
+
+    it('should redact nested PII fields', () => {
+      const logger = getLogger('test-logger');
+      logger.info('User data', {
+        nested: {
+          ssn: '111-22-5555', // SSN format -> last 4 (smart obfuscation)
+          safe: 'data'
+        }
+      });
+
+      expect(consoleOutput).to.have.lengthOf(1);
+      const output = JSON.parse(consoleOutput[0]);
+
+      expect(output.nested).to.have.property('ssn');
+      expect(output.nested).to.not.have.property('ssn_redacted');
+      expect(output.nested.ssn).to.equal('****5555');
+      expect(output.nested.safe).to.equal('data');
+    });
+
+    it('should redact double nested email variations', () => {
+      const logger = getLogger('test-logger');
+      logger.info('User data', {
+        double: {
+          nested: {
+            email: 'john@smith.com', // email format -> first 2 + domain (smart obfuscation)
+            e_mail: 'jane@smith.com', // email format
+            eMail: 'jack@smith.com' // email format
+          }
+        }
+      });
+
+      expect(consoleOutput).to.have.lengthOf(1);
+      const output = JSON.parse(consoleOutput[0]);
+
+      expect(output.double.nested).to.have.property('email');
+      expect(output.double.nested).to.have.property('e_mail');
+      expect(output.double.nested).to.have.property('eMail');
+      expect(output.double.nested).to.not.have.property('email_redacted');
+      expect(output.double.nested).to.not.have.property('e_mail_redacted');
+      expect(output.double.nested).to.not.have.property('eMail_redacted');
+      expect(output.double.nested.email).to.equal('jo****@smith.com');
+      expect(output.double.nested.e_mail).to.equal('ja****@smith.com');
+      expect(output.double.nested.eMail).to.equal('ja****@smith.com');
+    });
+
+    it('should work with plain text format', () => {
+      delete process.env.LOG_USE_JSON_FORMAT;
+      resetEnvVarCache();
+      resetLogLevelRulesCache();
+
+      const logger = getLogger('test-logger');
+      logger.info('User data', {
+        password: 'secret123', // 9 chars -> ****
+        action: 'login'
+      });
+
+      expect(consoleOutput).to.have.lengthOf(1);
+      const output = consoleOutput[0];
+
+      // Should contain obfuscated password in JSON context
+      expect(output).to.include('password');
+      expect(output).to.include('****');
+      expect(output).to.not.include('secret123');
+      expect(output).to.include('login');
+    });
+
+    it('should not affect logs when LOG_EAGER_AUTO_SANITIZE is false', () => {
+      process.env.LOG_EAGER_AUTO_SANITIZE = 'false';
+      resetEnvVarCache();
+      resetLogLevelRulesCache();
+
+      const logger = getLogger('test-logger');
+      logger.info('User data', {
+        password: 'neverguessme',
+        action: 'login'
+      });
+
+      expect(consoleOutput).to.have.lengthOf(1);
+      const output = JSON.parse(consoleOutput[0]);
+
+      // Without eager sanitization, password should appear as-is
+      expect(output).to.have.property('password');
+      expect(output.password).to.equal('neverguessme');
+      expect(output).to.not.have.property('password_redacted');
+    });
+
+    describe('template string scenarios (objects in message string)', () => {
+      it('SHOULD sanitize d4l() output when object is passed (d4l applies eager sanitization to objects)', () => {
+        const logger = getLogger('test-logger');
+        logger.info(`info = ${d4l({password:'abc123'})}`);
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        // d4l() applies eager sanitization to objects when enabled
+        expect(output.msg).to.include('password');
+        expect(output.msg).to.not.include('abc123');
+        expect(output.msg).to.include('****');
+      });
+
+      it('SHOULD sanitize nested objects in d4l() template strings', () => {
+        const logger = getLogger('test-logger');
+        logger.info(`info = ${d4l({ a: { password:'abc123'}})}`);
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        expect(output.msg).to.include('password');
+        expect(output.msg).to.not.include('abc123');
+        expect(output.msg).to.include('****');
+      });
+
+      it('SHOULD sanitize deeply nested objects in d4l() template strings', () => {
+        const logger = getLogger('test-logger');
+        logger.info(`info = ${d4l({ a: { b: { password:'abc123'}}})}`);
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        expect(output.msg).to.include('password');
+        expect(output.msg).to.not.include('abc123');
+        expect(output.msg).to.include('****');
+      });
+
+      it('SHOULD sanitize d4lObfuscate() output with objects (d4lObfuscate calls d4l which applies eager sanitization)', () => {
+        const logger = getLogger('test-logger');
+        logger.info(`info = ${d4lObfuscate({password:'abc123'})}`);
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        // d4lObfuscate calls d4l, which applies eager sanitization to objects
+        expect(output.msg).to.include('password');
+        expect(output.msg).to.not.include('abc123');
+        expect(output.msg).to.include('****');
+      });
+
+      it('SHOULD sanitize nested objects in d4lObfuscate() template strings', () => {
+        const logger = getLogger('test-logger');
+        logger.info(`info = ${d4lObfuscate({ a: { password:'abc123'}})}`);
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        expect(output.msg).to.include('password');
+        expect(output.msg).to.not.include('abc123');
+        expect(output.msg).to.include('****');
+      });
+
+      it('SHOULD sanitize deeply nested objects in d4lObfuscate() template strings', () => {
+        const logger = getLogger('test-logger');
+        logger.info(`info = ${d4lObfuscate({ a: { b: { password:'abc123'}}})}`);
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        expect(output.msg).to.include('password');
+        expect(output.msg).to.not.include('abc123');
+        expect(output.msg).to.include('****');
+      });
+
+      it('SHOULD sanitize when object is passed as context (2nd param)', () => {
+        const logger = getLogger('test-logger');
+        logger.info('User data', {password:'abc123'});
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        // Context objects ARE sanitized by LOG_EAGER_AUTO_SANITIZE
+        expect(output.password).to.not.equal('abc123');
+        expect(output.password).to.equal('****');
+      });
+
+      it('SHOULD sanitize nested context objects', () => {
+        const logger = getLogger('test-logger');
+        logger.info('User data', {a: { password:'abc123'}});
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        expect(output.a.password).to.not.equal('abc123');
+        expect(output.a.password).to.equal('****');
+      });
+
+      it('SHOULD sanitize deeply nested context objects', () => {
+        const logger = getLogger('test-logger');
+        logger.info('User data', {a: { b: { password:'abc123'}}});
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        expect(output.a.b.password).to.not.equal('abc123');
+        expect(output.a.b.password).to.equal('****');
+      });
+    });
+
+    describe('when LOG_EAGER_AUTO_SANITIZE is disabled', () => {
+      beforeEach(() => {
+        process.env.LOG_EAGER_AUTO_SANITIZE = 'false';
+        resetEnvVarCache();
+        resetLogLevelRulesCache();
+      });
+
+      it('should NOT sanitize d4l() in template strings', () => {
+        const logger = getLogger('test-logger');
+        logger.info(`info = ${d4l({password:'abc123'})}`);
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        expect(output.msg).to.include('password');
+        expect(output.msg).to.include('abc123');
+      });
+
+      it('should NOT sanitize d4l() with nested objects in template strings', () => {
+        const logger = getLogger('test-logger');
+        logger.info(`info = ${d4l({ a: { password:'abc123'}})}`);
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        expect(output.msg).to.include('password');
+        expect(output.msg).to.include('abc123');
+      });
+
+      it('should NOT sanitize d4l() with deeply nested objects in template strings', () => {
+        const logger = getLogger('test-logger');
+        logger.info(`info = ${d4l({ a: { b: { password:'abc123'}}})}`);
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        expect(output.msg).to.include('password');
+        expect(output.msg).to.include('abc123');
+      });
+
+      it('should NOT sanitize context objects when disabled', () => {
+        const logger = getLogger('test-logger');
+        logger.info('User data', {password:'abc123'});
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        // When disabled, context objects are NOT sanitized
+        expect(output.password).to.equal('abc123');
+      });
+
+      it('should NOT sanitize nested context objects when disabled', () => {
+        const logger = getLogger('test-logger');
+        logger.info('User data', {a: { password:'abc123'}});
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        expect(output.a.password).to.equal('abc123');
+      });
+
+      it('should NOT sanitize deeply nested context objects when disabled', () => {
+        const logger = getLogger('test-logger');
+        logger.info('User data', {a: { b: { password:'abc123'}}});
+
+        expect(consoleOutput).to.have.lengthOf(1);
+        const output = JSON.parse(consoleOutput[0]);
+
+        expect(output.a.b.password).to.equal('abc123');
+      });
     });
   });
 });

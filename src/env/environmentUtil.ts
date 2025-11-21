@@ -64,3 +64,18 @@ export function isTestLikeEnv(): boolean {
   const nodeEnv = tryGetEnvVar('NODE_ENV');
   return nodeEnv === 'test';
 }
+
+export function isEagerAutoSanitizeEnabled(): boolean {
+  const value = tryGetEnvVar('LOG_EAGER_AUTO_SANITIZE');
+  return isTruelike(value);
+}
+
+function isTruelike(input: boolean | string | number | undefined): boolean {
+  if (input == null) {
+    return false;
+  }
+  if (['true', 'yes', 't', 'y', '1'].includes(input.toString().trim().toLowerCase())) {
+    return true;
+  }
+  return false;
+}

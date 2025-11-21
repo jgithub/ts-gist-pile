@@ -6,6 +6,7 @@ exports.isProductionLikeEnv = isProductionLikeEnv;
 exports.isDevelopmentLikeEnv = isDevelopmentLikeEnv;
 exports.isStagingLikeEnv = isStagingLikeEnv;
 exports.isTestLikeEnv = isTestLikeEnv;
+exports.isEagerAutoSanitizeEnabled = isEagerAutoSanitizeEnabled;
 var memoized = new Map();
 function resetEnvVarCache() {
     memoized.clear();
@@ -53,5 +54,18 @@ function isStagingLikeEnv() {
 function isTestLikeEnv() {
     var nodeEnv = tryGetEnvVar('NODE_ENV');
     return nodeEnv === 'test';
+}
+function isEagerAutoSanitizeEnabled() {
+    var value = tryGetEnvVar('LOG_EAGER_AUTO_SANITIZE');
+    return isTruelike(value);
+}
+function isTruelike(input) {
+    if (input == null) {
+        return false;
+    }
+    if (['true', 'yes', 't', 'y', '1'].includes(input.toString().trim().toLowerCase())) {
+        return true;
+    }
+    return false;
 }
 //# sourceMappingURL=environmentUtil.js.map
