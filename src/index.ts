@@ -107,3 +107,12 @@ export type { JobQueueService, JobOptions, JobHandler, Job } from "./jobqueue/Jo
 
 // Audit Logging
 export type { AuditService, AuditEntry, AuditQueryOptions } from "./audit/AuditService"
+
+// Terraform / Environment Configuration
+export type { TerraformValue, TerraformVariables } from "./terraform/TerraformValue"
+export type { TerraformParserService } from "./terraform/TerraformParserService"
+export { TerraformParserServiceImpl } from "./terraform/TerraformParserServiceImpl"
+export type { TerraformToEnvConversionService, TerraformToEnvConversionOptions } from "./terraform/TerraformToEnvConversionService"
+export { TerraformToEnvConversionServiceImpl } from "./terraform/TerraformToEnvConversionServiceImpl"
+export { parseDotenvContent, parseArgs, runSetEnv } from "./terraform/set_env"
+export type { CliArgs } from "./terraform/set_env"
