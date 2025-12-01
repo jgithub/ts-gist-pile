@@ -86,8 +86,8 @@ exports.parseArgs = parseArgs;
 exports.runSetEnv = main;
 var path = __importStar(require("path"));
 var fs = __importStar(require("fs/promises"));
-var TerraformParserServiceImpl_1 = require("./TerraformParserServiceImpl");
-var TerraformToEnvConversionServiceImpl_1 = require("./TerraformToEnvConversionServiceImpl");
+var TerraformParserServiceImpl_1 = require("../terraform/TerraformParserServiceImpl");
+var TerraformToEnvConversionServiceImpl_1 = require("../terraform/TerraformToEnvConversionServiceImpl");
 function main() {
     return __awaiter(this, void 0, void 0, function () {
         var args;
@@ -122,7 +122,7 @@ function handleDotenvSource(args) {
             switch (_e.label) {
                 case 0:
                     environment = args.environment || '';
-                    baseFile = environment ? ".env.".concat(environment) : '.env';
+                    baseFile = (environment && environment !== 'none') ? ".env.".concat(environment) : '.env';
                     baseFilePath = path.resolve(process.cwd(), baseFile);
                     console.log("Loading environment from: ".concat(baseFile));
                     console.log("Working directory: ".concat(process.cwd()));

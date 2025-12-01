@@ -13,9 +13,9 @@
 
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { TerraformParserServiceImpl } from './TerraformParserServiceImpl';
-import { TerraformToEnvConversionServiceImpl } from './TerraformToEnvConversionServiceImpl';
-import { TerraformVariables } from './TerraformValue';
+import { TerraformParserServiceImpl } from '../terraform/TerraformParserServiceImpl';
+import { TerraformToEnvConversionServiceImpl } from '../terraform/TerraformToEnvConversionServiceImpl';
+import { TerraformVariables } from '../terraform/TerraformValue';
 
 interface CliArgs {
   source: 'dotenv' | 'tfvars';
@@ -46,7 +46,8 @@ async function handleDotenvSource(args: CliArgs) {
   const environment = args.environment || '';
 
   // Determine which base file to load
-  const baseFile = environment ? `.env.${environment}` : '.env';
+  // --environment=none (or omitted) loads plain .env
+  const baseFile = (environment && environment !== 'none') ? `.env.${environment}` : '.env';
   const baseFilePath = path.resolve(process.cwd(), baseFile);
 
   console.log(`Loading environment from: ${baseFile}`);

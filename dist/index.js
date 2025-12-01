@@ -118,7 +118,7 @@ var TerraformParserServiceImpl_1 = require("./terraform/TerraformParserServiceIm
 Object.defineProperty(exports, "TerraformParserServiceImpl", { enumerable: true, get: function () { return TerraformParserServiceImpl_1.TerraformParserServiceImpl; } });
 var TerraformToEnvConversionServiceImpl_1 = require("./terraform/TerraformToEnvConversionServiceImpl");
 Object.defineProperty(exports, "TerraformToEnvConversionServiceImpl", { enumerable: true, get: function () { return TerraformToEnvConversionServiceImpl_1.TerraformToEnvConversionServiceImpl; } });
-var set_env_1 = require("./terraform/set_env");
+var set_env_1 = require("./env/set_env");
 Object.defineProperty(exports, "parseDotenvContent", { enumerable: true, get: function () { return set_env_1.parseDotenvContent; } });
 Object.defineProperty(exports, "parseArgs", { enumerable: true, get: function () { return set_env_1.parseArgs; } });
 Object.defineProperty(exports, "runSetEnv", { enumerable: true, get: function () { return set_env_1.runSetEnv; } });

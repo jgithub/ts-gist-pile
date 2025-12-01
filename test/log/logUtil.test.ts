@@ -511,10 +511,10 @@ FROM table WHERE id = 1' (string, 33)`)
 
     describe('sensitive data obfuscation', () => {
       it('should obfuscate API keys', () => {
-        const apiKey = 'fake_live_1234567890abcdefghijklmnopqrstuvwxyz';
+        const apiKey = 'test_fake_1234567890abcdefghijklmnopqrstuvwxyz';
         const result = d4lObfuscate(apiKey);
         expect(result).to.equal('****uvwxyz');
-        expect(result).to.not.include('fake_live');
+        expect(result).to.not.include('test_fake');
         expect(result).to.not.include('1234567890');
       });
 
@@ -723,14 +723,14 @@ FROM table WHERE id = 1' (string, 33)`)
 
     describe('typical usage in log messages', () => {
       it('can be used in template strings', () => {
-        const apiKey = 'fake_live_1234567890abcdefghijklmnopqrstuvwxyz'; // 45 chars -> last 6
+        const apiKey = 'test_fake_1234567890abcdefghijklmnopqrstuvwxyz'; // 45 chars -> last 6
         const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9'; // 36 chars -> last 5
 
         const logMessage = `API request: key=${d4lObfuscate(apiKey)}, token=${d4lObfuscate(token)}`;
 
         expect(logMessage).to.include('key=****uvwxyz');
         expect(logMessage).to.include('token=****XVCJ9');
-        expect(logMessage).to.not.include('fake_live');
+        expect(logMessage).to.not.include('test_fake');
         expect(logMessage).to.not.include('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9');
       });
 
@@ -799,7 +799,7 @@ FROM table WHERE id = 1' (string, 33)`)
       });
 
       it('should obfuscate AND hash strings', () => {
-        const input = 'fake_live_1234567890abcdefghijklmnopqrstuvwxyz';
+        const input = 'test_fake_1234567890abcdefghijklmnopqrstuvwxyz';
         const result = d4lObfuscate(input);
 
         // Should have obfuscated part
@@ -808,7 +808,7 @@ FROM table WHERE id = 1' (string, 33)`)
         expect(result).to.include('(hashed=');
         expect(result).to.match(/\*\*\*\*uvwxyz \(hashed=[a-f0-9]{12}\)$/);
         // Should not include the full sensitive value
-        expect(result).to.not.include('fake_live_1234567890');
+        expect(result).to.not.include('test_fake_1234567890');
       });
 
       it('should provide consistent hashes for same input', () => {
@@ -946,7 +946,7 @@ FROM table WHERE id = 1' (string, 33)`)
         });
 
         it('provides both quick readability and correlation ability', () => {
-          const apiKey = 'fake_live_1234567890abcdefghijklmnopqrstuvwxyz';
+          const apiKey = 'test_fake_1234567890abcdefghijklmnopqrstuvwxyz';
           const result = d4lObfuscate(apiKey);
 
           // Quick readability: can see it ends with 'wxyz'
@@ -956,7 +956,7 @@ FROM table WHERE id = 1' (string, 33)`)
           expect(result).to.match(/hashed=[a-f0-9]{12}/);
 
           // Security: doesn't expose the actual secret
-          expect(result).to.not.include('fake_live_1234567890');
+          expect(result).to.not.include('test_fake_1234567890');
         });
 
         it('works well in log messages', () => {
