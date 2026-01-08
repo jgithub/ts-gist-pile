@@ -7,8 +7,6 @@ export interface Happening {
   eventAt: Date,                  // OTel: timestamp, CloudEvents: time
   appName: string,
   type: string,                   // CloudEvents: type (e.g., "com.app.user.created")
-  // eventValue?: string,
-
   // --- Subject (Actor): Who/what initiated the event ---
   // ReBAC: subject, OTel: service.*, CloudEvents: source
   subjectType?: string,           // ReBAC: subject namespace (e.g., "user", "service", "apiKey", "group")
@@ -21,22 +19,13 @@ export interface Happening {
 
   // --- Relation & Action ---
   // ReBAC: relation + action
-  // relation?: string,              // ReBAC: the relationship (e.g., "owner", "editor", "viewer", "member", "admin")
   action?: string,                // ReBAC: the operation (e.g., "read", "write", "delete", "share")
 
   attributes: { [key: string]: string | number | boolean }  // OTel: attributes, CloudEvents: data/extensions
 
-
-  // subResource?: string,
-  // result?: string,
-  // resourceInstanceName?: string,
-  // initiatorAction?: string,
   referrer?: string,
   groupId?: string,
-  // snapshotGroupName?: string,
   userId?: string,
-  // snapshotUserName?: string,
-  // subResourceId?: string,
   userAgent?: string,
   clientIpAddress?: string,
   derivedUserAgent?: string,
@@ -46,13 +35,10 @@ export interface Happening {
   tags?: string,
   browser?: string,
   os?: string,
-  // reason?: string,
-  // comment?: string,
   errorType?: string,
   errorValue?: string,
   appVersion?: string,
   eventId?: string,               // CloudEvents: id (unique event identifier)
-  // document?: string,
   authToken?: string,
   sessionId?: string,
   uniqueVisitorToken?: string
