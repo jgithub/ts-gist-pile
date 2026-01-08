@@ -46,16 +46,16 @@ export interface Happening {
   tags?: string,
   browser?: string,
   os?: string,
-  reason?: string,
-  comment?: string,
+  // reason?: string,
+  // comment?: string,
   errorType?: string,
   errorValue?: string,
   appVersion?: string,
   eventId?: string,               // CloudEvents: id (unique event identifier)
-  document?: string,
+  // document?: string,
   authToken?: string,
   sessionId?: string,
-  uniqueBrowserToken?: string
+  uniqueVisitorToken?: string
   recordCreatedAt?: Date,   // This is the timestamp.
   serverName?: string,
   statusCode?: string,
