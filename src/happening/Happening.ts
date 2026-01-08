@@ -1,29 +1,31 @@
-// https://opentelemetry.io/docs/specs/otel/logs/data-model/
+// Cross-specification alignment:
+// - OpenTelemetry: https://opentelemetry.io/docs/specs/otel/logs/data-model/
+// - CloudEvents: https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md
+// - ReBAC (Zanzibar): https://authzed.com/docs/spicedb/concepts/zanzibar
 
 export interface Happening {
-  eventAt: Date,
+  eventAt: Date,                  // OTel: timestamp, CloudEvents: time
   appName: string,
-  category: string, // event category, e.g. "authentication", "data-access", "system", "error", "transaction", "security", "audit", "performance"
-  code: string, // event code
-  eventValue?: string,
-  // eventName?: string,
-  description?: string,
-  resourceType?: string,
-  resourceAction?: string,
-  subResource?: string,
-  result?: string,
-  resourceId?: string,
-  resourceInstanceName?: string,
-  initiatorAction?: string,
-  param?: string,
-  param2?: string,  
-  param3?: string,  
+  type: string,                   // CloudEvents: type (e.g., "com.app.user.created")
+  // --- Subject (Actor): Who/what initiated the event ---
+  // ReBAC: subject, OTel: service.*, CloudEvents: source
+  subjectType?: string,           // ReBAC: subject namespace (e.g., "user", "service", "apiKey", "group")
+  subjectId?: string,             // ReBAC: subject id. Prefer over userId for non-user actors.
+
+  // --- Object (Resource): The thing being acted upon ---
+  // ReBAC: object, OTel: resource, CloudEvents: subject
+  objectType?: string,            // ReBAC: object namespace (e.g., "document", "folder", "account")
+  objectId?: string,              // ReBAC: object id
+
+  // --- Relation & Action ---
+  // ReBAC: relation + action
+  action?: string,                // ReBAC: the operation (e.g., "read", "write", "delete", "share")
+
+  attributes: { [key: string]: string | number | boolean }  // OTel: attributes, CloudEvents: data/extensions
+
   referrer?: string,
   groupId?: string,
-  snapshotGroupName?: string, 
   userId?: string,
-  snapshotUserName?: string,
-  subResourceId?: string,
   userAgent?: string,
   clientIpAddress?: string,
   derivedUserAgent?: string,
@@ -33,18 +35,13 @@ export interface Happening {
   tags?: string,
   browser?: string,
   os?: string,
-  reason?: string,
-  comment?: string,
   errorType?: string,
   errorValue?: string,
   appVersion?: string,
-  source?: string,
-  target?: string,
-  eventId?: string,
-  document?: string,
+  eventId?: string,               // CloudEvents: id (unique event identifier)
   authToken?: string,
   sessionId?: string,
-  uniqueBrowserToken?: string
+  uniqueVisitorToken?: string
   recordCreatedAt?: Date,   // This is the timestamp.
   serverName?: string,
   statusCode?: string,
@@ -61,10 +58,11 @@ export interface Happening {
   screenHeight?: number,
   screenWidth?: number,
   upstreamRecordId?: string, 
-  attributes: { [key: string]: string | number | boolean }
-  spanId?: string,
-  traceId?: string,
-  severity?: string,
+
+  // --- Distributed Tracing (OTel, CloudEvents traceparent extension) ---
+  spanId?: string,                // OTel: span_id
+  traceId?: string,               // OTel: trace_id, CloudEvents: traceparent extension
+  severity?: string,              // OTel: severity_text
   duration?: number,
   hostname?: string
 }

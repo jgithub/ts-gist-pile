@@ -1,26 +1,18 @@
 export interface Happening {
     eventAt: Date;
     appName: string;
-    category: string;
-    code: string;
-    eventValue?: string;
-    description?: string;
-    resourceType?: string;
-    resourceAction?: string;
-    subResource?: string;
-    result?: string;
-    resourceId?: string;
-    resourceInstanceName?: string;
-    initiatorAction?: string;
-    param?: string;
-    param2?: string;
-    param3?: string;
+    type: string;
+    subjectType?: string;
+    subjectId?: string;
+    objectType?: string;
+    objectId?: string;
+    action?: string;
+    attributes: {
+        [key: string]: string | number | boolean;
+    };
     referrer?: string;
     groupId?: string;
-    snapshotGroupName?: string;
     userId?: string;
-    snapshotUserName?: string;
-    subResourceId?: string;
     userAgent?: string;
     clientIpAddress?: string;
     derivedUserAgent?: string;
@@ -30,18 +22,13 @@ export interface Happening {
     tags?: string;
     browser?: string;
     os?: string;
-    reason?: string;
-    comment?: string;
     errorType?: string;
     errorValue?: string;
     appVersion?: string;
-    source?: string;
-    target?: string;
     eventId?: string;
-    document?: string;
     authToken?: string;
     sessionId?: string;
-    uniqueBrowserToken?: string;
+    uniqueVisitorToken?: string;
     recordCreatedAt?: Date;
     serverName?: string;
     statusCode?: string;
@@ -58,9 +45,6 @@ export interface Happening {
     screenHeight?: number;
     screenWidth?: number;
     upstreamRecordId?: string;
-    attributes: {
-        [key: string]: string | number | boolean;
-    };
     spanId?: string;
     traceId?: string;
     severity?: string;
