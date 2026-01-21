@@ -17,6 +17,7 @@ export * as idUtil from "./id/idUtil";
 export * as emailUtil from "./email/emailUtil";
 export * as phoneUtil from "./phone/phoneUtil";
 export * as diceUtil from "./dice/diceUtil";
+export * as shortcodeUtil from "./shortcode/shortcodeUtil";
 export * as retryUtil from "./retry/retryUtil";
 export * as environmentUtil from "./env/environmentUtil";
 export { Container } from "./di/Container";
