@@ -2,24 +2,31 @@
 // - OpenTelemetry: https://opentelemetry.io/docs/specs/otel/logs/data-model/
 // - CloudEvents: https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md
 // - ReBAC (Zanzibar): https://authzed.com/docs/spicedb/concepts/zanzibar
+//
+// NAMING DECISION (2026-01-27):
+// We use "actor" and "resource" instead of ReBAC's "subject"/"object" or CloudEvents' "subject"
+// because those terms conflict (ReBAC subject = actor, CloudEvents subject = resource).
+// See: doc/conversation-starter/LEARNINGS_20260127_subject_object_naming_rebac_cloudevents.md
+// See: https://xkcd.com/927/
 
 export interface Happening {
   eventAt: Date,                  // OTel: timestamp, CloudEvents: time
   appName: string,
   type: string,                   // CloudEvents: type (e.g., "com.app.user.created")
-  // --- Subject (Actor): Who/what initiated the event ---
-  // ReBAC: subject, OTel: service.*, CloudEvents: source
-  subjectType?: string,           // ReBAC: subject namespace (e.g., "user", "service", "apiKey", "group")
-  subjectId?: string,             // ReBAC: subject id. Prefer over userId for non-user actors.
 
-  // --- Object (Resource): The thing being acted upon ---
-  // ReBAC: object, OTel: resource, CloudEvents: subject
-  objectType?: string,            // ReBAC: object namespace (e.g., "document", "folder", "account")
-  objectId?: string,              // ReBAC: object id
+  // --- Actor: Who/what initiated the event ---
+  // Maps to: ReBAC subject, CloudEvents source
+  actorType?: string,             // e.g., "user", "service", "apiKey", "group"
+  actorId?: string,               // Prefer over userId for non-user actors.
 
-  // --- Relation & Action ---
-  // ReBAC: relation + action
-  action?: string,                // ReBAC: the operation (e.g., "read", "write", "delete", "share")
+  // --- Resource: The thing being acted upon ---
+  // Maps to: ReBAC object, CloudEvents subject
+  resourceType?: string,          // e.g., "document", "folder", "account", "job"
+  resourceId?: string,
+
+  // --- Action: The operation performed (CRUDL) ---
+  // Maps to: ReBAC relation/action
+  action?: string,                // Use CRUDL: "create", "read", "update", "delete", "list"
 
   attributes: { [key: string]: string | number | boolean }  // OTel: attributes, CloudEvents: data/extensions
 
