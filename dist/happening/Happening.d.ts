@@ -2,10 +2,10 @@ export interface Happening {
     eventAt: Date;
     appName: string;
     type: string;
-    subjectType?: string;
-    subjectId?: string;
-    objectType?: string;
-    objectId?: string;
+    actorType?: string;
+    actorId?: string;
+    resourceType?: string;
+    resourceId?: string;
     action?: string;
     attributes: {
         [key: string]: string | number | boolean;
