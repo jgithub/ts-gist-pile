@@ -15,8 +15,7 @@ export interface Happening {
     userId?: string;
     userAgent?: string;
     clientIpAddress?: string;
-    derivedUserAgent?: string;
-    derivedClientIpAddress?: string;
+    proxyIpAddress?: string;
     serverIpAddress?: string;
     serverPort?: number;
     tags?: string;
@@ -45,6 +44,8 @@ export interface Happening {
     country?: string;
     viewportHeight?: number;
     viewportWidth?: number;
+    screenHeight?: number;
+    screenWidth?: number;
     upstreamRecordId?: string;
     spanId?: string;
     traceId?: string;
