@@ -44,7 +44,8 @@ export interface Happening {
   os?: string,
   errorType?: string,
   errorValue?: string,
-  appVersion?: string,
+  serverVersion?: string,         // Backend version serving the request
+  clientVersion?: string,         // Frontend/SPA version (same as server for SSR)
   eventId?: string,               // CloudEvents: id (unique event identifier)
   authToken?: string,
   sessionId?: string,
