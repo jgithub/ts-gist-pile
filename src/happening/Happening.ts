@@ -63,8 +63,9 @@ export interface Happening {
   city?: string,
   region?: string,
   country?: string,  
-  screenHeight?: number,
-  screenWidth?: number,
+  // Viewport dimensions (visible area of document, sent via X-Screen-Dimensions header)
+  viewportHeight?: number,
+  viewportWidth?: number,
   upstreamRecordId?: string, 
 
   // --- Distributed Tracing (OTel, CloudEvents traceparent extension) ---

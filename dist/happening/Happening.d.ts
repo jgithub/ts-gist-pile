@@ -43,8 +43,8 @@ export interface Happening {
     city?: string;
     region?: string;
     country?: string;
-    screenHeight?: number;
-    screenWidth?: number;
+    viewportHeight?: number;
+    viewportWidth?: number;
     upstreamRecordId?: string;
     spanId?: string;
     traceId?: string;
