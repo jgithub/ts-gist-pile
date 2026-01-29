@@ -24,7 +24,8 @@ export interface Happening {
     os?: string;
     errorType?: string;
     errorValue?: string;
-    appVersion?: string;
+    serverVersion?: string;
+    clientVersion?: string;
     eventId?: string;
     authToken?: string;
     sessionId?: string;
