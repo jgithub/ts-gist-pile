@@ -34,9 +34,8 @@ export interface Happening {
   groupId?: string,
   userId?: string,
   userAgent?: string,
-  clientIpAddress?: string,
-  derivedUserAgent?: string,
-  derivedClientIpAddress?: string,
+  clientIpAddress?: string,       // Real client IP (from X-Forwarded-For)
+  proxyIpAddress?: string,        // Proxy/load balancer IP (direct socket connection)
   serverIpAddress?: string
   serverPort?: number,
   tags?: string,
@@ -50,7 +49,7 @@ export interface Happening {
   authToken?: string,
   sessionId?: string,
   uniqueVisitorToken?: string
-  recordCreatedAt?: Date,   // This is the timestamp.
+  ingestedAt?: Date,        // When record entered our system (for bulk imports; distinct from eventAt)
   serverName?: string,
   statusCode?: string,
   statusMessage?: string,
@@ -63,9 +62,12 @@ export interface Happening {
   city?: string,
   region?: string,
   country?: string,  
-  // Viewport dimensions (visible area of document, sent via X-Screen-Dimensions header)
+  // Viewport dimensions (visible document area, from X-Screen-Dimensions header second part)
   viewportHeight?: number,
   viewportWidth?: number,
+  // Screen dimensions (full screen size, from X-Screen-Dimensions header first part)
+  screenHeight?: number,
+  screenWidth?: number,
   upstreamRecordId?: string, 
 
   // --- Distributed Tracing (OTel, CloudEvents traceparent extension) ---
