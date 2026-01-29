@@ -18,6 +18,7 @@ export * as emailUtil from "./email/emailUtil"
 export * as phoneUtil from "./phone/phoneUtil"
 export * as diceUtil from "./dice/diceUtil"
 export * as shortcodeUtil from "./shortcode/shortcodeUtil"
+export * as requestUtil from "./request/requestUtil"
 export * as retryUtil from "./retry/retryUtil"
 export * as environmentUtil from "./env/environmentUtil"
 
@@ -117,3 +118,7 @@ export type { TerraformToEnvConversionService, TerraformToEnvConversionOptions }
 export { TerraformToEnvConversionServiceImpl } from "./terraform/TerraformToEnvConversionServiceImpl"
 export { parseDotenvContent, parseArgs, runSetEnv } from "./env/set_env"
 export type { CliArgs } from "./env/set_env"
+
+// HTTP Request utilities
+export { extractIpAddress } from "./request/requestUtil"
+export type { HttpRequestLike } from "./request/requestUtil"
