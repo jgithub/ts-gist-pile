@@ -1,4 +1,4 @@
-import { dateUtil, numberUtil } from "..";
+import * as dateUtil from "./dateUtil";
 import { DateProviderService } from "./DateProviderService";
 import { UtcGetterService } from "./UtcGetterService";
 

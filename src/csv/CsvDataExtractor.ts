@@ -1,4 +1,4 @@
-import { stringUtil } from "..";
+import * as stringUtil from "../string/stringUtil";
 
 export class CsvDataExtractor {
   private readonly headerNameToIndexMap: Map<string, number> = new Map();
