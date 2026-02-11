@@ -28,5 +28,11 @@ saved.npmrc
 *.tar.gz
 TsGistPile.js
 
+# tsc compiles index.browser.ts to CJS — not useful, the real browser
+# bundle is dist/ts-gist-pile.browser.min.js (esbuild IIFE)
+dist/index.browser.js
+dist/index.browser.js.map
+dist/index.browser.d.ts
+
 trash_/
 draft_/
