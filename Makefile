@@ -12,8 +12,13 @@ help:
 	@echo "  make bundle-browser           - Build browser IIFE bundle (dist/ts-gist-pile.browser.min.js)"
 	@echo "  make demo-all                 - Run all blur demos"
 
+.PHONY: stamp-version
+stamp-version:
+	@VERSION=$$(node -p "require('./package.json').version") && \
+	echo "export const VERSION = '$$VERSION';" > src/version.ts
+
 .PHONY: dist
-dist: cleandist
+dist: cleandist stamp-version
 	cd ${ROOT_DIR} && npm run build
 	cd ${ROOT_DIR} && $(MAKE) bundle-browser
 	cd ${ROOT_DIR} && npm pack

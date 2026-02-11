@@ -76,6 +76,9 @@ export { NoOpSpanEndHandler } from "./opentelemetry/api/NoOpSpanEndHandler"
 export { DEFAULT_RETRY_POLICY, AGGRESSIVE_RETRY_POLICY } from "./documentstore/RetryPolicy"
 export { DEFAULT_READ_AFTER_WRITE_OPTIONS, FAST_READ_AFTER_WRITE_OPTIONS, PATIENT_READ_AFTER_WRITE_OPTIONS } from "./documentstore/ReadAfterWriteOptions"
 
+// Package version
+export { VERSION } from "./version"
+
 // EXCLUDED (Node-only):
 // - TerraformParserServiceImpl (fs/promises)
 // - TerraformToEnvConversionServiceImpl (fs/promises)

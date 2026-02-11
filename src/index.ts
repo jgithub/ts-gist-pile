@@ -122,3 +122,6 @@ export type { CliArgs } from "./env/set_env"
 // HTTP Request utilities
 export { extractIpAddress } from "./request/requestUtil"
 export type { HttpRequestLike } from "./request/requestUtil"
+
+// Package version
+export { VERSION } from "./version"

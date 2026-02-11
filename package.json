@@ -1,6 +1,6 @@
 {
   "name": "@jgithub/ts-gist-pile",
-  "version": "0.0.327",
+  "version": "0.0.328",
   "description": "tired of finding this on stackoverflow",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -52,7 +52,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@jgithub/ts-gist-pile": "github:jgithub/ts-gist-pile#v0.0.327",
+    "@jgithub/ts-gist-pile": "github:jgithub/ts-gist-pile#v0.0.328",
     "@opentelemetry/api": "^1.9.0",
     "uuid": "^11.1.0"
   }
