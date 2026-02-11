@@ -50,6 +50,7 @@ export interface Happening {
   sessionId?: string,
   uniqueVisitorToken?: string
   ingestedAt?: Date,        // When record entered our system (for bulk imports; distinct from eventAt)
+  eventDate?: number,        // YYYYMMDD integer (e.g., 20260211) — derived from eventAt in UTC
   serverName?: string,
   statusCode?: string,
   statusMessage?: string,

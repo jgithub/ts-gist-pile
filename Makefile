@@ -14,7 +14,8 @@ help:
 
 .PHONY: dist
 dist: cleandist
-#	cd ${ROOT_DIR} && npm run build
+	cd ${ROOT_DIR} && npm run build
+	cd ${ROOT_DIR} && $(MAKE) bundle-browser
 	cd ${ROOT_DIR} && npm pack
 
 .PHONY: build
