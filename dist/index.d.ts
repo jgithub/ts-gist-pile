@@ -84,3 +84,4 @@ export { parseDotenvContent, parseArgs, runSetEnv } from "./env/set_env";
 export type { CliArgs } from "./env/set_env";
 export { extractIpAddress } from "./request/requestUtil";
 export type { HttpRequestLike } from "./request/requestUtil";
+export { VERSION } from "./version";

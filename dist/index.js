@@ -34,7 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EvictionMode = exports.SimplestKeyValueStoreInMemImpl = exports.CanonicalUuid = exports.ImmutableUtc = exports.UtcGetterServiceImpl = exports.DateProviderServiceImpl = exports.LlmQueryImpl = exports.ObjectIdFinder = exports.OptionallyCachedValue = exports.BooleanStringPair = exports.safeStringify = exports.jsonUtil = exports.statUtil = exports.withStoreId = exports.s4l = exports.c4l = exports.b4l = exports.p4l = exports.blurWhereNeeded = exports.blurIfEnabled = exports.plain = exports.d4lPii = exports.d4lObfuscate = exports.d4l = exports.LOG_RULES = exports.getLogger = exports.Container = exports.environmentUtil = exports.retryUtil = exports.requestUtil = exports.shortcodeUtil = exports.diceUtil = exports.phoneUtil = exports.emailUtil = exports.idUtil = exports.uuidUtil = exports.radixUtil = exports.tryUtil = exports.arrayUtil = exports.extendedExceptionList = exports.functionUtil = exports.mapUtil = exports.dateUtil = exports.numberUtil = exports.logUtil = exports.booleanUtil = exports.stringUtil = exports.cloneUtil = exports.objectUtil = exports.anyUtil = void 0;
-exports.extractIpAddress = exports.runSetEnv = exports.parseArgs = exports.parseDotenvContent = exports.TerraformToEnvConversionServiceImpl = exports.TerraformParserServiceImpl = exports.DEFAULT_RETRY_OPTIONS = exports.retryWithBackoff = exports.PATIENT_READ_AFTER_WRITE_OPTIONS = exports.FAST_READ_AFTER_WRITE_OPTIONS = exports.DEFAULT_READ_AFTER_WRITE_OPTIONS = exports.AGGRESSIVE_RETRY_POLICY = exports.DEFAULT_RETRY_POLICY = exports.NoOpSpanEndHandler = exports.NoOpAddEventHandler = exports.CsvDataExtractor = void 0;
+exports.VERSION = exports.extractIpAddress = exports.runSetEnv = exports.parseArgs = exports.parseDotenvContent = exports.TerraformToEnvConversionServiceImpl = exports.TerraformParserServiceImpl = exports.DEFAULT_RETRY_OPTIONS = exports.retryWithBackoff = exports.PATIENT_READ_AFTER_WRITE_OPTIONS = exports.FAST_READ_AFTER_WRITE_OPTIONS = exports.DEFAULT_READ_AFTER_WRITE_OPTIONS = exports.AGGRESSIVE_RETRY_POLICY = exports.DEFAULT_RETRY_POLICY = exports.NoOpSpanEndHandler = exports.NoOpAddEventHandler = exports.CsvDataExtractor = void 0;
 exports.anyUtil = __importStar(require("./any/anyUtil"));
 exports.objectUtil = __importStar(require("./object/objectUtil"));
 exports.cloneUtil = __importStar(require("./clone/cloneUtil"));
@@ -126,4 +126,6 @@ Object.defineProperty(exports, "parseArgs", { enumerable: true, get: function ()
 Object.defineProperty(exports, "runSetEnv", { enumerable: true, get: function () { return set_env_1.runSetEnv; } });
 var requestUtil_1 = require("./request/requestUtil");
 Object.defineProperty(exports, "extractIpAddress", { enumerable: true, get: function () { return requestUtil_1.extractIpAddress; } });
+var version_1 = require("./version");
+Object.defineProperty(exports, "VERSION", { enumerable: true, get: function () { return version_1.VERSION; } });
 //# sourceMappingURL=index.js.map

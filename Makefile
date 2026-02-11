@@ -9,11 +9,18 @@ help:
 	@echo "  make demo-blur-prod           - Run blur API demo (prod mode with hashing)"
 	@echo "  make demo-comprehensive       - Run comprehensive logging demo (130 objects)"
 	@echo "  make demo-comprehensive-prod  - Run comprehensive demo (prod mode)"
+	@echo "  make bundle-browser           - Build browser IIFE bundle (dist/ts-gist-pile.browser.min.js)"
 	@echo "  make demo-all                 - Run all blur demos"
 
+.PHONY: stamp-version
+stamp-version:
+	@VERSION=$$(node -p "require('./package.json').version") && \
+	echo "export const VERSION = '$$VERSION';" > src/version.ts
+
 .PHONY: dist
-dist: cleandist
-#	cd ${ROOT_DIR} && npm run build
+dist: cleandist stamp-version
+	cd ${ROOT_DIR} && npm run build
+	cd ${ROOT_DIR} && $(MAKE) bundle-browser
 	cd ${ROOT_DIR} && npm pack
 
 .PHONY: build
@@ -63,6 +70,22 @@ demo-comprehensive:
 demo-comprehensive-prod:
 	@echo "=== Comprehensive Demo (Production Mode) ==="
 	cd ${ROOT_DIR} && LOG_EAGER_AUTO_SANITIZE=true LOG_HASH_SECRET=my-secret-key-123 LOG_INFO=true npx ts-node examples/comprehensive_logging_demo.ts
+
+.PHONY: bundle-browser
+bundle-browser:
+	cd ${ROOT_DIR} && npx esbuild src/index.browser.ts \
+		--bundle \
+		--format=iife \
+		--global-name=TsGistPile \
+		--platform=browser \
+		--target=es2020 \
+		--minify \
+		--sourcemap \
+		--external:async_hooks \
+		--external:crypto \
+		--outfile=dist/ts-gist-pile.browser.min.js
+	@echo "Browser bundle created at dist/ts-gist-pile.browser.min.js"
+	@ls -lh ${ROOT_DIR}/dist/ts-gist-pile.browser.min.js
 
 .PHONY: demo-all
 demo-all: demo-blur demo-blur-prod
