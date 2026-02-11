@@ -30,6 +30,7 @@ export interface Happening {
     sessionId?: string;
     uniqueVisitorToken?: string;
     ingestedAt?: Date;
+    eventDate?: number;
     serverName?: string;
     statusCode?: string;
     statusMessage?: string;
