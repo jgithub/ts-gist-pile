@@ -1,4 +1,5 @@
 export declare function generateSortedFiveMinuteBucketsForYearInSeconds(year: number): number[];
+export declare function dateToYyyyMmDdNumberAtUtc(date: Date): number;
 export declare function dateToYyyyMmDdStringAtUtc(date: Date): string;
 export declare function getDateInLondon(date: Date): Date;
 export declare function getMillisecondsBetweenDates(start: Date, end: Date): number;

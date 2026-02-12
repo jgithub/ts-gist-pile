@@ -31,6 +31,34 @@ describe('dateUtil', () => {
   })  
 
 
+  describe('.dateToYyyyMmDdNumberAtUtc()', () => {
+    it('returns YYYYMMDD integer for a known date', () => {
+      const date = new Date('2026-02-12T15:30:00Z')
+      expect(dateUtil.dateToYyyyMmDdNumberAtUtc(date)).to.eq(20260212)
+    })
+
+    it('uses UTC, not local time', () => {
+      // 2026-01-31 at 23:59 UTC — local timezone must not push it to Feb 1
+      const date = new Date('2026-01-31T23:59:59Z')
+      expect(dateUtil.dateToYyyyMmDdNumberAtUtc(date)).to.eq(20260131)
+    })
+
+    it('handles single-digit month and day', () => {
+      const date = new Date('2026-01-01T00:00:00Z')
+      expect(dateUtil.dateToYyyyMmDdNumberAtUtc(date)).to.eq(20260101)
+    })
+
+    it('handles leap day', () => {
+      const date = new Date('2024-02-29T12:00:00Z')
+      expect(dateUtil.dateToYyyyMmDdNumberAtUtc(date)).to.eq(20240229)
+    })
+
+    it('handles end of year', () => {
+      const date = new Date('2025-12-31T23:59:59Z')
+      expect(dateUtil.dateToYyyyMmDdNumberAtUtc(date)).to.eq(20251231)
+    })
+  })
+
   describe('.isValidDateObject()', () => {
     describe('for a variety of common inputs', () => {
       it('generates the expected result', () => {

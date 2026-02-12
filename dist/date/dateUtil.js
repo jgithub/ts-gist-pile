@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateSortedFiveMinuteBucketsForYearInSeconds = generateSortedFiveMinuteBucketsForYearInSeconds;
+exports.dateToYyyyMmDdNumberAtUtc = dateToYyyyMmDdNumberAtUtc;
 exports.dateToYyyyMmDdStringAtUtc = dateToYyyyMmDdStringAtUtc;
 exports.getDateInLondon = getDateInLondon;
 exports.getMillisecondsBetweenDates = getMillisecondsBetweenDates;
@@ -20,6 +21,11 @@ function generateSortedFiveMinuteBucketsForYearInSeconds(year) {
         workingValueInMilliseconds += (5 * 60 * 1000);
     }
     return retval;
+}
+function dateToYyyyMmDdNumberAtUtc(date) {
+    return date.getUTCFullYear() * 10000
+        + (date.getUTCMonth() + 1) * 100
+        + date.getUTCDate();
 }
 function dateToYyyyMmDdStringAtUtc(date) {
     var dateAtUtc = new Date(date.toUTCString());
