@@ -17,6 +17,12 @@ export function generateSortedFiveMinuteBucketsForYearInSeconds(year: number): n
   return retval
 }
 
+export function dateToYyyyMmDdNumberAtUtc(date: Date): number {
+  return date.getUTCFullYear() * 10000
+    + (date.getUTCMonth() + 1) * 100
+    + date.getUTCDate();
+}
+
 export function dateToYyyyMmDdStringAtUtc(date: Date): string {
   const dateAtUtc: Date = new Date(date.toUTCString())
   const yyyyMmDdString = `${dateAtUtc.getUTCFullYear()}${padLeftWithZeros(dateAtUtc.getUTCMonth() + 1, 2)}${padLeftWithZeros(dateAtUtc.getUTCDate(), 2)}` 
