@@ -52,5 +52,6 @@ export interface Happening {
     traceId?: string;
     severity?: string;
     duration?: number;
+    value?: number;
     hostname?: string;
 }

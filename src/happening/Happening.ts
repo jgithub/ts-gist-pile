@@ -76,5 +76,6 @@ export interface Happening {
   traceId?: string,               // OTel: trace_id, CloudEvents: traceparent extension
   severity?: string,              // OTel: severity_text
   duration?: number,
+  value?: number,               // General-purpose numeric measurement (null implies count of 1)
   hostname?: string
 }
