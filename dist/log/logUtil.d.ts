@@ -5,6 +5,9 @@ export declare function blurWhereNeeded(input: string | number | boolean | Error
 export declare const plain: typeof d4l;
 export declare const blur: typeof d4lObfuscate;
 export declare const blurIfEnabled: typeof d4lPii;
+export declare const fmt: typeof d4l;
+export declare const pii: typeof d4lPii;
+export declare const safe: typeof blurWhereNeeded;
 export declare const p4l: typeof d4l;
 export declare const b4l: typeof d4lObfuscate;
 export declare const c4l: typeof d4lPii;
