@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.s4l = exports.c4l = exports.b4l = exports.p4l = exports.blurIfEnabled = exports.blur = exports.plain = void 0;
+exports.s4l = exports.c4l = exports.b4l = exports.p4l = exports.safe = exports.pii = exports.fmt = exports.blurIfEnabled = exports.blur = exports.plain = void 0;
 exports.d4l = d4l;
 exports.d4lObfuscate = d4lObfuscate;
 exports.d4lPii = d4lPii;
@@ -201,6 +201,9 @@ function blurWhereNeeded(input, logOptions) {
 exports.plain = d4l;
 exports.blur = d4lObfuscate;
 exports.blurIfEnabled = d4lPii;
+exports.fmt = d4l;
+exports.pii = d4lPii;
+exports.safe = blurWhereNeeded;
 exports.p4l = d4l;
 exports.b4l = d4lObfuscate;
 exports.c4l = d4lPii;

@@ -31,7 +31,7 @@ export * as jsonUtil from "./json/jsonUtil"
 // Named exports
 export { Container } from "./di/Container"
 export { getLogger, LOG_RULES, withStoreId } from "./log/getLogger"
-export { d4l, d4lObfuscate, d4lPii, plain, blur, blurIfEnabled, blurWhereNeeded, p4l, b4l, c4l, s4l } from "./log/logUtil"
+export { d4l, d4lObfuscate, d4lPii, plain, blur, blurIfEnabled, blurWhereNeeded, p4l, b4l, c4l, s4l, fmt, pii, safe } from "./log/logUtil"
 export { safeStringify } from "./string/safeStringify"
 export { BooleanStringPair } from "./container/BooleanStringPair"
 export { ResultOrErr } from "./result/ResultOrErr"

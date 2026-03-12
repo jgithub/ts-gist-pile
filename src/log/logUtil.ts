@@ -294,6 +294,11 @@ export const plain = d4l;
 export const blur = d4lObfuscate;
 export const blurIfEnabled = d4lPii;
 
+// Short English-word aliases for maximum readability in log lines
+export const fmt = d4l;               // format/decorate for logging (plain output)
+export const pii = d4lPii;            // conditional redact (blur if enabled)
+export const safe = blurWhereNeeded;   // smart auto-detect PII and redact
+
 /**
  * Short aliases for frequent use (all 3 characters for consistency):
  *
