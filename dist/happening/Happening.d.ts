@@ -38,8 +38,8 @@ export interface Happening {
     path?: string;
     batchStamp?: string;
     postalCode?: string;
-    latitude?: string;
-    longitude?: string;
+    latitude?: number;
+    longitude?: number;
     city?: string;
     region?: string;
     country?: string;
