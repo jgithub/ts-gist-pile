@@ -58,8 +58,9 @@ export interface Happening {
   path?: string,
   batchStamp?: string,
   postalCode?: string,
-  latitude?: string,
-  longitude?: string,
+  /** Decimal degrees. Were `string` until 0.0.333 while every store held a number; the lie moved a parse into each repository. */
+  latitude?: number,
+  longitude?: number,
   city?: string,
   region?: string,
   country?: string,  

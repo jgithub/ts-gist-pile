@@ -1,6 +1,6 @@
 {
   "name": "@jgithub/ts-gist-pile",
-  "version": "0.0.332",
+  "version": "0.0.333",
   "description": "tired of finding this on stackoverflow",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,6 +8,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./dist/*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
     },
     "./opentelemetry/api": {
       "types": "./dist/opentelemetry/api/index.d.ts",
