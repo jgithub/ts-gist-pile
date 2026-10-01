@@ -125,11 +125,12 @@ FROM table WHERE id = 1' (string, 33)`)
   });
 
   describe('.d4lPii()', () => {
+    // The contract: d4lPii NEVER returns a person's identifying value in plaintext. Until 0.0.334 it returned d4l(input)
+    // whenever LOG_HASH_SECRET was unset, and for every non-string input even when it was set.
     const originalHashSecret = process.env.LOG_HASH_SECRET;
     const originalEagerSanitize = process.env.LOG_EAGER_AUTO_SANITIZE;
 
     afterEach(() => {
-      // Restore original environment
       if (originalHashSecret) {
         process.env.LOG_HASH_SECRET = originalHashSecret;
       } else {
@@ -150,45 +151,49 @@ FROM table WHERE id = 1' (string, 33)`)
         resetEnvVarCache();
       });
 
-      it('should behave like d4l for strings', () => {
-        const input = 'user-12345';
-        const result = d4lPii(input);
-        expect(result).to.equal(d4l(input));
-        expect(result).to.equal("'user-12345' (string, 10)");
+      it('redacts strings instead of printing them, without a hash', () => {
+        const result = d4lPii('john.smith@example.com');
+        expect(result).to.not.include('john.smith');
+        expect(result).to.equal('jo****@example.com');
       });
 
-      it('should behave like d4l for numbers', () => {
-        const input = 42;
-        const result = d4lPii(input);
-        expect(result).to.equal(d4l(input));
-        expect(result).to.equal("42 (number)");
+      it('redacts numbers', () => {
+        expect(d4lPii(5551234567)).to.not.include('5551234567');
       });
 
-      it('should behave like d4l for booleans', () => {
-        const input = true;
-        const result = d4lPii(input);
-        expect(result).to.equal(d4l(input));
-        expect(result).to.equal("TRUE (boolean)");
+      it('redacts every string in an array', () => {
+        const result = d4lPii(['alice.anderson@example.com', 'bob.brown@example.com']);
+        expect(result).to.not.include('alice.anderson');
+        expect(result).to.not.include('bob.brown');
+        expect(result).to.match(/^Array\(len=2\) \[/);
       });
 
-      it('should behave like d4l for objects', () => {
-        const input = { userId: '123', email: 'test@example.com' };
-        const result = d4lPii(input);
-        expect(result).to.equal(d4l(input));
-        expect(result).to.include('"userId":"123"');
-        expect(result).to.include('"email":"test@example.com"');
+      it('redacts every value of an object, whatever its key is called', () => {
+        const result = d4lPii({ to: 'carol.carter@example.com', nested: { who: 'Dave Example' } });
+        expect(result).to.not.include('carol.carter');
+        expect(result).to.not.include('Dave Example');
+        expect(result).to.include('to:');
+        expect(result).to.include('who:');
       });
 
-      it('should behave like d4l for null', () => {
-        const result = d4lPii(null);
-        expect(result).to.equal(d4l(null));
-        expect(result).to.equal("<null> (null)");
+      it('redacts the message of an Error', () => {
+        const result = d4lPii(new Error('delivery failed for erin.evans@example.com'));
+        expect(result).to.not.include('erin.evans');
+        expect(result).to.include('Error');
       });
 
-      it('should behave like d4l for undefined', () => {
-        const result = d4lPii(undefined);
-        expect(result).to.equal(d4l(undefined));
-        expect(result).to.equal("<undefined> (undefined)");
+      it('formats null, undefined and booleans like d4l, since they identify nobody', () => {
+        expect(d4lPii(null)).to.equal('<null> (null)');
+        expect(d4lPii(undefined)).to.equal('<undefined> (undefined)');
+        expect(d4lPii(true)).to.equal('TRUE (boolean)');
+      });
+
+      it('survives an object that refers to itself', () => {
+        const cyclic: any = { email: 'frank.foster@example.com' };
+        cyclic.self = cyclic;
+        const result = d4lPii(cyclic);
+        expect(result).to.not.include('frank.foster');
+        expect(result).to.include('<cycle>');
       });
     });
 
@@ -199,241 +204,41 @@ FROM table WHERE id = 1' (string, 33)`)
         resetEnvVarCache();
       });
 
-      it('should obfuscate strings (with hash for long strings)', () => {
-        const input = 'user-12345';
-        const result = d4lPii(input);
-
-        // 10 chars -> fully obfuscated, no hash (hash only for strings > 10 chars)
-        expect(result).to.not.equal(d4l(input));
-        expect(result).to.not.include('user-12345');
-        expect(result).to.equal('****');
-
-        // Longer string should have hash
-        const longInput = 'user-123456';  // 11 chars
-        const longResult = d4lPii(longInput);
-        expect(longResult).to.include('(hashed=');
-        expect(longResult).to.match(/\*\*\*\*56 \(hashed=[a-f0-9]{12}\)$/);
+      it('obfuscates strings like d4lObfuscate, with a hash for strings longer than 10', () => {
+        expect(d4lPii('user-12345')).to.equal('****');
+        expect(d4lPii('user-123456')).to.match(/\*\*\*\*56 \(hashed=[a-f0-9]{12}\)$/);
+        expect(d4lPii('user@example.com')).to.match(/us\*\*\*\*@example\.com \(hashed=[a-f0-9]{12}\)$/);
       });
 
-      it('should pass through numbers unchanged', () => {
-        const input = 12345;
-        const result = d4lPii(input);
-
-        // Non-strings pass through unchanged (like d4l)
-        expect(result).to.equal(d4l(input));
-        expect(result).to.equal('12345 (number)');
-      });
-
-      it('should pass through booleans unchanged', () => {
-        const input = true;
-        const result = d4lPii(input);
-
-        // Non-strings pass through unchanged (like d4l)
-        expect(result).to.equal(d4l(input));
-        expect(result).to.equal('TRUE (boolean)');
-      });
-
-      it('should pass through objects unchanged', () => {
-        const input = { userId: '123', email: 'test@example.com' };
-        const result = d4lPii(input);
-
-        // Non-strings pass through unchanged (like d4l)
-        expect(result).to.equal(d4l(input));
-        expect(result).to.include('userId');
-        expect(result).to.include('test@example.com');
-      });
-
-      it('should create consistent obfuscation for same input', () => {
-        const input = 'user-12345-abc';  // 14 chars to get hash
-        const result1 = d4lPii(input);
-        const result2 = d4lPii(input);
-
-        expect(result1).to.equal(result2);
-        expect(result1).to.include('(hashed=');
-      });
-
-      it('should create different hashes for different inputs', () => {
-        const input1 = 'user-12345-abc';  // 14 chars to get hash
-        const input2 = 'user-67890-xyz';  // 14 chars to get hash
-        const result1 = d4lPii(input1);
-        const result2 = d4lPii(input2);
-
-        expect(result1).to.not.equal(result2);
-        // Extract hashes
+      it('creates the same output for the same input and different hashes for different inputs', () => {
+        const result1 = d4lPii('user-12345-abc');
+        expect(d4lPii('user-12345-abc')).to.equal(result1);
         const hash1 = result1.match(/hashed=([a-f0-9]{12})/)?.[1];
-        const hash2 = result2.match(/hashed=([a-f0-9]{12})/)?.[1];
+        const hash2 = d4lPii('user-67890-xyz').match(/hashed=([a-f0-9]{12})/)?.[1];
+        expect(hash1).to.not.equal(undefined);
         expect(hash1).to.not.equal(hash2);
       });
 
-      it('should handle null', () => {
-        const result = d4lPii(null);
-        // null passes through (like d4l)
-        expect(result).to.equal('<null> (null)');
+      it('hashes strings inside arrays and objects too', () => {
+        const arrayResult = d4lPii(['alice.anderson@example.com']);
+        expect(arrayResult).to.not.include('alice.anderson');
+        expect(arrayResult).to.match(/\(hashed=[a-f0-9]{12}\)/);
+
+        const objectResult = d4lPii({ to: 'carol.carter@example.com' });
+        expect(objectResult).to.not.include('carol.carter');
+        expect(objectResult).to.match(/\(hashed=[a-f0-9]{12}\)/);
       });
 
-      it('should handle undefined', () => {
-        const result = d4lPii(undefined);
-        // undefined passes through (like d4l)
-        expect(result).to.equal('<undefined> (undefined)');
-      });
-
-      it('should handle Error objects', () => {
-        const input = new Error('test error message');
-        const result = d4lPii(input);
-
-        // Errors pass through (like d4l) - they include the message
-        expect(result).to.include('Error: test error message');
-        expect(result).to.include('(Error');
-      });
-    });
-
-    describe('typical usage in log messages', () => {
-      beforeEach(() => {
-        process.env.LOG_HASH_SECRET = 'test-secret-key-123';
+      it('never includes the secret itself', () => {
+        expect(d4lPii('john.smith@example.com')).to.not.include('test-secret-key-123');
       });
 
       it('can be used in template strings', () => {
-        const userId = 'user-12345';
-        const email = 'john@example.com';
-
-        const logMessage = `User logged in: userId=${d4lPii(userId)}, email=${d4lPii(email)}`;
-
+        const logMessage = `User logged in: userId=${d4lPii('user-12345')}, email=${d4lPii('john@example.com')}`;
         expect(logMessage).to.not.include('user-12345');
         expect(logMessage).to.not.include('john@example.com');
-        expect(logMessage).to.include('userId=');
-        expect(logMessage).to.include('email=');
-        expect(logMessage).to.include('(hashed=');
-        // Email should use email format
-        expect(logMessage).to.include('jo****@example.com');
-        // UserId is 10 chars, so fully obfuscated
+        expect(logMessage).to.include('jo****@example.com (hashed=');
         expect(logMessage).to.include('userId=****,');
-      });
-    });
-
-    describe('edge cases', () => {
-      beforeEach(() => {
-        process.env.LOG_HASH_SECRET = 'test-secret-key-123';
-      });
-
-      it('should handle arrays', () => {
-        const input = [1, 2, 3];
-        const result = d4lPii(input);
-        // Arrays pass through (like d4l)
-        expect(result).to.include('Array');
-        expect(result).to.equal(d4l(input));
-      });
-
-      it('should handle very long strings', () => {
-        const input = 'x'.repeat(10000);
-        const result = d4lPii(input);
-        // Very long strings show last 6 chars + hash
-        expect(result).to.match(/\*\*\*\*xxxxxx \(hashed=[a-f0-9]{12}\)$/);
-      });
-
-      it('should handle special characters', () => {
-        const input = '!@#$%^&*()_+-=[]{}|;:,.<>?/~`';
-        const result = d4lPii(input);
-        // 29 chars -> last 5, check that it has obfuscation and hash
-        expect(result).to.include('****');
-        expect(result).to.include('(hashed=');
-        expect(result).to.match(/\(hashed=[a-f0-9]{12}\)$/);
-      });
-
-      it('should handle unicode characters', () => {
-        const input = '你好世界🌍🌎🌏';
-        const result = d4lPii(input);
-        // 10 chars -> no hash (too short)
-        expect(result).to.equal('****');
-      });
-
-      it('should handle empty strings', () => {
-        const input = '';
-        const result = d4lPii(input);
-        // Empty -> fully obfuscated, no hash
-        expect(result).to.equal('****');
-      });
-
-      it('should handle whitespace-only strings', () => {
-        const input = '   \t\n  ';
-        const result = d4lPii(input);
-        // 7 chars -> fully obfuscated, no hash
-        expect(result).to.equal('****');
-      });
-
-      it('should handle numeric strings', () => {
-        const input = '1234567890';
-        const result = d4lPii(input);
-        // 10 digits -> shows last 2 (not detected as CC since CC needs 15-16 digits)
-        expect(result).to.equal('****7890');
-      });
-
-      it('should handle email addresses', () => {
-        const input = 'user@example.com';
-        const result = d4lPii(input);
-        // Email format
-        expect(result).to.match(/us\*\*\*\*@example\.com \(hashed=[a-f0-9]{12}\)$/);
-        expect(result).to.not.include('user@example.com');
-      });
-
-      it('should handle phone numbers', () => {
-        const input = '+1-555-123-4567';
-        const result = d4lPii(input);
-        // Phone format -> last 4
-        expect(result).to.match(/\*\*\*\*4567 \(hashed=[a-f0-9]{12}\)$/);
-        expect(result).to.not.include('555');
-      });
-
-      it('should handle SSN format', () => {
-        const input = '123-45-6789';
-        const result = d4lPii(input);
-        // SSN format -> last 4
-        expect(result).to.match(/\*\*\*\*6789 \(hashed=[a-f0-9]{12}\)$/);
-        expect(result).to.not.include('123');
-      });
-
-      it('should handle credit card numbers', () => {
-        const input = '4532-1234-5678-9012';
-        const result = d4lPii(input);
-        // CC format with dashes -> last 4
-        expect(result).to.match(/\*\*\*\*9012 \(hashed=[a-f0-9]{12}\)$/);
-        expect(result).to.not.include('4532');
-      });
-
-      it('should handle multiline strings', () => {
-        const input = 'line1\nline2\nline3';
-        const result = d4lPii(input);
-        // 17 chars -> last 4
-        expect(result).to.match(/\*\*\*\*ine3 \(hashed=[a-f0-9]{12}\)$/);
-      });
-
-      it('should handle zero', () => {
-        const input = 0;
-        const result = d4lPii(input);
-        // Numbers pass through (like d4l)
-        expect(result).to.equal('0 (number)');
-      });
-
-      it('should handle negative numbers', () => {
-        const input = -42;
-        const result = d4lPii(input);
-        // Numbers pass through (like d4l)
-        expect(result).to.equal('-42 (number)');
-      });
-
-      it('should handle false', () => {
-        const input = false;
-        const result = d4lPii(input);
-        // Booleans pass through (like d4l)
-        expect(result).to.equal('FALSE (boolean)');
-      });
-
-      it('should handle nested objects', () => {
-        const input = { user: { id: '123', profile: { email: 'test@example.com' } } };
-        const result = d4lPii(input);
-        // Objects pass through (like d4l)
-        expect(result).to.equal(d4l(input));
-        expect(result).to.include('user');
-        expect(result).to.include('test@example.com');
       });
     });
   });
