@@ -89,55 +89,59 @@ function d4l(input, logOptions) {
 }
 function d4lObfuscate(input, logOptions) {
     if (logOptions === void 0) { logOptions = {}; }
-    if (input instanceof Error || input instanceof Date || input instanceof RegExp) {
+    if (input instanceof RegExp) {
         return d4l(input, logOptions);
     }
-    if (Array.isArray(input)) {
-        return formatArrayForLog(input, function (item) { return d4lObfuscate(item, logOptions); });
-    }
-    if (typeof input === 'object' && input !== null) {
-        var sanitized = (0, piiSanitizer_1.eagerSanitizePII)(input);
-        return d4l(sanitized, logOptions);
-    }
-    if (typeof input === 'string') {
-        var obfuscated = (0, smartObfuscate_1.smartObfuscate)(input);
-        if ((0, piiSanitizer_1.isPIISecureModeEnabled)() && input.length > 10) {
-            var hash = (0, piiSanitizer_1.hashPIIValue)(input);
-            return "".concat(obfuscated, " (hashed=").concat(hash, ")");
-        }
-        return obfuscated;
-    }
-    return d4l(input, logOptions);
+    return redactWithSeen(input, logOptions, new WeakSet());
 }
-function d4lPii(input, logOptions) {
-    if (logOptions === void 0) { logOptions = {}; }
-    return d4lPiiWithSeen(input, logOptions, new WeakSet());
+function obfuscateString(input) {
+    var obfuscated = (0, smartObfuscate_1.smartObfuscate)(input);
+    if ((0, piiSanitizer_1.isPIISecureModeEnabled)() && input.length > 10) {
+        return "".concat(obfuscated, " (hashed=").concat((0, piiSanitizer_1.hashPIIValue)(input), ")");
+    }
+    return obfuscated;
 }
-function d4lPiiWithSeen(input, logOptions, seen) {
+var FIELD_NAME = /^[A-Za-z_$][A-Za-z0-9_$]{0,39}$/;
+function redactWithSeen(input, logOptions, seen) {
     if (input == null || typeof input === 'boolean') {
         return d4l(input, logOptions);
     }
     if (input instanceof Date) {
-        return d4lObfuscate(Number.isNaN(input.getTime()) ? 'Invalid Date' : input.toISOString(), logOptions);
+        return obfuscateString(Number.isNaN(input.getTime()) ? 'Invalid Date' : input.toISOString());
     }
     if (typeof input !== 'object') {
-        return d4lObfuscate(String(input), logOptions);
+        return obfuscateString(String(input));
     }
     if (seen.has(input)) {
         return '<cycle>';
     }
     seen.add(input);
     if (input instanceof Error) {
-        return "".concat(input.name, ": ").concat(d4lPiiWithSeen(input.message, logOptions, seen), " (Error)");
+        return "".concat(input.name, ": ").concat(redactWithSeen(input.message, logOptions, seen), " (Error)");
     }
     if (Array.isArray(input)) {
-        return formatArrayForLog(input, function (item) { return d4lPiiWithSeen(item, logOptions, seen); });
+        return formatArrayForLog(input, function (item) { return redactWithSeen(item, logOptions, seen); });
+    }
+    var formatKey = function (key) { return (typeof key === 'string' && FIELD_NAME.test(key) ? key : redactWithSeen(key, logOptions, seen)); };
+    if (input instanceof Map) {
+        var entries_1 = Array.from(input.entries()).map(function (_a) {
+            var key = _a[0], value = _a[1];
+            return "".concat(formatKey(key), " => ").concat(redactWithSeen(value, logOptions, seen));
+        });
+        return "Map(size=".concat(input.size, ") { ").concat(entries_1.join(', '), " }");
+    }
+    if (input instanceof Set) {
+        return "Set(size=".concat(input.size, ") [").concat(Array.from(input).map(function (item) { return redactWithSeen(item, logOptions, seen); }).join(', '), "]");
     }
     var entries = Object.entries(input).map(function (_a) {
         var key = _a[0], value = _a[1];
-        return "".concat(key, ": ").concat(d4lPiiWithSeen(value, logOptions, seen));
+        return "".concat(formatKey(key), ": ").concat(redactWithSeen(value, logOptions, seen));
     });
     return "{ ".concat(entries.join(', '), " } (object)");
+}
+function d4lPii(input, logOptions) {
+    if (logOptions === void 0) { logOptions = {}; }
+    return redactWithSeen(input, logOptions, new WeakSet());
 }
 function formatArrayForLog(input, formatItem) {
     var parts = [];

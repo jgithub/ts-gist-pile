@@ -94,45 +94,70 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
   return `${input}`
 }
 
+/**
+ * Debug-for-logging for a credential or any other value that must not be printed (a token, a secret, a password, a
+ * login code). ALWAYS obfuscates, whatever the input: strings get smart obfuscation (emails keep their domain, phone and
+ * card numbers their last four) plus `(hashed=<12 hex>)` when LOG_HASH_SECRET is set; numbers and dates are masked
+ * the same way; arrays, Maps, Sets, objects and Errors are walked and EVERY leaf is masked. Until 0.0.334 an Error kept
+ * its message and stack, a number passed through, and an object kept every value whose KEY didn't look like PII.
+ * A RegExp is code, not data, and is formatted as d4l() formats it.
+ */
 export function d4lObfuscate(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}): string {
-  // For special object types (Error, Date, RegExp), pass through to d4l
-  if (input instanceof Error || input instanceof Date || input instanceof RegExp) {
+  if (input instanceof RegExp) {
     return d4l(input, logOptions);
   }
+  return redactWithSeen(input, logOptions, new WeakSet<object>());
+}
 
-  // Arrays: obfuscate each element. eagerSanitizePII only redacts values under PII-named KEYS, so a plain array of
-  // strings (a list of email addresses, say) used to pass through it untouched.
+/** A string's smart obfuscation, with the correlation hash when LOG_HASH_SECRET is set. */
+function obfuscateString(input: string): string {
+  const obfuscated = smartObfuscate(input);
+  if (isPIISecureModeEnabled() && input.length > 10) {
+    return `${obfuscated} (hashed=${hashPIIValue(input)})`;
+  }
+  return obfuscated;
+}
+
+/** An object or Map key is shown when it looks like a field name; any other key (an email, a name) is masked. */
+const FIELD_NAME = /^[A-Za-z_$][A-Za-z0-9_$]{0,39}$/;
+
+function redactWithSeen(input: any, logOptions: LogOptions, seen: WeakSet<object>): string {
+  if (input == null || typeof input === 'boolean') {
+    return d4l(input, logOptions);
+  }
+  if (input instanceof Date) {
+    return obfuscateString(Number.isNaN(input.getTime()) ? 'Invalid Date' : input.toISOString());
+  }
+  if (typeof input !== 'object') {
+    return obfuscateString(String(input));
+  }
+  if (seen.has(input)) {
+    return '<cycle>';
+  }
+  seen.add(input);
+  if (input instanceof Error) {
+    return `${input.name}: ${redactWithSeen(input.message, logOptions, seen)} (Error)`;
+  }
   if (Array.isArray(input)) {
-    return formatArrayForLog(input, (item) => d4lObfuscate(item, logOptions));
+    return formatArrayForLog(input, (item) => redactWithSeen(item, logOptions, seen));
   }
-
-  // For plain objects, apply eager sanitization
-  if (typeof input === 'object' && input !== null) {
-    const sanitized = eagerSanitizePII(input);
-    return d4l(sanitized, logOptions);
+  const formatKey = (key: unknown): string => (typeof key === 'string' && FIELD_NAME.test(key) ? key : redactWithSeen(key, logOptions, seen));
+  if (input instanceof Map) {
+    const entries = Array.from(input.entries()).map(([key, value]) => `${formatKey(key)} => ${redactWithSeen(value, logOptions, seen)}`);
+    return `Map(size=${input.size}) { ${entries.join(', ')} }`;
   }
-
-  // For strings, apply smart obfuscation
-  if (typeof input === 'string') {
-    const obfuscated = smartObfuscate(input);
-
-    // If PII secure mode is enabled, also append the hash for correlation
-    if (isPIISecureModeEnabled() && input.length > 10) {
-      const hash = hashPIIValue(input);
-      return `${obfuscated} (hashed=${hash})`;
-    }
-
-    return obfuscated;
+  if (input instanceof Set) {
+    return `Set(size=${input.size}) [${Array.from(input).map((item) => redactWithSeen(item, logOptions, seen)).join(', ')}]`;
   }
-
-  return d4l(input, logOptions);
+  const entries = Object.entries(input).map(([key, value]) => `${formatKey(key)}: ${redactWithSeen(value, logOptions, seen)}`);
+  return `{ ${entries.join(', ')} } (object)`;
 }
 
 /**
  * Debug-for-logging for a value that identifies a person. NEVER returns the value in plaintext.
  *
- * Every string, number and date inside the value is obfuscated with d4lObfuscate() (emails keep their domain, phone
- * and card numbers their last four). When LOG_HASH_SECRET is SET, longer values also get `(hashed=<12 hex>)`, so two
+ * Masked exactly as d4lObfuscate() masks (emails keep their domain, phone and card numbers their last four; object and
+ * Map keys that aren't field names are masked too); the two names say which kind of value was withheld. When LOG_HASH_SECRET is SET, longer values also get `(hashed=<12 hex>)`, so two
  * log lines about the same person can be linked without naming them; when it is UNSET they are redacted all the same,
  * just without the hash. Arrays and objects are walked and EVERY leaf is treated as PII: the caller said the whole
  * value identifies someone, so a key name is not evidence that a value is safe. null, undefined and booleans identify
@@ -147,31 +172,7 @@ export function d4lObfuscate(input: string | number | boolean | Error | Array<an
  * // With LOG_HASH_SECRET:    "User logged in: jo****@example.com (hashed=abc123def456)"
  */
 export function d4lPii(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}): string {
-  return d4lPiiWithSeen(input, logOptions, new WeakSet<object>());
-}
-
-function d4lPiiWithSeen(input: any, logOptions: LogOptions, seen: WeakSet<object>): string {
-  if (input == null || typeof input === 'boolean') {
-    return d4l(input, logOptions);
-  }
-  if (input instanceof Date) {
-    return d4lObfuscate(Number.isNaN(input.getTime()) ? 'Invalid Date' : input.toISOString(), logOptions);
-  }
-  if (typeof input !== 'object') {
-    return d4lObfuscate(String(input), logOptions);
-  }
-  if (seen.has(input)) {
-    return '<cycle>';
-  }
-  seen.add(input);
-  if (input instanceof Error) {
-    return `${input.name}: ${d4lPiiWithSeen(input.message, logOptions, seen)} (Error)`;
-  }
-  if (Array.isArray(input)) {
-    return formatArrayForLog(input, (item) => d4lPiiWithSeen(item, logOptions, seen));
-  }
-  const entries = Object.entries(input).map(([key, value]) => `${key}: ${d4lPiiWithSeen(value, logOptions, seen)}`);
-  return `{ ${entries.join(', ')} } (object)`;
+  return redactWithSeen(input, logOptions, new WeakSet<object>());
 }
 
 /**

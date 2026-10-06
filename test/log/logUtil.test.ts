@@ -365,10 +365,11 @@ FROM table WHERE id = 1' (string, 33)`)
     });
 
     describe('non-string types', () => {
-      it('should handle numbers without obfuscation', () => {
-        const input = 12345;
-        const result = d4lObfuscate(input);
-        expect(result).to.equal('12345 (number)');
+      // 0.0.334: blur ALWAYS obfuscates. Until then numbers, arrays of numbers, objects and Errors passed through (#109).
+      it('masks numbers: a card or account number is still a credential', () => {
+        const result = d4lObfuscate(12345);
+        expect(result).to.equal('****');
+        expect(result).to.not.include('12345');
       });
 
       it('should handle booleans without obfuscation', () => {
@@ -387,30 +388,39 @@ FROM table WHERE id = 1' (string, 33)`)
         expect(result).to.equal('<undefined> (undefined)');
       });
 
-      it('should handle arrays without obfuscation', () => {
-        const input = [1, 2, 3];
-        const result = d4lObfuscate(input);
-        expect(result).to.equal('Array(len=3) [1 (number), …, 3 (number)]');
+      it('masks every element of an array, keeping its shape', () => {
+        const result = d4lObfuscate([1, 2, 3]);
+        expect(result).to.equal('Array(len=3) [****, …, ****]');
       });
 
-      it('should handle objects without obfuscation', () => {
-        const input = { a: 1, b: 2 };
-        const result = d4lObfuscate(input);
-        expect(result).to.include('"a":1');
-        expect(result).to.include('"b":2');
-        expect(result).to.include('(object)');
+      it('masks every value of an object, whatever its key, keeping field names', () => {
+        const result = d4lObfuscate({ a: 1, b: 2 });
+        expect(result).to.equal('{ a: ****, b: **** } (object)');
       });
 
-      it('should handle Error objects without obfuscation', () => {
-        const error = new Error('test error');
+      it('masks a key that is not a field name, such as an email address', () => {
+        const result = d4lObfuscate({ 'bob@example.com': 'x' });
+        expect(result).to.equal('{ bo****@example.com: **** } (object)');
+        expect(result).to.not.include('bob@');
+      });
+
+      it("masks an Error's message and leaves out its stack", () => {
+        const error = new Error('token sk_live_1234567890 rejected');
         const result = d4lObfuscate(error);
-        expect(result).to.include('Error: test error');
+        expect(result).to.match(/^Error: \*\*\*\*.* \(Error\)$/);
+        expect(result).to.not.include('sk_live_1234567890');
+        expect(result).to.not.include('    at ');
       });
 
-      it('should handle Date objects', () => {
-        const date = new Date('2023-01-01T00:00:00.000Z');
-        const result = d4lObfuscate(date);
-        expect(result).to.equal('2023-01-01T00:00:00.000Z');
+      it('masks a Date like the string it is', () => {
+        const result = d4lObfuscate(new Date('2023-01-01T00:00:00.000Z'));
+        expect(result).to.equal('****000Z');
+      });
+
+      it('masks Map values, keeping field-name keys', () => {
+        const result = d4lObfuscate(new Map([['k', 'secret-value-123']]));
+        expect(result).to.equal('Map(size=1) { k => ****23 }');
+        expect(result).to.not.include('secret-value');
       });
 
       it('should handle RegExp objects', () => {
@@ -574,9 +584,9 @@ FROM table WHERE id = 1' (string, 33)`)
         expect(obfuscateResult).to.equal('****scated');
       });
 
-      it('should have same behavior as d4l for numbers', () => {
-        const input = 42;
-        expect(d4lObfuscate(input)).to.equal(d4l(input));
+      it('differs from d4l for numbers: d4l prints them, blur masks them', () => {
+        expect(d4l(42)).to.equal('42 (number)');
+        expect(d4lObfuscate(42)).to.equal('****');
       });
 
       it('should have same behavior as d4l for booleans', () => {
@@ -584,14 +594,10 @@ FROM table WHERE id = 1' (string, 33)`)
         expect(d4lObfuscate(input)).to.equal(d4l(input));
       });
 
-      it('should have same behavior as d4l for objects', () => {
-        const input = { a: 1 };
-        expect(d4lObfuscate(input)).to.equal(d4l(input));
-      });
-
-      it('should have same behavior as d4l for arrays', () => {
-        const input = [1, 2, 3];
-        expect(d4lObfuscate(input)).to.equal(d4l(input));
+      it('differs from d4l for objects and arrays: blur masks every value', () => {
+        expect(d4l({ a: 1 })).to.include('"a":1');
+        expect(d4lObfuscate({ a: 1 })).to.equal('{ a: **** } (object)');
+        expect(d4lObfuscate([1, 2, 3])).to.equal('Array(len=3) [****, …, ****]');
       });
     });
     }); // end "when LOG_HASH_SECRET is NOT set"
@@ -713,24 +719,19 @@ FROM table WHERE id = 1' (string, 33)`)
         expect(result).to.not.include('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9');
       });
 
-      it('should NOT hash non-string types', () => {
-        // Numbers
-        expect(d4lObfuscate(12345)).to.equal('12345 (number)');
-        expect(d4lObfuscate(12345)).to.not.include('hashed=');
+      it('masks non-string values too, hashing those longer than 10 characters as it does strings', () => {
+        // Short values: masked, no hash (as for short strings)
+        expect(d4lObfuscate(12345)).to.equal('****');
+        expect(d4lObfuscate([1, 2, 3])).to.equal('Array(len=3) [****, …, ****]');
+        expect(d4lObfuscate({ a: 1 })).to.equal('{ a: **** } (object)');
 
-        // Booleans
+        // Booleans carry nothing and are formatted as d4l() formats them
         expect(d4lObfuscate(true)).to.equal('TRUE (boolean)');
-        expect(d4lObfuscate(true)).to.not.include('hashed=');
 
-        // Arrays
-        const arrResult = d4lObfuscate([1, 2, 3]);
-        expect(arrResult).to.equal('Array(len=3) [1 (number), …, 3 (number)]');
-        expect(arrResult).to.not.include('hashed=');
-
-        // Objects
-        const objResult = d4lObfuscate({ a: 1 });
-        expect(objResult).to.include('"a":1');
-        expect(objResult).to.not.include('hashed=');
+        // A long number is masked AND hashed, so two log lines about it correlate
+        const longNumber = d4lObfuscate(4111111111111111);
+        expect(longNumber).to.match(/^\*\*\*\*1111 \(hashed=[a-f0-9]{12}\)$/);
+        expect(longNumber).to.not.include('411111');
       });
 
       describe('typical usage scenarios', () => {
@@ -782,6 +783,15 @@ FROM table WHERE id = 1' (string, 33)`)
           expect(logMessage).to.not.include('Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9');
         });
       });
+    });
+  });
+
+  // #109's review: pii() printed an object KEY in plaintext, so pii({ [email]: x }) leaked the address it was asked to hide.
+  describe('d4lPii on keys that identify someone', () => {
+    it('masks an email-address key and keeps field-name keys', () => {
+      const result = d4lPii({ 'bob@example.com': 'x', status: 'invited' });
+      expect(result).to.equal('{ bo****@example.com: ****, status: **** } (object)');
+      expect(result).to.not.include('bob@');
     });
   });
 })
