@@ -11,6 +11,12 @@ export function resetEnvVarCache(): void {
   memoized.clear();
 }
 
+/**
+ * Reads an environment variable, falling back to its REACT_APP_ and VITE_ prefixed forms.
+ *
+ * The first read of each name is announced on stdout, but NEVER its value: this is how the logger reads
+ * LOG_HASH_SECRET, and printing it put the secret that makes PII hashes unlinkable into every host's journal.
+ */
 export function tryGetEnvVar(envVarName: string): string | undefined {
   // @ts-ignore: import.meta may not be recognized depending on tsconfig/module system
   let retval: string | undefined = undefined;
@@ -19,7 +25,7 @@ export function tryGetEnvVar(envVarName: string): string | undefined {
     if (typeof process !== 'undefined' && typeof process.env?.[envVarName] !== 'undefined') {
       retval = process.env[envVarName];
       if (!memoized.has(`process.env.${envVarName}`)) {
-        console.log(`ts-gist-pile: tryGetEnvVar(): During logger configuration, found process.env[${envVarName}] = ${retval}`);
+        console.log(`ts-gist-pile: tryGetEnvVar(): During logger configuration, found process.env[${envVarName}] (value not printed)`);
         memoized.set(`process.env.${envVarName}`, true);
       }
     }
@@ -35,7 +41,7 @@ export function tryGetEnvVar(envVarName: string): string | undefined {
       if (typeof process !== 'undefined' && typeof process.env?.[effectiveEnvVarName] !== 'undefined') {
         retval = process.env[effectiveEnvVarName];
         if (!memoized.has(`process.env.${effectiveEnvVarName}`)) {
-          console.log(`ts-gist-pile: tryGetEnvVar(): During logger configuration, found process.env[${effectiveEnvVarName}] = ${retval}`);
+          console.log(`ts-gist-pile: tryGetEnvVar(): During logger configuration, found process.env[${effectiveEnvVarName}] (value not printed)`);
           memoized.set(`process.env.${effectiveEnvVarName}`, true);
         }
       }

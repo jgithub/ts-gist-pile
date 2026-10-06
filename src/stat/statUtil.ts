@@ -55,16 +55,18 @@ export function sendStatToKpitracks(requestBodyString: string): void {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 750)
     const url = "https://stat.kpitracks.com/c"
-    requestBodyString = requestBodyString + `&ezkey=${process.env.KPITRACKS_EZ_KEY?.trim()}`
+    // The key goes in the POST body only. Every log line below prints the body WITHOUT it: until 0.0.334 they printed
+    // the body with `&ezkey=<the key>` appended, so the credential reached stdout on every send.
+    const requestBodyWithKey = requestBodyString + `&ezkey=${kpitracksEzKey}`
 
-    console.log(`sendStatToKpitracks(): Sending POST to Stathat url = '${url}',  requestBodyString = '${requestBodyString}'`)
+    console.log(`sendStatToKpitracks(): Sending POST to Stathat url = '${url}',  requestBodyString = '${requestBodyString}' (ezkey not printed)`)
 
     const beforeAt = new Date()
     // While still experimental, the global fetch API is available by default in Node.js 18
     fetch(url, { 
       method: 'POST', 
       signal: controller.signal,
-      body: requestBodyString
+      body: requestBodyWithKey
     }).then(response => {
       // completed request before timeout fired
       const deltaInMs = new Date().getTime() - beforeAt.getTime()

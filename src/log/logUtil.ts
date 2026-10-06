@@ -94,68 +94,103 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
   return `${input}`
 }
 
-export function d4lObfuscate(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}) {
-  // For special object types (Error, Date, RegExp), pass through to d4l
-  if (input instanceof Error || input instanceof Date || input instanceof RegExp) {
+/**
+ * Debug-for-logging for a credential or any other value that must not be printed (a token, a secret, a password, a
+ * login code). ALWAYS obfuscates, whatever the input: strings get smart obfuscation (emails keep their domain, phone and
+ * card numbers their last four) plus `(hashed=<12 hex>)` when LOG_HASH_SECRET is set; numbers and dates are masked
+ * the same way; arrays, Maps, Sets, objects and Errors are walked and EVERY leaf is masked. Until 0.0.334 an Error kept
+ * its message and stack, a number passed through, and an object kept every value whose KEY didn't look like PII.
+ * A RegExp is code, not data, and is formatted as d4l() formats it.
+ */
+export function d4lObfuscate(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}): string {
+  if (input instanceof RegExp) {
     return d4l(input, logOptions);
   }
+  return redactWithSeen(input, logOptions, new WeakSet<object>());
+}
 
-  // For plain objects and arrays, apply eager sanitization
-  if (typeof input === 'object' && input !== null) {
-    const sanitized = eagerSanitizePII(input);
-    return d4l(sanitized, logOptions);
+/** A string's smart obfuscation, with the correlation hash when LOG_HASH_SECRET is set. */
+function obfuscateString(input: string): string {
+  const obfuscated = smartObfuscate(input);
+  if (isPIISecureModeEnabled() && input.length > 10) {
+    return `${obfuscated} (hashed=${hashPIIValue(input)})`;
   }
+  return obfuscated;
+}
 
-  // For strings, apply smart obfuscation
-  if (typeof input === 'string') {
-    const obfuscated = smartObfuscate(input);
+/** An object or Map key is shown when it looks like a field name; any other key (an email, a name) is masked. */
+const FIELD_NAME = /^[A-Za-z_$][A-Za-z0-9_$]{0,39}$/;
 
-    // If PII secure mode is enabled, also append the hash for correlation
-    if (isPIISecureModeEnabled() && input.length > 10) {
-      const hash = hashPIIValue(input);
-      return `${obfuscated} (hashed=${hash})`;
-    }
-
-    return obfuscated;
+function redactWithSeen(input: any, logOptions: LogOptions, seen: WeakSet<object>): string {
+  if (input == null || typeof input === 'boolean') {
+    return d4l(input, logOptions);
   }
-
-  return d4l(input, logOptions);
+  if (input instanceof Date) {
+    return obfuscateString(Number.isNaN(input.getTime()) ? 'Invalid Date' : input.toISOString());
+  }
+  if (typeof input !== 'object') {
+    return obfuscateString(String(input));
+  }
+  if (seen.has(input)) {
+    return '<cycle>';
+  }
+  seen.add(input);
+  if (input instanceof Error) {
+    return `${input.name}: ${redactWithSeen(input.message, logOptions, seen)} (Error)`;
+  }
+  if (Array.isArray(input)) {
+    return formatArrayForLog(input, (item) => redactWithSeen(item, logOptions, seen));
+  }
+  const formatKey = (key: unknown): string => (typeof key === 'string' && FIELD_NAME.test(key) ? key : redactWithSeen(key, logOptions, seen));
+  if (input instanceof Map) {
+    const entries = Array.from(input.entries()).map(([key, value]) => `${formatKey(key)} => ${redactWithSeen(value, logOptions, seen)}`);
+    return `Map(size=${input.size}) { ${entries.join(', ')} }`;
+  }
+  if (input instanceof Set) {
+    return `Set(size=${input.size}) [${Array.from(input).map((item) => redactWithSeen(item, logOptions, seen)).join(', ')}]`;
+  }
+  const entries = Object.entries(input).map(([key, value]) => `${formatKey(key)}: ${redactWithSeen(value, logOptions, seen)}`);
+  return `{ ${entries.join(', ')} } (object)`;
 }
 
 /**
- * Debug-for-logging for PII (Personally Identifiable Information) values.
+ * Debug-for-logging for a value that identifies a person. NEVER returns the value in plaintext.
  *
- * When LOG_HASH_SECRET is UNSET:
- *   - Behaves exactly like d4l() - logs the value normally
+ * Masked exactly as d4lObfuscate() masks (emails keep their domain, phone and card numbers their last four; object and
+ * Map keys that aren't field names are masked too); the two names say which kind of value was withheld. When LOG_HASH_SECRET is SET, longer values also get `(hashed=<12 hex>)`, so two
+ * log lines about the same person can be linked without naming them; when it is UNSET they are redacted all the same,
+ * just without the hash. Arrays and objects are walked and EVERY leaf is treated as PII: the caller said the whole
+ * value identifies someone, so a key name is not evidence that a value is safe. null, undefined and booleans identify
+ * nobody and are formatted as d4l() formats them.
  *
- * When LOG_HASH_SECRET is SET:
- *   - Behaves like d4lObfuscate() - shows smart obfuscation with hash
- *   - Uses context-aware obfuscation (emails show domain, cards show last 4, etc.)
- *   - Hash is consistent (same input = same hash)
- *   - Hash is irreversible (cannot recover original value)
- *
- * Use this for values that might contain PII (emails, user IDs, etc.)
+ * Until 0.0.334 this returned d4l(input) -- the plain value -- whenever LOG_HASH_SECRET was unset, and for every
+ * non-string input even when it was set.
  *
  * @example
- * logger.info(`User logged in: ${d4lPii(userId)}`)
- * // Without LOG_HASH_SECRET: "User logged in: 'user-12345' (string, 10)"
- * // With LOG_HASH_SECRET: "User logged in: ****2345 (hashed=abc123def456)"
+ * logger.info(`User logged in: ${d4lPii(email)}`)
+ * // Without LOG_HASH_SECRET: "User logged in: jo****@example.com"
+ * // With LOG_HASH_SECRET:    "User logged in: jo****@example.com (hashed=abc123def456)"
  */
 export function d4lPii(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}): string {
-  if (!isPIISecureModeEnabled()) {
-    // PII mode not enabled - use regular d4l (pass through)
-    return d4l(input, logOptions);
-  }
+  return redactWithSeen(input, logOptions, new WeakSet<object>());
+}
 
-  // PII mode enabled - only obfuscate strings, pass through everything else
-  // d4lPii is designed for use in template strings with individual values,
-  // not for entire objects (use logger context for objects)
-  if (typeof input === 'string') {
-    return d4lObfuscate(input, logOptions);
+/**
+ * Formats an array the way d4l() does -- first element, an ellipsis, last element -- with each element formatted by
+ * the given function.
+ */
+function formatArrayForLog(input: Array<any>, formatItem: (item: any) => string): string {
+  const parts: string[] = [];
+  if (input.length > 0) {
+    parts.push(formatItem(input[0]));
   }
-
-  // Pass through non-strings unchanged
-  return d4l(input, logOptions);
+  if (input.length > 2) {
+    parts.push(`…`);
+  }
+  if (input.length > 1) {
+    parts.push(formatItem(input[input.length - 1]));
+  }
+  return `Array(len=${input.length}) [${parts.join(", ")}]`;
 }
 
 /**
@@ -292,11 +327,11 @@ export function blurWhereNeeded(input: string | number | boolean | Error | Array
 // Aliases for cleaner API
 export const plain = d4l;
 export const blur = d4lObfuscate;
-export const blurIfEnabled = d4lPii;
+export const blurIfEnabled = d4lPii;  // historical name: it now blurs ALWAYS
 
 // Short English-word aliases for maximum readability in log lines
 export const fmt = d4l;               // format/decorate for logging (plain output)
-export const pii = d4lPii;            // conditional redact (blur if enabled)
+export const pii = d4lPii;            // always redact; hash too when LOG_HASH_SECRET is set
 export const safe = blurWhereNeeded;   // smart auto-detect PII and redact
 
 /**
@@ -305,12 +340,12 @@ export const safe = blurWhereNeeded;   // smart auto-detect PII and redact
  * d4l - Direct/decorate for logging (plain output with type info)
  * p4l - Plain for logging (same as d4l)
  * b4l - Blur for logging (always obfuscates)
- * c4l - Conditional for logging (blur only if LOG_HASH_SECRET set)
+ * c4l - PII for logging (always redacts; hash too when LOG_HASH_SECRET is set)
  * s4l - Scan for logging (content-aware PII detection, always active)
  */
 export const p4l = d4l;                // plain for logging (alias for d4l)
 export const b4l = d4lObfuscate;       // blur for logging (always)
-export const c4l = d4lPii;             // conditional for logging (blur if enabled)
+export const c4l = d4lPii;             // PII for logging (always redacts)
 export const s4l = blurWhereNeeded;    // scan for logging (content-aware PII)
 
 export type LogOptions = {

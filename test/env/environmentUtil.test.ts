@@ -115,19 +115,18 @@ describe('environmentUtil', () => {
       expect(thirdCallLogCount).to.equal(firstCallLogCount);
     });
 
-    it('should log when finding env var with REACT_APP_ prefix', () => {
+    it('should log the name, not the value, when finding env var with REACT_APP_ prefix', () => {
       delete process.env.PREFIXED_VAR;
       process.env.REACT_APP_PREFIXED_VAR = 'react-value';
 
       consoleOutput = [];
       tryGetEnvVar('PREFIXED_VAR');
 
-      expect(consoleOutput.some(log =>
-        log.includes('REACT_APP_PREFIXED_VAR') && log.includes('react-value')
-      )).to.be.true;
+      expect(consoleOutput.some(log => log.includes('REACT_APP_PREFIXED_VAR'))).to.be.true;
+      expect(consoleOutput.some(log => log.includes('react-value'))).to.be.false;
     });
 
-    it('should log when finding env var with VITE_ prefix', () => {
+    it('should log the name, not the value, when finding env var with VITE_ prefix', () => {
       delete process.env.PREFIXED_VAR;
       delete process.env.REACT_APP_PREFIXED_VAR;
       process.env.VITE_PREFIXED_VAR = 'vite-value';
@@ -135,9 +134,18 @@ describe('environmentUtil', () => {
       consoleOutput = [];
       tryGetEnvVar('PREFIXED_VAR');
 
-      expect(consoleOutput.some(log =>
-        log.includes('VITE_PREFIXED_VAR') && log.includes('vite-value')
-      )).to.be.true;
+      expect(consoleOutput.some(log => log.includes('VITE_PREFIXED_VAR'))).to.be.true;
+      expect(consoleOutput.some(log => log.includes('vite-value'))).to.be.false;
+    });
+
+    it('should never print the value it found, only the name (LOG_HASH_SECRET is read through here)', () => {
+      process.env.LOG_HASH_SECRET_LIKE_VAR = 'a-secret-that-must-not-be-printed';
+
+      consoleOutput = [];
+      tryGetEnvVar('LOG_HASH_SECRET_LIKE_VAR');
+
+      expect(consoleOutput.some(log => log.includes('LOG_HASH_SECRET_LIKE_VAR'))).to.be.true;
+      expect(consoleOutput.some(log => log.includes('a-secret-that-must-not-be-printed'))).to.be.false;
     });
 
     it('should handle special characters in env var names', () => {

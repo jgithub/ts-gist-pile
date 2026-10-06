@@ -18,7 +18,7 @@ function tryGetEnvVar(envVarName) {
         if (typeof process !== 'undefined' && typeof ((_a = process.env) === null || _a === void 0 ? void 0 : _a[envVarName]) !== 'undefined') {
             retval = process.env[envVarName];
             if (!memoized.has("process.env.".concat(envVarName))) {
-                console.log("ts-gist-pile: tryGetEnvVar(): During logger configuration, found process.env[".concat(envVarName, "] = ").concat(retval));
+                console.log("ts-gist-pile: tryGetEnvVar(): During logger configuration, found process.env[".concat(envVarName, "] (value not printed)"));
                 memoized.set("process.env.".concat(envVarName), true);
             }
         }
@@ -31,7 +31,7 @@ function tryGetEnvVar(envVarName) {
             if (typeof process !== 'undefined' && typeof ((_b = process.env) === null || _b === void 0 ? void 0 : _b[effectiveEnvVarName]) !== 'undefined') {
                 retval = process.env[effectiveEnvVarName];
                 if (!memoized.has("process.env.".concat(effectiveEnvVarName))) {
-                    console.log("ts-gist-pile: tryGetEnvVar(): During logger configuration, found process.env[".concat(effectiveEnvVarName, "] = ").concat(retval));
+                    console.log("ts-gist-pile: tryGetEnvVar(): During logger configuration, found process.env[".concat(effectiveEnvVarName, "] (value not printed)"));
                     memoized.set("process.env.".concat(effectiveEnvVarName), true);
                 }
             }

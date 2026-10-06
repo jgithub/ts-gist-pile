@@ -28,20 +28,19 @@ function sendPlusOneCountToStathat(countStatName) {
     }
 }
 function sendStatToKpitracks(requestBodyString) {
-    var _a;
     var kpitracksEzKey = process.env.KPITRACKS_EZ_KEY;
     kpitracksEzKey = kpitracksEzKey === null || kpitracksEzKey === void 0 ? void 0 : kpitracksEzKey.trim();
     if (kpitracksEzKey != null && (kpitracksEzKey === null || kpitracksEzKey === void 0 ? void 0 : kpitracksEzKey.length) > 0) {
         var controller_2 = new AbortController();
         var timeoutId_2 = setTimeout(function () { return controller_2.abort(); }, 750);
         var url = "https://stat.kpitracks.com/c";
-        requestBodyString = requestBodyString + "&ezkey=".concat((_a = process.env.KPITRACKS_EZ_KEY) === null || _a === void 0 ? void 0 : _a.trim());
-        console.log("sendStatToKpitracks(): Sending POST to Stathat url = '".concat(url, "',  requestBodyString = '").concat(requestBodyString, "'"));
+        var requestBodyWithKey = requestBodyString + "&ezkey=".concat(kpitracksEzKey);
+        console.log("sendStatToKpitracks(): Sending POST to Stathat url = '".concat(url, "',  requestBodyString = '").concat(requestBodyString, "' (ezkey not printed)"));
         var beforeAt_1 = new Date();
         fetch(url, {
             method: 'POST',
             signal: controller_2.signal,
-            body: requestBodyString
+            body: requestBodyWithKey
         }).then(function (response) {
             var deltaInMs = new Date().getTime() - beforeAt_1.getTime();
             clearTimeout(timeoutId_2);
