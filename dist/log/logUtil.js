@@ -92,6 +92,9 @@ function d4lObfuscate(input, logOptions) {
     if (input instanceof Error || input instanceof Date || input instanceof RegExp) {
         return d4l(input, logOptions);
     }
+    if (Array.isArray(input)) {
+        return formatArrayForLog(input, function (item) { return d4lObfuscate(item, logOptions); });
+    }
     if (typeof input === 'object' && input !== null) {
         var sanitized = (0, piiSanitizer_1.eagerSanitizePII)(input);
         return d4l(sanitized, logOptions);
@@ -108,13 +111,46 @@ function d4lObfuscate(input, logOptions) {
 }
 function d4lPii(input, logOptions) {
     if (logOptions === void 0) { logOptions = {}; }
-    if (!(0, piiSanitizer_1.isPIISecureModeEnabled)()) {
+    return d4lPiiWithSeen(input, logOptions, new WeakSet());
+}
+function d4lPiiWithSeen(input, logOptions, seen) {
+    if (input == null || typeof input === 'boolean') {
         return d4l(input, logOptions);
     }
-    if (typeof input === 'string') {
-        return d4lObfuscate(input, logOptions);
+    if (input instanceof Date) {
+        return d4lObfuscate(Number.isNaN(input.getTime()) ? 'Invalid Date' : input.toISOString(), logOptions);
     }
-    return d4l(input, logOptions);
+    if (typeof input !== 'object') {
+        return d4lObfuscate(String(input), logOptions);
+    }
+    if (seen.has(input)) {
+        return '<cycle>';
+    }
+    seen.add(input);
+    if (input instanceof Error) {
+        return "".concat(input.name, ": ").concat(d4lPiiWithSeen(input.message, logOptions, seen), " (Error)");
+    }
+    if (Array.isArray(input)) {
+        return formatArrayForLog(input, function (item) { return d4lPiiWithSeen(item, logOptions, seen); });
+    }
+    var entries = Object.entries(input).map(function (_a) {
+        var key = _a[0], value = _a[1];
+        return "".concat(key, ": ").concat(d4lPiiWithSeen(value, logOptions, seen));
+    });
+    return "{ ".concat(entries.join(', '), " } (object)");
+}
+function formatArrayForLog(input, formatItem) {
+    var parts = [];
+    if (input.length > 0) {
+        parts.push(formatItem(input[0]));
+    }
+    if (input.length > 2) {
+        parts.push("\u2026");
+    }
+    if (input.length > 1) {
+        parts.push(formatItem(input[input.length - 1]));
+    }
+    return "Array(len=".concat(input.length, ") [").concat(parts.join(", "), "]");
 }
 function scanObjectForPII(obj) {
     if (obj == null)

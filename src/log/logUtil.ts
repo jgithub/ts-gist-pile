@@ -94,7 +94,7 @@ export function d4l(input: string | number | boolean | Error | Array<any> | any,
   return `${input}`
 }
 
-export function d4lObfuscate(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}) {
+export function d4lObfuscate(input: string | number | boolean | Error | Array<any> | any, logOptions: LogOptions = {}): string {
   // For special object types (Error, Date, RegExp), pass through to d4l
   if (input instanceof Error || input instanceof Date || input instanceof RegExp) {
     return d4l(input, logOptions);
