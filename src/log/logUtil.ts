@@ -324,6 +324,47 @@ export function blurWhereNeeded(input: string | number | boolean | Error | Array
   return scanStringForPII(input);
 }
 
+/** A key longer than this is data, not a field name (a token sent as `?<token>` is a query key), so only its length prints. */
+const KEYS_OF_MAX_KEY_LENGTH = 64
+
+/**
+ * The shape of a value, for a log line: every top-level key, sorted, and NEVER a value. Use it for anything whose
+ * values may carry a password, token or cookie: a request body, query, cookies or headers, a context store.
+ *
+ *   keysOf({ password: 'x', email: 'y' })  → `["email", "password"] (keys, 2)`
+ *   keysOf(null)                           → `<null> (null)`
+ *   keysOf('a secret')                     → `<string> (length 8, no keys)`
+ *   keysOf([1, 2, 3])                      → `Array(len=3) (no keys)`
+ *   keysOf(new Map([['k', 'v']]))          → `Map(size=1) (no keys)`: a Map's keys are data
+ *
+ * Every key is listed (it does not go through d4l()'s array printer, which shows only the first and the last). Each key
+ * is JSON-quoted, so a newline in a key cannot forge a log line; one longer than 64 characters prints as its length.
+ * Own enumerable string keys only (Object.keys): no getter runs and nothing on the prototype is read.
+ */
+export function keysOf(input: unknown): string {
+  if (typeof input === 'undefined') {
+    return "<undefined> (undefined)"
+  }
+  if (input === null) {
+    return "<null> (null)"
+  }
+  if (typeof input === 'string') {
+    return `<string> (length ${input.length}, no keys)`
+  }
+  if (typeof input !== 'object') {
+    return `<${typeof input}> (no keys)`
+  }
+  if (Array.isArray(input)) {
+    return `Array(len=${input.length}) (no keys)`
+  }
+  if (input instanceof Map || input instanceof Set) {
+    return `${input instanceof Map ? 'Map' : 'Set'}(size=${input.size}) (no keys)`
+  }
+  const keys = Object.keys(input).sort()
+  const printed = keys.map((key) => key.length > KEYS_OF_MAX_KEY_LENGTH ? `<key of ${key.length} chars>` : JSON.stringify(key))
+  return `[${printed.join(", ")}] (keys, ${keys.length})`
+}
+
 // Aliases for cleaner API
 export const plain = d4l;
 export const blur = d4lObfuscate;
