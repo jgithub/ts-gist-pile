@@ -44,6 +44,14 @@ describe('logUtil.keysOf()', () => {
     expect(printed).to.eql('["a\\u2028INFO forged", "b\\u2029x", "c\\u0085y"] (keys, 3)')
   })
 
+  // U+009B is the one-byte form of ESC [: a terminal that honours C1 controls runs `\u009b1A\u009b2K` (cursor up, erase
+  // line), which overwrites the line before. The bidi overrides reorder how a line reads.
+  it('escapes DEL, the C1 controls and the bidi controls JSON.stringify leaves raw', () => {
+    const printed = keysOf({ 'a\u007fb': 1, 'c\u009b1A\u009b2Kd': 2, 'e‮f': 3, 'g⁦h': 4 })
+    expect(printed).not.to.match(/[\u007f-\u009f‎‏‪-‮⁦-⁩]/)
+    expect(printed).to.eql('["a\\u007fb", "c\\u009b1A\\u009b2Kd", "e\\u202ef", "g\\u2066h"] (keys, 4)')
+  })
+
   it('prints a key longer than 64 characters as its length: a token sent as ?<token> is a query key', () => {
     const token = 'x'.repeat(65)
     const printed = keysOf({ [token]: '', sd: '1x1' })

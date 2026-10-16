@@ -341,8 +341,9 @@ const KEYS_OF_MAX_KEY_LENGTH = 64
  *   keysOf(new String('pw'))               → `<string> (length 2, no keys)`: a boxed primitive prints as its primitive
  *
  * Every key is listed (it does not go through d4l()'s array printer, which shows only the first and the last). Each key
- * is JSON-quoted, with U+0085, U+2028 and U+2029 escaped too (JSON leaves them raw), so no line break in a key can
- * forge a log line; one longer than 64 characters prints as its length.
+ * is JSON-quoted (which escapes U+0000-U+001F and lone surrogates), and DEL, the C1 controls U+007F-U+009F, U+2028,
+ * U+2029 and the bidi controls are escaped too, as JSON leaves them raw; one longer than 64 characters prints as its
+ * length.
  *
  * What it reads, and nothing else: own enumerable string keys (Object.keys); an array's length; a Map's or Set's size;
  * binary data's byteLength and its constructor's name (used only if it is a plain identifier, otherwise the built-in
@@ -391,11 +392,16 @@ function keysOfOrThrow(input: unknown): string {
   return `[${printed.join(", ")}] (keys, ${keys.length})`
 }
 
-/** Line breaks JSON.stringify leaves unescaped, which a log viewer that follows Unicode may still break a line on. */
-const UNICODE_LINE_BREAKS = /[\u0085\u2028\u2029]/g
+/**
+ * What JSON.stringify leaves raw (it escapes only U+0000-U+001F, `"` and `\`, and lone surrogates) that can still forge
+ * or disguise a log line: DEL and the C1 controls U+007F-U+009F (U+0085 is a line break, U+009B starts a terminal escape
+ * sequence that can move the cursor and erase a line), the line and paragraph separators U+2028 and U+2029, and the
+ * bidi controls U+200E, U+200F, U+202A-U+202E and U+2066-U+2069, which reorder how a line reads.
+ */
+const UNSAFE_IN_A_LOG_LINE = /[\u007f-\u009f\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g
 
 function quoteKey(key: string): string {
-  return JSON.stringify(key).replace(UNICODE_LINE_BREAKS, (c) => '\\u' + ('000' + c.charCodeAt(0).toString(16)).slice(-4))
+  return JSON.stringify(key).replace(UNSAFE_IN_A_LOG_LINE, (c) => '\\u' + ('000' + c.charCodeAt(0).toString(16)).slice(-4))
 }
 
 /** `Object.prototype.toString`'s tag (`String`, `Uint8Array`, `Object`), or '' when a `Symbol.toStringTag` getter throws. */

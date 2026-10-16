@@ -279,9 +279,9 @@ function keysOfOrThrow(input) {
     var printed = keys.map(function (key) { return key.length > KEYS_OF_MAX_KEY_LENGTH ? "<key of ".concat(key.length, " chars>") : quoteKey(key); });
     return "[".concat(printed.join(", "), "] (keys, ").concat(keys.length, ")");
 }
-var UNICODE_LINE_BREAKS = /[\u0085\u2028\u2029]/g;
+var UNSAFE_IN_A_LOG_LINE = /[\u007f-\u009f\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g;
 function quoteKey(key) {
-    return JSON.stringify(key).replace(UNICODE_LINE_BREAKS, function (c) { return '\\u' + ('000' + c.charCodeAt(0).toString(16)).slice(-4); });
+    return JSON.stringify(key).replace(UNSAFE_IN_A_LOG_LINE, function (c) { return '\\u' + ('000' + c.charCodeAt(0).toString(16)).slice(-4); });
 }
 function toStringTagOf(input) {
     try {
