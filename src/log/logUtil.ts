@@ -341,7 +341,8 @@ const KEYS_OF_MAX_KEY_LENGTH = 64
  *   keysOf(new String('pw'))               → `<string> (length 2, no keys)`: a boxed primitive prints as its primitive
  *
  * Every key is listed (it does not go through d4l()'s array printer, which shows only the first and the last). Each key
- * is JSON-quoted, so a newline in a key cannot forge a log line; one longer than 64 characters prints as its length.
+ * is JSON-quoted, with U+0085, U+2028 and U+2029 escaped too (JSON leaves them raw), so no line break in a key can
+ * forge a log line; one longer than 64 characters prints as its length.
  *
  * What it reads, and nothing else: own enumerable string keys (Object.keys); an array's length; a Map's or Set's size;
  * binary data's byteLength and its constructor's name (used only if it is a plain identifier, otherwise the built-in
@@ -386,8 +387,15 @@ function keysOfOrThrow(input: unknown): string {
     return keysOfOrThrow(unboxed.primitive)
   }
   const keys = Object.keys(input).sort()
-  const printed = keys.map((key) => key.length > KEYS_OF_MAX_KEY_LENGTH ? `<key of ${key.length} chars>` : JSON.stringify(key))
+  const printed = keys.map((key) => key.length > KEYS_OF_MAX_KEY_LENGTH ? `<key of ${key.length} chars>` : quoteKey(key))
   return `[${printed.join(", ")}] (keys, ${keys.length})`
+}
+
+/** Line breaks JSON.stringify leaves unescaped, which a log viewer that follows Unicode may still break a line on. */
+const UNICODE_LINE_BREAKS = /[\u0085\u2028\u2029]/g
+
+function quoteKey(key: string): string {
+  return JSON.stringify(key).replace(UNICODE_LINE_BREAKS, (c) => '\\u' + ('000' + c.charCodeAt(0).toString(16)).slice(-4))
 }
 
 /** `Object.prototype.toString`'s tag (`String`, `Uint8Array`, `Object`), or '' when a `Symbol.toStringTag` getter throws. */

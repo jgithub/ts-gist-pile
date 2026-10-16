@@ -38,6 +38,12 @@ describe('logUtil.keysOf()', () => {
     expect(printed).to.eql('["a\\nINFO forged line"] (keys, 1)')
   })
 
+  it('escapes the Unicode line breaks JSON.stringify leaves raw (U+0085, U+2028, U+2029)', () => {
+    const printed = keysOf({ 'a\u2028INFO forged': 1, 'b\u2029x': 2, 'c\u0085y': 3 })
+    expect(printed).not.to.match(/[\u0085\u2028\u2029]/)
+    expect(printed).to.eql('["a\\u2028INFO forged", "b\\u2029x", "c\\u0085y"] (keys, 3)')
+  })
+
   it('prints a key longer than 64 characters as its length: a token sent as ?<token> is a query key', () => {
     const token = 'x'.repeat(65)
     const printed = keysOf({ [token]: '', sd: '1x1' })
