@@ -98,6 +98,72 @@ describe('logUtil.keysOf()', () => {
     expect(keysOf(new String('pw'))).to.eql('<string> (length 2, no keys)')
     expect(keysOf(new Number(4111))).to.eql('<number> (no keys)')
     expect(keysOf(new Boolean(true))).to.eql('<boolean> (no keys)')
+    expect(keysOf(Object(BigInt(4111)))).to.eql('<bigint> (no keys)')
+  })
+
+  // A log formatter must never throw, and must run as little of the input's own code as it can: these inputs are
+  // built by code, never parsed from a request, but other projects call this library with whatever they hold.
+  it('never calls valueOf() on a boxed primitive', () => {
+    // A real String wrapper whose own valueOf returns itself (a `class extends String` compiles to ES5 here and would
+    // not be a real wrapper): calling it recursed until the stack overflowed.
+    let valueOfCalls = 0
+    const selfReturning = new String('pw')
+    Object.defineProperty(selfReturning, 'valueOf', {
+      value() {
+        valueOfCalls += 1
+        return selfReturning
+      }
+    })
+    expect(keysOf(selfReturning)).to.eql('<string> (length 2, no keys)')
+    expect(valueOfCalls).to.eql(0)
+  })
+
+  it('treats an object that only inherits from String.prototype as a plain object, without throwing', () => {
+    expect(keysOf(Object.create(String.prototype))).to.eql('[] (keys, 0)')
+  })
+
+  it('lists the keys of a plain object that forges a String tag, rather than hiding them', () => {
+    class ForgedTag {
+      password = 'hunter2'
+      get [Symbol.toStringTag](): string {
+        return 'String'
+      }
+    }
+    expect(keysOf(new ForgedTag())).to.eql('["password"] (keys, 1)')
+  })
+
+  it('names binary data by its tag when its constructor getter throws', () => {
+    const bytes = new Uint8Array(2)
+    Object.defineProperty(bytes, 'constructor', {
+      get() {
+        throw new Error('constructor getter')
+      }
+    })
+    expect(keysOf(bytes)).to.eql('Uint8Array(byteLength=2) (no keys)')
+  })
+
+  it('never prints a constructor name that could forge a log line', () => {
+    const bytes = new Uint8Array(2)
+    Object.defineProperty(bytes, 'constructor', { value: { name: 'X\nFAKE LOG LINE' } })
+    expect(keysOf(bytes)).to.eql('Uint8Array(byteLength=2) (no keys)')
+  })
+
+  it('never throws, even when reading the input throws', () => {
+    const hostile = new Proxy({}, {
+      ownKeys() {
+        throw new Error('ownKeys trap')
+      },
+      get() {
+        throw new Error('get trap')
+      }
+    })
+    expect(keysOf(hostile)).to.eql('<unreadable> (no keys)')
+    class ThrowingTag {
+      get [Symbol.toStringTag](): string {
+        throw new Error('tag getter')
+      }
+    }
+    expect(keysOf(new ThrowingTag())).to.eql('[] (keys, 0)')
   })
 
   it('is exported from the browser entry point', () => {

@@ -241,7 +241,14 @@ function blurWhereNeeded(input, logOptions) {
 }
 var KEYS_OF_MAX_KEY_LENGTH = 64;
 function keysOf(input) {
-    var _a, _b;
+    try {
+        return keysOfOrThrow(input);
+    }
+    catch (_a) {
+        return "<unreadable> (no keys)";
+    }
+}
+function keysOfOrThrow(input) {
     if (typeof input === 'undefined') {
         return "<undefined> (undefined)";
     }
@@ -260,15 +267,57 @@ function keysOf(input) {
     if (input instanceof Map || input instanceof Set) {
         return "".concat(input instanceof Map ? 'Map' : 'Set', "(size=").concat(input.size, ") (no keys)");
     }
-    if (input instanceof String || input instanceof Number || input instanceof Boolean) {
-        return keysOf(input.valueOf());
-    }
     if (ArrayBuffer.isView(input) || input instanceof ArrayBuffer) {
-        return "".concat((_b = (_a = input.constructor) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : 'Binary', "(byteLength=").concat(input.byteLength, ") (no keys)");
+        return "".concat(binaryTypeName(input), "(byteLength=").concat(input.byteLength, ") (no keys)");
+    }
+    var tag = toStringTagOf(input);
+    var unboxed = unboxPrimitive(input, tag);
+    if (unboxed.isBoxed) {
+        return keysOfOrThrow(unboxed.primitive);
     }
     var keys = Object.keys(input).sort();
     var printed = keys.map(function (key) { return key.length > KEYS_OF_MAX_KEY_LENGTH ? "<key of ".concat(key.length, " chars>") : JSON.stringify(key); });
     return "[".concat(printed.join(", "), "] (keys, ").concat(keys.length, ")");
+}
+function toStringTagOf(input) {
+    try {
+        return Object.prototype.toString.call(input).slice("[object ".length, -1);
+    }
+    catch (_a) {
+        return '';
+    }
+}
+var BUILT_IN_UNBOXERS = {
+    String: String.prototype.valueOf,
+    Number: Number.prototype.valueOf,
+    Boolean: Boolean.prototype.valueOf,
+    Symbol: typeof Symbol === 'function' ? Symbol.prototype.valueOf : undefined,
+    BigInt: typeof BigInt === 'function' ? BigInt.prototype.valueOf : undefined,
+};
+function unboxPrimitive(input, tag) {
+    var unbox = Object.prototype.hasOwnProperty.call(BUILT_IN_UNBOXERS, tag) ? BUILT_IN_UNBOXERS[tag] : undefined;
+    if (unbox === undefined) {
+        return { isBoxed: false };
+    }
+    try {
+        return { isBoxed: true, primitive: unbox.call(input) };
+    }
+    catch (_a) {
+        return { isBoxed: false };
+    }
+}
+var PLAIN_IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+function binaryTypeName(input) {
+    var _a;
+    try {
+        var name_1 = (_a = input.constructor) === null || _a === void 0 ? void 0 : _a.name;
+        if (typeof name_1 === 'string' && PLAIN_IDENTIFIER.test(name_1)) {
+            return name_1;
+        }
+    }
+    catch (_b) {
+    }
+    return toStringTagOf(input) || 'Binary';
 }
 exports.plain = d4l;
 exports.blur = d4lObfuscate;

@@ -342,9 +342,23 @@ const KEYS_OF_MAX_KEY_LENGTH = 64
  *
  * Every key is listed (it does not go through d4l()'s array printer, which shows only the first and the last). Each key
  * is JSON-quoted, so a newline in a key cannot forge a log line; one longer than 64 characters prints as its length.
- * Own enumerable string keys only (Object.keys): no getter runs and nothing on the prototype is read.
+ *
+ * What it reads, and nothing else: own enumerable string keys (Object.keys); an array's length; a Map's or Set's size;
+ * binary data's byteLength and its constructor's name (used only if it is a plain identifier, otherwise the built-in
+ * type tag); and for any other object, its Object.prototype.toString tag and, when that tag names a primitive wrapper,
+ * the built-in String/Number/Boolean/BigInt/Symbol valueOf (never the object's own valueOf). A subclass can override
+ * a getter among those reads; whatever it does, keysOf never throws: a read that throws prints
+ * `<unreadable> (no keys)`, or the built-in type tag for a binary value's name.
  */
 export function keysOf(input: unknown): string {
+  try {
+    return keysOfOrThrow(input)
+  } catch {
+    return "<unreadable> (no keys)"
+  }
+}
+
+function keysOfOrThrow(input: unknown): string {
   if (typeof input === 'undefined') {
     return "<undefined> (undefined)"
   }
@@ -363,15 +377,66 @@ export function keysOf(input: unknown): string {
   if (input instanceof Map || input instanceof Set) {
     return `${input instanceof Map ? 'Map' : 'Set'}(size=${input.size}) (no keys)`
   }
-  if (input instanceof String || input instanceof Number || input instanceof Boolean) {
-    return keysOf(input.valueOf())
-  }
   if (ArrayBuffer.isView(input) || input instanceof ArrayBuffer) {
-    return `${input.constructor?.name ?? 'Binary'}(byteLength=${input.byteLength}) (no keys)`
+    return `${binaryTypeName(input)}(byteLength=${input.byteLength}) (no keys)`
+  }
+  const tag = toStringTagOf(input)
+  const unboxed = unboxPrimitive(input, tag)
+  if (unboxed.isBoxed) {
+    return keysOfOrThrow(unboxed.primitive)
   }
   const keys = Object.keys(input).sort()
   const printed = keys.map((key) => key.length > KEYS_OF_MAX_KEY_LENGTH ? `<key of ${key.length} chars>` : JSON.stringify(key))
   return `[${printed.join(", ")}] (keys, ${keys.length})`
+}
+
+/** `Object.prototype.toString`'s tag (`String`, `Uint8Array`, `Object`), or '' when a `Symbol.toStringTag` getter throws. */
+function toStringTagOf(input: object): string {
+  try {
+    return Object.prototype.toString.call(input).slice("[object ".length, -1)
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * The tag is only a hint (`Symbol.toStringTag` can forge it), so the built-in valueOf is the proof: it reads the
+ * wrapper's internal slot, runs none of the object's code, and throws for anything that is not really a wrapper.
+ */
+const BUILT_IN_UNBOXERS: { [tag: string]: ((this: unknown) => unknown) | undefined } = {
+  String: String.prototype.valueOf,
+  Number: Number.prototype.valueOf,
+  Boolean: Boolean.prototype.valueOf,
+  Symbol: typeof Symbol === 'function' ? Symbol.prototype.valueOf : undefined,
+  BigInt: typeof BigInt === 'function' ? BigInt.prototype.valueOf : undefined,
+}
+
+function unboxPrimitive(input: object, tag: string): { isBoxed: true, primitive: unknown } | { isBoxed: false } {
+  const unbox = Object.prototype.hasOwnProperty.call(BUILT_IN_UNBOXERS, tag) ? BUILT_IN_UNBOXERS[tag] : undefined
+  if (unbox === undefined) {
+    return { isBoxed: false }
+  }
+  try {
+    return { isBoxed: true, primitive: unbox.call(input) }
+  } catch {
+    // A forged tag (or an object that only inherits from String.prototype): a plain object, so its keys print.
+    return { isBoxed: false }
+  }
+}
+
+const PLAIN_IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/
+
+/** `Buffer`, `Uint8Array`, `ArrayBuffer`: the constructor's name if it is a plain identifier, else the built-in tag. */
+function binaryTypeName(input: object): string {
+  try {
+    const name: unknown = (input as { constructor?: { name?: unknown } }).constructor?.name
+    if (typeof name === 'string' && PLAIN_IDENTIFIER.test(name)) {
+      return name
+    }
+  } catch {
+    // A constructor getter or Proxy trap that throws: fall back to the tag below.
+  }
+  return toStringTagOf(input) || 'Binary'
 }
 
 // Aliases for cleaner API
