@@ -5,6 +5,7 @@ exports.d4l = d4l;
 exports.d4lObfuscate = d4lObfuscate;
 exports.d4lPii = d4lPii;
 exports.blurWhereNeeded = blurWhereNeeded;
+exports.keysOf = keysOf;
 var piiSanitizer_1 = require("./piiSanitizer");
 var environmentUtil_1 = require("../env/environmentUtil");
 var smartObfuscate_1 = require("./smartObfuscate");
@@ -237,6 +238,30 @@ function blurWhereNeeded(input, logOptions) {
         return d4l(input, logOptions);
     }
     return scanStringForPII(input);
+}
+var KEYS_OF_MAX_KEY_LENGTH = 64;
+function keysOf(input) {
+    if (typeof input === 'undefined') {
+        return "<undefined> (undefined)";
+    }
+    if (input === null) {
+        return "<null> (null)";
+    }
+    if (typeof input === 'string') {
+        return "<string> (length ".concat(input.length, ", no keys)");
+    }
+    if (typeof input !== 'object') {
+        return "<".concat(typeof input, "> (no keys)");
+    }
+    if (Array.isArray(input)) {
+        return "Array(len=".concat(input.length, ") (no keys)");
+    }
+    if (input instanceof Map || input instanceof Set) {
+        return "".concat(input instanceof Map ? 'Map' : 'Set', "(size=").concat(input.size, ") (no keys)");
+    }
+    var keys = Object.keys(input).sort();
+    var printed = keys.map(function (key) { return key.length > KEYS_OF_MAX_KEY_LENGTH ? "<key of ".concat(key.length, " chars>") : JSON.stringify(key); });
+    return "[".concat(printed.join(", "), "] (keys, ").concat(keys.length, ")");
 }
 exports.plain = d4l;
 exports.blur = d4lObfuscate;
