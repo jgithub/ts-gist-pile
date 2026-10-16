@@ -328,14 +328,17 @@ export function blurWhereNeeded(input: string | number | boolean | Error | Array
 const KEYS_OF_MAX_KEY_LENGTH = 64
 
 /**
- * The shape of a value, for a log line: every top-level key, sorted, and NEVER a value. Use it for anything whose
- * values may carry a password, token or cookie: a request body, query, cookies or headers, a context store.
+ * The shape of a value, for a log line: every top-level key, sorted. A value is never printed. Use it for anything whose
+ * values may carry a password, token or cookie: a request body, query, cookies or headers, a context store. Keys do
+ * print, so a plain object used as a dictionary (keyed by email or id) prints its keys, which are data, like any key.
  *
  *   keysOf({ password: 'x', email: 'y' })  → `["email", "password"] (keys, 2)`
  *   keysOf(null)                           → `<null> (null)`
  *   keysOf('a secret')                     → `<string> (length 8, no keys)`
  *   keysOf([1, 2, 3])                      → `Array(len=3) (no keys)`
  *   keysOf(new Map([['k', 'v']]))          → `Map(size=1) (no keys)`: a Map's keys are data
+ *   keysOf(Buffer.from('secret'))          → `Buffer(byteLength=6) (no keys)`: any binary value prints its size
+ *   keysOf(new String('pw'))               → `<string> (length 2, no keys)`: a boxed primitive prints as its primitive
  *
  * Every key is listed (it does not go through d4l()'s array printer, which shows only the first and the last). Each key
  * is JSON-quoted, so a newline in a key cannot forge a log line; one longer than 64 characters prints as its length.
@@ -359,6 +362,12 @@ export function keysOf(input: unknown): string {
   }
   if (input instanceof Map || input instanceof Set) {
     return `${input instanceof Map ? 'Map' : 'Set'}(size=${input.size}) (no keys)`
+  }
+  if (input instanceof String || input instanceof Number || input instanceof Boolean) {
+    return keysOf(input.valueOf())
+  }
+  if (ArrayBuffer.isView(input) || input instanceof ArrayBuffer) {
+    return `${input.constructor?.name ?? 'Binary'}(byteLength=${input.byteLength}) (no keys)`
   }
   const keys = Object.keys(input).sort()
   const printed = keys.map((key) => key.length > KEYS_OF_MAX_KEY_LENGTH ? `<key of ${key.length} chars>` : JSON.stringify(key))

@@ -241,6 +241,7 @@ function blurWhereNeeded(input, logOptions) {
 }
 var KEYS_OF_MAX_KEY_LENGTH = 64;
 function keysOf(input) {
+    var _a, _b;
     if (typeof input === 'undefined') {
         return "<undefined> (undefined)";
     }
@@ -258,6 +259,12 @@ function keysOf(input) {
     }
     if (input instanceof Map || input instanceof Set) {
         return "".concat(input instanceof Map ? 'Map' : 'Set', "(size=").concat(input.size, ") (no keys)");
+    }
+    if (input instanceof String || input instanceof Number || input instanceof Boolean) {
+        return keysOf(input.valueOf());
+    }
+    if (ArrayBuffer.isView(input) || input instanceof ArrayBuffer) {
+        return "".concat((_b = (_a = input.constructor) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : 'Binary', "(byteLength=").concat(input.byteLength, ") (no keys)");
     }
     var keys = Object.keys(input).sort();
     var printed = keys.map(function (key) { return key.length > KEYS_OF_MAX_KEY_LENGTH ? "<key of ".concat(key.length, " chars>") : JSON.stringify(key); });

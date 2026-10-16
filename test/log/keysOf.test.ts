@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { keysOf } from "../../src/index";
+import * as browserEntry from "../../src/index.browser";
 
 // keysOf() exists so a request body, query, cookie jar or context store can be logged without its values: each test
 // that plants a value asserts that value never reaches the output.
@@ -79,5 +80,27 @@ describe('logUtil.keysOf()', () => {
   it('prints a Map or a Set as its size: their keys are data', () => {
     expect(keysOf(new Map([['ada@example.com', 1]]))).to.eql('Map(size=1) (no keys)')
     expect(keysOf(new Set(['ada@example.com']))).to.eql('Set(size=1) (no keys)')
+  })
+
+  // A raw request body (bodyParser.raw) is a Buffer: listing its byte indexes made a 5 MB body a 56 MB log line.
+  it('prints binary data as its byte length, never its indexes or bytes', () => {
+    expect(keysOf(Buffer.from('secret'))).to.eql('Buffer(byteLength=6) (no keys)')
+    expect(keysOf(new Uint8Array([115, 51, 99]))).to.eql('Uint8Array(byteLength=3) (no keys)')
+    expect(keysOf(new ArrayBuffer(16))).to.eql('ArrayBuffer(byteLength=16) (no keys)')
+    expect(keysOf(new DataView(new ArrayBuffer(4)))).to.eql('DataView(byteLength=4) (no keys)')
+  })
+
+  it('prints a large Buffer in a short line', () => {
+    expect(keysOf(Buffer.alloc(1024 * 1024))).to.eql('Buffer(byteLength=1048576) (no keys)')
+  })
+
+  it('prints a boxed primitive as its primitive would, never its index keys or its value', () => {
+    expect(keysOf(new String('pw'))).to.eql('<string> (length 2, no keys)')
+    expect(keysOf(new Number(4111))).to.eql('<number> (no keys)')
+    expect(keysOf(new Boolean(true))).to.eql('<boolean> (no keys)')
+  })
+
+  it('is exported from the browser entry point', () => {
+    expect(browserEntry.keysOf).to.equal(keysOf)
   })
 })
