@@ -5,6 +5,7 @@ exports.d4l = d4l;
 exports.d4lObfuscate = d4lObfuscate;
 exports.d4lPii = d4lPii;
 exports.blurWhereNeeded = blurWhereNeeded;
+exports.keysOf = keysOf;
 var piiSanitizer_1 = require("./piiSanitizer");
 var environmentUtil_1 = require("../env/environmentUtil");
 var smartObfuscate_1 = require("./smartObfuscate");
@@ -237,6 +238,90 @@ function blurWhereNeeded(input, logOptions) {
         return d4l(input, logOptions);
     }
     return scanStringForPII(input);
+}
+var KEYS_OF_MAX_KEY_LENGTH = 64;
+function keysOf(input) {
+    try {
+        return keysOfOrThrow(input);
+    }
+    catch (_a) {
+        return "<unreadable> (no keys)";
+    }
+}
+function keysOfOrThrow(input) {
+    if (typeof input === 'undefined') {
+        return "<undefined> (undefined)";
+    }
+    if (input === null) {
+        return "<null> (null)";
+    }
+    if (typeof input === 'string') {
+        return "<string> (length ".concat(input.length, ", no keys)");
+    }
+    if (typeof input !== 'object') {
+        return "<".concat(typeof input, "> (no keys)");
+    }
+    if (Array.isArray(input)) {
+        return "Array(len=".concat(input.length, ") (no keys)");
+    }
+    if (input instanceof Map || input instanceof Set) {
+        return "".concat(input instanceof Map ? 'Map' : 'Set', "(size=").concat(input.size, ") (no keys)");
+    }
+    if (ArrayBuffer.isView(input) || input instanceof ArrayBuffer) {
+        return "".concat(binaryTypeName(input), "(byteLength=").concat(input.byteLength, ") (no keys)");
+    }
+    var tag = toStringTagOf(input);
+    var unboxed = unboxPrimitive(input, tag);
+    if (unboxed.isBoxed) {
+        return keysOfOrThrow(unboxed.primitive);
+    }
+    var keys = Object.keys(input).sort();
+    var printed = keys.map(function (key) { return key.length > KEYS_OF_MAX_KEY_LENGTH ? "<key of ".concat(key.length, " chars>") : quoteKey(key); });
+    return "[".concat(printed.join(", "), "] (keys, ").concat(keys.length, ")");
+}
+var UNSAFE_IN_A_LOG_LINE = /[\u007f-\u009f\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g;
+function quoteKey(key) {
+    return JSON.stringify(key).replace(UNSAFE_IN_A_LOG_LINE, function (c) { return '\\u' + ('000' + c.charCodeAt(0).toString(16)).slice(-4); });
+}
+function toStringTagOf(input) {
+    try {
+        return Object.prototype.toString.call(input).slice("[object ".length, -1);
+    }
+    catch (_a) {
+        return '';
+    }
+}
+var BUILT_IN_UNBOXERS = {
+    String: String.prototype.valueOf,
+    Number: Number.prototype.valueOf,
+    Boolean: Boolean.prototype.valueOf,
+    Symbol: typeof Symbol === 'function' ? Symbol.prototype.valueOf : undefined,
+    BigInt: typeof BigInt === 'function' ? BigInt.prototype.valueOf : undefined,
+};
+function unboxPrimitive(input, tag) {
+    var unbox = Object.prototype.hasOwnProperty.call(BUILT_IN_UNBOXERS, tag) ? BUILT_IN_UNBOXERS[tag] : undefined;
+    if (unbox === undefined) {
+        return { isBoxed: false };
+    }
+    try {
+        return { isBoxed: true, primitive: unbox.call(input) };
+    }
+    catch (_a) {
+        return { isBoxed: false };
+    }
+}
+var PLAIN_IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+function binaryTypeName(input) {
+    var _a;
+    try {
+        var name_1 = (_a = input.constructor) === null || _a === void 0 ? void 0 : _a.name;
+        if (typeof name_1 === 'string' && PLAIN_IDENTIFIER.test(name_1)) {
+            return name_1;
+        }
+    }
+    catch (_b) {
+    }
+    return toStringTagOf(input) || 'Binary';
 }
 exports.plain = d4l;
 exports.blur = d4lObfuscate;
