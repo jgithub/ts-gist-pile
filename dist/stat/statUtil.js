@@ -27,11 +27,16 @@ function sendPlusOneCountToStathat(countStatName) {
         }, 0);
     }
 }
+var hasWarnedAboutMissingKpitracksStatUrl = false;
 function sendStatToKpitracks(requestBodyString) {
     var _a;
     var kpitracksEzKey = process.env.KPITRACKS_EZ_KEY;
     kpitracksEzKey = kpitracksEzKey === null || kpitracksEzKey === void 0 ? void 0 : kpitracksEzKey.trim();
     var url = (_a = process.env.KPITRACKS_STAT_URL) === null || _a === void 0 ? void 0 : _a.trim();
+    if (kpitracksEzKey != null && kpitracksEzKey.length > 0 && (url == null || url.length === 0) && !hasWarnedAboutMissingKpitracksStatUrl) {
+        hasWarnedAboutMissingKpitracksStatUrl = true;
+        console.log("sendStatToKpitracks(): KPITRACKS_EZ_KEY is set but KPITRACKS_STAT_URL is not, so no stat is being sent. Set KPITRACKS_STAT_URL to the stats endpoint.");
+    }
     if (kpitracksEzKey != null && (kpitracksEzKey === null || kpitracksEzKey === void 0 ? void 0 : kpitracksEzKey.length) > 0 && url != null && url.length > 0) {
         var controller_2 = new AbortController();
         var timeoutId_2 = setTimeout(function () { return controller_2.abort(); }, 750);

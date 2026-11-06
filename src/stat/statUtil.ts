@@ -47,12 +47,20 @@ export function sendPlusOneCountToStathat(countStatName: string): void {
 }
 
 
+let hasWarnedAboutMissingKpitracksStatUrl = false
+
 export function sendStatToKpitracks(requestBodyString: string): void {
   let kpitracksEzKey = process.env.KPITRACKS_EZ_KEY
   kpitracksEzKey = kpitracksEzKey?.trim()
   // The destination is configuration, never a literal here: the browser bundle ships this file to every page, and a built-in
   // host name would travel with it. No URL, no send.
   const url = process.env.KPITRACKS_STAT_URL?.trim()
+
+  if (kpitracksEzKey != null && kpitracksEzKey.length > 0 && (url == null || url.length === 0) && !hasWarnedAboutMissingKpitracksStatUrl) {
+    // A key with no destination drops every stat, so say so, once per process. Never the key, never a host.
+    hasWarnedAboutMissingKpitracksStatUrl = true
+    console.log(`sendStatToKpitracks(): KPITRACKS_EZ_KEY is set but KPITRACKS_STAT_URL is not, so no stat is being sent. Set KPITRACKS_STAT_URL to the stats endpoint.`)
+  }
 
   if (kpitracksEzKey != null && kpitracksEzKey?.length > 0 && url != null && url.length > 0) {
     const controller = new AbortController()
