@@ -28,12 +28,13 @@ function sendPlusOneCountToStathat(countStatName) {
     }
 }
 function sendStatToKpitracks(requestBodyString) {
+    var _a;
     var kpitracksEzKey = process.env.KPITRACKS_EZ_KEY;
     kpitracksEzKey = kpitracksEzKey === null || kpitracksEzKey === void 0 ? void 0 : kpitracksEzKey.trim();
-    if (kpitracksEzKey != null && (kpitracksEzKey === null || kpitracksEzKey === void 0 ? void 0 : kpitracksEzKey.length) > 0) {
+    var url = (_a = process.env.KPITRACKS_STAT_URL) === null || _a === void 0 ? void 0 : _a.trim();
+    if (kpitracksEzKey != null && (kpitracksEzKey === null || kpitracksEzKey === void 0 ? void 0 : kpitracksEzKey.length) > 0 && url != null && url.length > 0) {
         var controller_2 = new AbortController();
         var timeoutId_2 = setTimeout(function () { return controller_2.abort(); }, 750);
-        var url = "https://stat.kpitracks.com/c";
         var requestBodyWithKey = requestBodyString + "&ezkey=".concat(kpitracksEzKey);
         console.log("sendStatToKpitracks(): Sending POST to Stathat url = '".concat(url, "',  requestBodyString = '").concat(requestBodyString, "' (ezkey not printed)"));
         var beforeAt_1 = new Date();

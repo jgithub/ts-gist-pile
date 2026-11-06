@@ -50,11 +50,13 @@ export function sendPlusOneCountToStathat(countStatName: string): void {
 export function sendStatToKpitracks(requestBodyString: string): void {
   let kpitracksEzKey = process.env.KPITRACKS_EZ_KEY
   kpitracksEzKey = kpitracksEzKey?.trim()
+  // The destination is configuration, never a literal here: the browser bundle ships this file to every page, and a built-in
+  // host name would travel with it. No URL, no send.
+  const url = process.env.KPITRACKS_STAT_URL?.trim()
 
-  if (kpitracksEzKey != null && kpitracksEzKey?.length > 0) {
+  if (kpitracksEzKey != null && kpitracksEzKey?.length > 0 && url != null && url.length > 0) {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 750)
-    const url = "https://stat.kpitracks.com/c"
     // The key goes in the POST body only. Every log line below prints the body WITHOUT it: until 0.0.334 they printed
     // the body with `&ezkey=<the key>` appended, so the credential reached stdout on every send.
     const requestBodyWithKey = requestBodyString + `&ezkey=${kpitracksEzKey}`
