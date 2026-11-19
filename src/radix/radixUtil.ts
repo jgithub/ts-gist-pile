@@ -1,6 +1,5 @@
 // radixUtil is a lower level library than is uuidUtil
 const BASE62_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-const BASE64_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/';
 
 // https://github.com/JamoCA/cfml-nanoid/blob/main/README.md
 // https://zelark.github.io/nano-id-cc/

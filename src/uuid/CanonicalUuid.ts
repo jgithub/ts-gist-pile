@@ -1,6 +1,8 @@
 import { Brand } from '../type/Brand';
 import { isWellFormedCanonicalUuid } from '../string/stringUtil';
 import { v4, v7 } from 'uuid';
+import { encode, decode, MultibaseName } from '../multibase/multibase';
+import { ArgumentException } from '../exception/ArgumentException';
 
 /**
  * Canonical UUID as a branded lowercase string with hyphens.
@@ -44,6 +46,42 @@ export const CanonicalUuid = {
     }
 
     return normalized as CanonicalUuid;
+  },
+
+  /**
+   * Encodes the 16 bytes of a UUID as a multibase string (prefix + body).
+   *
+   * @param uuid - The canonical UUID
+   * @param name - Multibase encoding, default 'base64url'
+   *
+   * @example
+   * CanonicalUuid.toMultibase(CanonicalUuid.fromString('6dfb93da-5164-4eef-bd9a-0daed5e4ebeb'));
+   * // 'ubfuT2lFkTu-9mg2u1eTr6w'
+   */
+  toMultibase: (uuid: CanonicalUuid, name: MultibaseName = 'base64url'): string => {
+    const hex = CanonicalUuid.fromString(uuid).replace(/-/g, '');
+    const bytes = new Uint8Array(16);
+    for (let i = 0; i < 16; i++) {
+      bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    }
+    return encode(bytes, name);
+  },
+
+  /**
+   * Decodes a multibase string that holds exactly 16 bytes into a CanonicalUuid.
+   *
+   * @throws if the string is not valid multibase, or does not decode to exactly 16 bytes
+   */
+  fromMultibase: (str: string): CanonicalUuid => {
+    const { bytes } = decode(str);
+    if (bytes.length !== 16) {
+      throw new ArgumentException(`CanonicalUuid.fromMultibase() needs exactly 16 bytes, got ${bytes.length}`);
+    }
+    let hex = '';
+    for (let i = 0; i < 16; i++) {
+      hex += (bytes[i] < 16 ? '0' : '') + bytes[i].toString(16);
+    }
+    return CanonicalUuid.fromString(`${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`);
   },
 
   /**

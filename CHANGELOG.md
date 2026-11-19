@@ -1,4 +1,10 @@
 # ts-gist-pile Development History
+## 0.0.337 - multibase
+
+- Added `multibase` (src/multibase): `encode(bytes, name)` and `decode(str)` for base58btc (`z`), base58flickr (`Z`), base64 (`m`), base64pad (`M`), base64url (`u`) and base64urlpad (`U`), over `Uint8Array`, no Buffer. Decoding is strict (one spelling per byte string).
+- Added `CanonicalUuid.toMultibase(uuid, name = 'base64url')` and `CanonicalUuid.fromMultibase(str)` (refuses anything but exactly 16 bytes).
+- Removed the unused, non-RFC-4648 `BASE64_ALPHABET` constant from radixUtil.
+
 ## October 2023 - October 2025
 
 *2-year evolution of a foundational TypeScript utility library*
