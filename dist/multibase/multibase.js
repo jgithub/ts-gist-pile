@@ -45,7 +45,7 @@ function decode(str) {
     var prefix = str[0];
     var name = NAME_BY_PREFIX.get(prefix);
     if (name === undefined) {
-        throw new ArgumentException_1.ArgumentException("multibase: unknown prefix U+".concat(prefix.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')));
+        throw new ArgumentException_1.ArgumentException("multibase: unknown prefix U+".concat(str.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')));
     }
     var spec = ENCODINGS[name].spec;
     var bytes = spec.kind === 'base64'

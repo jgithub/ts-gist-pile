@@ -122,6 +122,7 @@ describe('multibase', () => {
   describe('strict decoding refuses', () => {
     it('an empty string', () => expectRefusal('', 'empty'))
     it('an unknown prefix', () => expectRefusal('f796573', 'unknown prefix U+0066'))
+    it('an astral-plane first character, named by its full code point', () => expectRefusal('\u{1F600}abc', 'unknown prefix U+1F600'))
     it('a character outside the base58btc alphabet (0, O, I, l)', () => {
       expectRefusal('z10', "multibase 'z'")
       expectRefusal('z1O', 'position 2')

@@ -75,7 +75,7 @@ export function decode(str: string): { name: MultibaseName; bytes: Uint8Array } 
   const prefix = str[0];
   const name = NAME_BY_PREFIX.get(prefix);
   if (name === undefined) {
-    throw new ArgumentException(`multibase: unknown prefix U+${prefix.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`);
+    throw new ArgumentException(`multibase: unknown prefix U+${str.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`);
   }
   const { spec } = ENCODINGS[name];
   const bytes = spec.kind === 'base64'
