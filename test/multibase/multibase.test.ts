@@ -51,7 +51,7 @@ describe('multibase', () => {
         'U+006d m base64 final',
         'U+004d M base64pad experimental',
         'U+0075 u base64url final',
-        'U+0055 U base64urlpad undefined',
+        'U+0055 U base64urlpad final',
       ]);
     })
   })
@@ -78,6 +78,14 @@ describe('multibase', () => {
     it('is zEahwZHMDn9fZtVGVMybqiJ in base58btc', () => {
       expect(multibase.encode(uuidBytes, 'base58btc')).to.eq('zEahwZHMDn9fZtVGVMybqiJ')
       expect(Array.from(multibase.decode('zEahwZHMDn9fZtVGVMybqiJ').bytes)).to.deep.eq(Array.from(uuidBytes))
+    })
+  })
+
+  describe('encode refuses', () => {
+    it('an unknown name from an untyped caller, including Object.prototype keys', () => {
+      for (const bad of ['base32', 'constructor', 'toString', '__proto__']) {
+        expect(() => multibase.encode(new Uint8Array([1]), bad as MultibaseName)).to.throw('unknown encoding name')
+      }
     })
   })
 

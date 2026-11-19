@@ -21,7 +21,7 @@ exports.CanonicalUuid = {
         var hex = exports.CanonicalUuid.fromString(uuid).replace(/-/g, '');
         var bytes = new Uint8Array(16);
         for (var i = 0; i < 16; i++) {
-            bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+            bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
         }
         return (0, multibase_1.encode)(bytes, name);
     },

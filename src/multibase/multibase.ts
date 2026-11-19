@@ -3,32 +3,6 @@
 // Decoding is strict: each byte string has exactly one spelling per encoding.
 import { ArgumentException } from "../exception/ArgumentException";
 
-export type MultibaseName =
-  | 'base58btc'
-  | 'base58flickr'
-  | 'base64'
-  | 'base64pad'
-  | 'base64url'
-  | 'base64urlpad';
-
-export interface MultibasePrefixRow {
-  readonly codepoint: string;
-  readonly prefix: string;
-  readonly name: MultibaseName;
-  readonly description: string;
-  // No status was given for base64urlpad in the request, so none is recorded.
-  readonly status?: 'final' | 'experimental';
-}
-
-export const MULTIBASE_PREFIX_TABLE: readonly MultibasePrefixRow[] = [
-  { codepoint: 'U+007a', prefix: 'z', name: 'base58btc', description: 'Base58 Bitcoin', status: 'final' },
-  { codepoint: 'U+005a', prefix: 'Z', name: 'base58flickr', description: 'Base58 Flicker', status: 'experimental' },
-  { codepoint: 'U+006d', prefix: 'm', name: 'base64', description: 'RFC4648 no padding', status: 'final' },
-  { codepoint: 'U+004d', prefix: 'M', name: 'base64pad', description: 'RFC4648 with padding - MIME encoding', status: 'experimental' },
-  { codepoint: 'U+0075', prefix: 'u', name: 'base64url', description: 'RFC4648 no padding', status: 'final' },
-  { codepoint: 'U+0055', prefix: 'U', name: 'base64urlpad', description: 'RFC4648 with padding' },
-];
-
 const BASE64_RFC4648_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 const BASE64URL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 const BASE58BTC_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -37,32 +11,61 @@ const BASE58FLICKR_ALPHABET = '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQ
 interface Base64Spec { readonly kind: 'base64'; readonly alphabet: string; readonly padded: boolean }
 interface Base58Spec { readonly kind: 'base58'; readonly alphabet: string }
 
-const SPECS: Readonly<Record<MultibaseName, Base64Spec | Base58Spec>> = {
-  base58btc: { kind: 'base58', alphabet: BASE58BTC_ALPHABET },
-  base58flickr: { kind: 'base58', alphabet: BASE58FLICKR_ALPHABET },
-  base64: { kind: 'base64', alphabet: BASE64_RFC4648_ALPHABET, padded: false },
-  base64pad: { kind: 'base64', alphabet: BASE64_RFC4648_ALPHABET, padded: true },
-  base64url: { kind: 'base64', alphabet: BASE64URL_ALPHABET, padded: false },
-  base64urlpad: { kind: 'base64', alphabet: BASE64URL_ALPHABET, padded: true },
-};
+interface EncodingRow {
+  readonly codepoint: string;
+  readonly prefix: string;
+  readonly description: string;
+  readonly status: 'final' | 'experimental';
+  readonly spec: Base64Spec | Base58Spec;
+}
 
-function prefixOf(name: MultibaseName): string {
-  const row = MULTIBASE_PREFIX_TABLE.find((r) => r.name === name);
-  if (row === undefined) {
-    throw new ArgumentException(`multibase: unknown encoding name`);
-  }
-  return row.prefix;
+// The one source of truth: the name union, the prefix table and the decoder lookup all derive from this.
+// Rows and statuses as in multibase.csv at d7406cdea189b82a0b3937f5737b440f5fa92f92 (spelling "Flicker" is upstream's).
+const ENCODINGS = {
+  base58btc: { codepoint: 'U+007a', prefix: 'z', description: 'Base58 Bitcoin', status: 'final', spec: { kind: 'base58', alphabet: BASE58BTC_ALPHABET } },
+  base58flickr: { codepoint: 'U+005a', prefix: 'Z', description: 'Base58 Flicker', status: 'experimental', spec: { kind: 'base58', alphabet: BASE58FLICKR_ALPHABET } },
+  base64: { codepoint: 'U+006d', prefix: 'm', description: 'RFC4648 no padding', status: 'final', spec: { kind: 'base64', alphabet: BASE64_RFC4648_ALPHABET, padded: false } },
+  base64pad: { codepoint: 'U+004d', prefix: 'M', description: 'RFC4648 with padding - MIME encoding', status: 'experimental', spec: { kind: 'base64', alphabet: BASE64_RFC4648_ALPHABET, padded: true } },
+  base64url: { codepoint: 'U+0075', prefix: 'u', description: 'RFC4648 no padding', status: 'final', spec: { kind: 'base64', alphabet: BASE64URL_ALPHABET, padded: false } },
+  base64urlpad: { codepoint: 'U+0055', prefix: 'U', description: 'RFC4648 with padding', status: 'final', spec: { kind: 'base64', alphabet: BASE64URL_ALPHABET, padded: true } },
+} as const satisfies Readonly<Record<string, EncodingRow>>;
+
+export type MultibaseName = keyof typeof ENCODINGS;
+
+export interface MultibasePrefixRow {
+  readonly codepoint: string;
+  readonly prefix: string;
+  readonly name: MultibaseName;
+  readonly description: string;
+  readonly status: 'final' | 'experimental';
+}
+
+const NAMES = Object.keys(ENCODINGS) as MultibaseName[];
+
+export const MULTIBASE_PREFIX_TABLE: readonly MultibasePrefixRow[] = NAMES.map((name) => {
+  const { codepoint, prefix, description, status } = ENCODINGS[name];
+  return { codepoint, prefix, name, description, status };
+});
+
+const NAME_BY_PREFIX: ReadonlyMap<string, MultibaseName> = new Map(NAMES.map((name) => [ENCODINGS[name].prefix, name]));
+if (NAME_BY_PREFIX.size !== NAMES.length) {
+  throw new Error('multibase: two encodings share a prefix');
+}
+
+function isMultibaseName(name: string): name is MultibaseName {
+  return Object.prototype.hasOwnProperty.call(ENCODINGS, name);
 }
 
 export function encode(bytes: Uint8Array, name: MultibaseName): string {
-  const spec = SPECS[name];
-  if (spec === undefined) {
+  // Guards JavaScript callers, which the type cannot.
+  if (!isMultibaseName(name)) {
     throw new ArgumentException(`multibase: unknown encoding name`);
   }
+  const { prefix, spec } = ENCODINGS[name];
   const body = spec.kind === 'base64'
     ? encodeBase64Body(bytes, spec)
     : encodeBase58Body(bytes, spec.alphabet);
-  return prefixOf(name) + body;
+  return prefix + body;
 }
 
 export function decode(str: string): { name: MultibaseName; bytes: Uint8Array } {
@@ -70,15 +73,15 @@ export function decode(str: string): { name: MultibaseName; bytes: Uint8Array } 
     throw new ArgumentException('multibase: empty string has no prefix');
   }
   const prefix = str[0];
-  const row = MULTIBASE_PREFIX_TABLE.find((r) => r.prefix === prefix);
-  if (row === undefined) {
+  const name = NAME_BY_PREFIX.get(prefix);
+  if (name === undefined) {
     throw new ArgumentException(`multibase: unknown prefix U+${prefix.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`);
   }
-  const spec = SPECS[row.name];
+  const { spec } = ENCODINGS[name];
   const bytes = spec.kind === 'base64'
-    ? decodeBase64Body(str, spec, row.prefix)
-    : decodeBase58Body(str, spec.alphabet, row.prefix);
-  return { name: row.name, bytes };
+    ? decodeBase64Body(str, spec, prefix)
+    : decodeBase58Body(str, spec.alphabet, prefix);
+  return { name, bytes };
 }
 
 // Positions in error messages are 0-based indexes into the whole string, so the prefix is position 0.
