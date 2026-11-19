@@ -1,7 +1,10 @@
 import { Brand } from '../type/Brand';
+import { MultibaseName } from '../multibase/multibase';
 export type CanonicalUuid = Brand<string, 'CanonicalUuid'>;
 export declare const CanonicalUuid: {
     fromString: (uuid: string) => CanonicalUuid;
+    toMultibase: (uuid: CanonicalUuid, name?: MultibaseName) => string;
+    fromMultibase: (str: string) => CanonicalUuid;
     parse: (uuid: string) => CanonicalUuid;
     v4: () => CanonicalUuid;
     v7: () => CanonicalUuid;

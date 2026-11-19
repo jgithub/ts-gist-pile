@@ -361,4 +361,32 @@ describe('CanonicalUuid', () => {
       expect(sorted).to.deep.equal(ids);
     });
   });
+
+  describe('multibase', () => {
+    const uuid = '6dfb93da-5164-4eef-bd9a-0daed5e4ebeb';
+    it('encodes to base64url by default and back', () => {
+      expect(CanonicalUuid.toMultibase(CanonicalUuid.fromString(uuid))).to.eq('ubfuT2lFkTu-9mg2u1eTr6w');
+      expect(CanonicalUuid.fromMultibase('ubfuT2lFkTu-9mg2u1eTr6w')).to.eq(uuid);
+    });
+    it('encodes to base58btc and back', () => {
+      expect(CanonicalUuid.toMultibase(CanonicalUuid.fromString(uuid), 'base58btc')).to.eq('zEahwZHMDn9fZtVGVMybqiJ');
+      expect(CanonicalUuid.fromMultibase('zEahwZHMDn9fZtVGVMybqiJ')).to.eq(uuid);
+    });
+    it('normalizes an uppercase input UUID', () => {
+      expect(CanonicalUuid.toMultibase(CanonicalUuid.fromString(uuid.toUpperCase()))).to.eq('ubfuT2lFkTu-9mg2u1eTr6w');
+    });
+    it('keeps leading zero bytes', () => {
+      const zero = CanonicalUuid.fromString('00000000-0000-0000-0000-000000000001');
+      for (const name of ['base58btc', 'base58flickr', 'base64', 'base64pad', 'base64url', 'base64urlpad'] as const) {
+        expect(CanonicalUuid.fromMultibase(CanonicalUuid.toMultibase(zero, name))).to.eq(zero);
+      }
+    });
+    it('refuses 15 and 17 bytes', () => {
+      expect(() => CanonicalUuid.fromMultibase('u' + 'A'.repeat(20))).to.throw('exactly 16 bytes, got 15');
+      expect(() => CanonicalUuid.fromMultibase('u' + 'A'.repeat(23))).to.throw('exactly 16 bytes, got 17');
+    });
+    it('refuses an invalid UUID string', () => {
+      expect(() => CanonicalUuid.toMultibase('not-a-uuid' as CanonicalUuidType)).to.throw('invalid UUID');
+    });
+  });
 });

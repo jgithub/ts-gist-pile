@@ -12,6 +12,7 @@ export * as extendedExceptionList from "./exception/extendedExceptionList";
 export * as arrayUtil from "./array/arrayUtil";
 export * as tryUtil from "./try/tryUtil";
 export * as radixUtil from "./radix/radixUtil";
+export * as multibase from "./multibase/multibase";
 export * as uuidUtil from "./uuid/uuidUtil";
 export * as idUtil from "./id/idUtil";
 export * as emailUtil from "./email/emailUtil";

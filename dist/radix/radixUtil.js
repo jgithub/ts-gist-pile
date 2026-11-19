@@ -5,7 +5,6 @@ exports.decodeBase62ToNumber = decodeBase62ToNumber;
 exports.convertHexToBase62 = convertHexToBase62;
 exports.convertHexToNanoIdAlphabet = convertHexToNanoIdAlphabet;
 var BASE62_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-var BASE64_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/';
 var NANOID_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz-';
 var NOLOOKALIKES_ALPHABET = '346789ABCDEFGHJKLMNPQRTUVWXYabcdefghijkmnpqrtwxyz';
 function encodeNumberAsBase62(num) {
